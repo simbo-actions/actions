@@ -1,0 +1,101 @@
+name: ' Checks 🧐'
+
+#-------------------------------------------------------------------------------
+# "Checks" Workflow
+#
+# Runs tests, builds, and performs checks on pull requests and pushes to main.
+# Triggers release workflow if changesets are present on main branch.
+#-------------------------------------------------------------------------------
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: >
+    ${{
+      format(
+        '{0}--{1}',
+        github.workflow,
+        github.ref_name
+      )
+    }}
+
+run-name: >
+  ${{
+    format(
+      '{0} {1}',
+      github.workflow,
+      github.event_name == 'pull_request'
+        && format('PR#{0} "{1}"', github.event.pull_request.number, github.event.pull_request.title)
+        || format('Branch {0}', github.ref_name)
+    )
+  }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🪪 Retrieve Credentials
+        id: credentials
+        uses: simbo-actions/actions/actions/github-app-credentials@main
+        with:
+          app-id: ${{ secrets.SIMBO_GITHUB_APP_ID }}
+          app-private-key: ${{ secrets.SIMBO_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.credentials.outputs.token }}
+          ref: main
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 📦 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 👷‍♂️ Build
+        run: pnpm run each:build
+
+      - name: 🎁 Bundle
+        run: pnpm run each:bundle
+
+      - name: 👨‍🔬 Test
+        run: pnpm run each:test
+
+      - name: 👨‍🏫 Check
+        run: pnpm run each:check
+
+      - name: 🧐 Root Checks
+        run: pnpm run check
+
+      - name: 🔍 Check for Changesets
+        id: has-changesets
+        if: >
+          github.event_name == 'push' &&
+          github.ref_name == 'main'
+        run: |
+          set -euo pipefail
+          result=$([[ -d .changeset ]] && find .changeset -type f -name '*.md' -print -quit | grep -q . && echo 'true' || echo 'false')
+          echo "result=${result}" >> $GITHUB_OUTPUT
+
+      - name: '🎉 Workflow: Release (If Changesets on Main Branch)'
+        uses: peter-evans/repository-dispatch@v4
+        if: >
+          github.event_name == 'push' &&
+          github.ref_name == 'main' &&
+          steps.has-changesets.outputs.result == 'true'
+        with:
+          token: ${{ steps.credentials.outputs.token }}
+          event-type: workflow:release

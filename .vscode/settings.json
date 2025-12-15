@@ -1,0 +1,8 @@
+{
+  "cSpell.enabled": true,
+  "npm.packageManager": "pnpm",
+  "search.followSymlinks": false,
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/raineorshine/npm-check-updates/main/src/types/RunOptions.json": [".ncurc.yml"]
+  }
+}

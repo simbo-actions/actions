@@ -1,0 +1,13 @@
+{
+  "name": "actions-changelog",
+  "description": "A meta package to manage the changelog and versioning of the actions mono repository.",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Simon Lepel <simbo@simbo.de> (http://simbo.de)",
+  "license": "MIT",
+  "homepage": "http://github.com/simbo-actions/actions/tree/main/changelog#readme",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "module"
+}

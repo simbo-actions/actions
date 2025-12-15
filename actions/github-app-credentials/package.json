@@ -1,0 +1,12 @@
+{
+  "name": "github-app-credentials",
+  "version": "0.0.0",
+  "description": "A GitHub Action to obtain token, slug, user ID, name, and email for a GitHub App.",
+  "author": "Simon Lepel <simbo@simbo.de> (http://simbo.de)",
+  "license": "MIT",
+  "homepage": "http://github.com/simbo-actions/github-app-credentials",
+  "bugs": "http://github.com/simbo-actions/actions/issues",
+  "repository": "github:simbo-actions/actions",
+  "private": true,
+  "type": "module"
+}

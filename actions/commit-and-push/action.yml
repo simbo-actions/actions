@@ -1,0 +1,124 @@
+name: Commit and Push
+description: A GitHub Action to commit and push changes to a repository. Supports user config, commit signing, and tagging.
+
+inputs:
+  message:
+    description: 'The commit message to use'
+    required: true
+  add:
+    description: 'Files to add to the commit (optional, white-space separated)'
+    required: false
+    default: '.'
+  tags:
+    description: 'The tags to apply to the commit (optional, white-space separated)'
+    required: false
+    default: ''
+  remote:
+    description: 'The remote to push to'
+    required: false
+    default: 'origin'
+  ref:
+    description: 'The branch or ref to push to'
+    required: false
+    default: ${{ github.ref_name }}
+  name:
+    description: 'The name to use for the commit author'
+    required: false
+    default: 'GitHub Actions'
+  email:
+    description: 'The email to use for the commit author'
+    required: false
+    default: 'github-actions[bot]@users.noreply.github.com'
+  signing-key-private:
+    description: The SSH private key to use for commit signing
+    required: false
+    default: ''
+  signing-key-public:
+    description: The SSH public key to use for commit signing
+    required: false
+    default: ''
+  path:
+    description: 'The working directory to run the action in'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🧐 Validate Inputs
+      shell: bash
+      env:
+        MESSAGE: ${{ inputs.message }}
+      run: |
+        set -euo pipefail
+
+        if [[ -z "$MESSAGE" ]]; then
+          echo "::error title=Missing Commit Message::The commit message input is required."
+          exit 1
+        fi
+
+    - name: 🪪 Setup Signing
+      if: >
+        inputs.signing-key-private != '' &&
+        inputs.signing-key-public != ''
+      shell: bash
+      env:
+        PRIVATE_KEY: ${{ inputs.signing-key-private }}
+        PUBLIC_KEY: ${{ inputs.signing-key-public }}
+      working-directory: ${{ inputs.path }}
+      run: |
+        set -euo pipefail
+
+        echo "::add-mask::${PRIVATE_KEY}"
+
+        tmpDir="${RUNNER_TEMP:-/tmp}/signing-key-${RANDOM}"
+        mkdir -p "$tmpDir"
+
+        privKeyPath="$tmpDir/signing_key"
+        pubKeyPath="$tmpDir/signing_key.pub"
+
+        echo "$PRIVATE_KEY" > "$privKeyPath"
+        chmod 600 "$privKeyPath"
+
+        echo "$PUBLIC_KEY" > "$pubKeyPath"
+        chmod 644 "$pubKeyPath"
+
+        git config gpg.format ssh
+        git config user.signingkey "$privKeyPath"
+        git config commit.gpgsign true
+
+    - name: 💾 Commit and Push
+      shell: bash
+      env:
+        NAME: ${{ inputs.name }}
+        EMAIL: ${{ inputs.email }}
+        ADD: ${{ inputs.add }}
+        MESSAGE: ${{ inputs.message }}
+        REMOTE: ${{ inputs.remote }}
+        REF: ${{ inputs.ref }}
+        TAGS: ${{ inputs.tags }}
+      working-directory: ${{ inputs.path }}
+      run: |
+        set -euo pipefail
+
+        git config user.name "$NAME"
+        git config user.email "$EMAIL"
+
+        if [ -n "$ADD" ]; then
+          git add "$ADD"
+        fi
+
+        if git diff --cached --quiet; then
+          echo "::error title=No Changes to Commit::There are no changes to commit."
+          exit 1
+        fi
+
+        git commit -m "$MESSAGE" --no-verify
+        git push "$REMOTE" "$REF" --no-verify
+
+        if [ -n "$TAGS" ]; then
+          for tag in $TAGS; do
+            git tag -a "$tag" -m "$tag"
+            git push "$REMOTE" "$tag" --no-verify
+          done
+        fi

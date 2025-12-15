@@ -1,0 +1,72 @@
+name: GitHub App Credentials
+description: A GitHub Action to obtain token, slug, user ID, name, and email for a GitHub App.
+
+inputs:
+  app-id:
+    description: The GitHub App ID
+    required: true
+  app-private-key:
+    description: The GitHub App private key in PEM format
+    required: true
+  owner:
+    description: The GitHub App owner (user or organization)
+    required: false
+    default: ${{ github.repository_owner }}
+
+outputs:
+  token:
+    description: The GitHub App token
+    value: ${{ steps.app-token.outputs.token }}
+  slug:
+    description: The GitHub App slug
+    value: ${{ steps.app-token.outputs.app-slug }}
+  id:
+    description: The GitHub App user ID
+    value: ${{ steps.app-user-id.outputs.user-id }}
+  name:
+    description: The GitHub App user name
+    value: ${{ steps.app-name-email.outputs.name }}
+  email:
+    description: The GitHub App user email
+    value: ${{ steps.app-name-email.outputs.email }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🕵️‍♂️ Mask Secrets
+      shell: bash
+      run: |
+        echo "::add-mask::${{ inputs.app-private-key }}"
+
+    - name: 🔑 Get App Token
+      uses: actions/create-github-app-token@v2
+      id: app-token
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.app-private-key }}
+        owner: ${{ inputs.owner }}
+
+    - name: 🪪 Get App User ID
+      id: app-user-id
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        SLUG: ${{ steps.app-token.outputs.app-slug }}
+      run: |
+        set -euo pipefail
+        userId=$(gh api "/users/$SLUG[bot]" --jq .id)
+        echo "user-id=$userId" >> "$GITHUB_OUTPUT"
+
+    - name: 📧 Get App Name and Email
+      id: app-name-email
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        SLUG: ${{ steps.app-token.outputs.app-slug }}
+        USER_ID: ${{ steps.app-user-id.outputs.user-id }}
+      run: |
+        set -euo pipefail
+        name="$SLUG[bot]"
+        email="$USER_ID+$SLUG[bot]@users.noreply.github.com"
+        echo "name=$name" >> "$GITHUB_OUTPUT"
+        echo "email=$email" >> "$GITHUB_OUTPUT"

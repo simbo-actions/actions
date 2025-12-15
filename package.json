@@ -1,0 +1,57 @@
+{
+  "name": "actions",
+  "description": "Simbo's collection of GitHub Actions.",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Simon Lepel <simbo@simbo.de> (http://simbo.de)",
+  "license": "MIT",
+  "homepage": "http://github.com/simbo-actions/actions",
+  "bugs": "http://github.com/simbo-actions/actions/issues",
+  "repository": "github:simbo-actions/actions",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@10.25.0",
+  "workspaces": [
+    "actions/*",
+    "changelog"
+  ],
+  "type": "module",
+  "scripts": {
+    "check": "pnpm run format && pnpm run check:boundaries && pnpm run check:spelling",
+    "check:boundaries": "turbo boundaries",
+    "check:spelling": "cspell",
+    "clean": "pnpm run clean:turbo && pnpm run clean:node_modules",
+    "clean:node_modules": "trash node_modules",
+    "clean:turbo": "trash .turbo",
+    "each:build": "turbo run build",
+    "each:bundle": "turbo run bundle",
+    "each:check": "turbo run check",
+    "each:clean:dist": "turbo run clean:dist",
+    "each:clean:node_modules": "turbo run clean:node_modules",
+    "each:clean:turbo": "turbo run clean:turbo",
+    "each:clean": "turbo run clean",
+    "each:test": "turbo run test",
+    "format": "prettier --check .",
+    "format:fix": "prettier --log-level=warn --write  .",
+    "ncu:latest": "ncu --interactive --target latest --reject='/^(@types/node)$/'",
+    "ncu:minor": "ncu --interactive --target minor",
+    "ncu:patch": "ncu --interactive --target patch",
+    "preflight": "pnpm install --frozen-lockfile && pnpm run check && pnpm run each:build && pnpm run each:bundle && pnpm run each:test && pnpm run each:check && echo 'CvCfn6IgG1sxOzMybUFsbCBDaGVja3MgUGFzc2VkIRtbMG0K' | base64 --decode"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "@commitlint/cli": "^20.2.0",
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.0",
+    "@simbo/commitlint-config": "^1.0.7",
+    "@simbo/cspell-config": "^1.4.0",
+    "@simbo/prettier-config": "^1.0.6",
+    "@types/node": "^24.10.3",
+    "cspell": "^9.4.0",
+    "npm-check-updates": "^19.2.0",
+    "prettier": "^3.7.4",
+    "prettier-plugin-organize-attributes": "^1.0.0",
+    "trash-cli": "^7.0.0",
+    "turbo": "^2.6.3"
+  }
+}

@@ -1,0 +1,110 @@
+name: ' Release 📬'
+
+#-------------------------------------------------------------------------------
+# "Release" Workflow
+#
+# Integrates changesets, creates release commit and tags.
+#-------------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types:
+      - workflow:release
+
+concurrency:
+  cancel-in-progress: false
+  group: ${{ github.workflow }}
+
+run-name: ${{ github.workflow }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🪪 Retrieve Credentials
+        id: credentials
+        uses: simbo-actions/actions/actions/github-app-credentials@main
+        with:
+          app-id: ${{ secrets.SIMBO_GITHUB_APP_ID }}
+          app-private-key: ${{ secrets.SIMBO_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.credentials.outputs.token }}
+          ref: main
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 📥 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 📝 Integrate Changesets
+        run: |
+          set -euo pipefail
+
+          # Bump versions and update changelogs
+          pnpm exec changeset version
+
+          # Fail if no changes were made
+          if git diff --quiet; then
+            echo "::error title=No Changesets Integrated::No version bumps or changelog updates were made by `changeset version`."
+            exit 1
+          fi
+
+          # Update the lockfile
+          pnpm install
+
+      - name: 🧾 Collect Bumped Packages
+        id: bumped-packages
+        run: |
+          set -euo pipefail
+
+          # Get the names of changes files
+          changedFiles=$(git diff --name-only HEAD)
+
+          # Initialize an array of package versions for release
+          packages=()
+
+          # Loop through the changed files and check for package.json files.
+          # Check if the package.json has a version change, extract the package folder name and version.
+          # Join them with a slash and add it to the released packages list.
+          for file in $changedFiles; do
+            if [[ "$file" =~ ^(actions/[^/]+|changelog)/package\.json$ ]]; then
+              oldVersion=$(git show HEAD:"$file" | jq -r .version 2>/dev/null || echo)
+              newVersion=$(jq -r .version "$file")
+              if [[ -n "$oldVersion" && -n "$newVersion" && "$oldVersion" != "$newVersion" ]]; then
+                packageName=$(jq -r .name "$file")
+                packages+=("${packageName}/v${newVersion}")
+              fi
+            fi
+          done
+
+          # Fail if no packages are found
+          if [[ ${#packages[@]} -eq 0 ]]; then
+            echo "::error title=No Packages Found::No packages were found to release."
+            exit 1
+          fi
+
+          # Output the packages
+          echo "packages=${packages[*]}" >> $GITHUB_OUTPUT
+
+      - name: 💾 Commit & Push Changes
+        uses: simbo-actions/actions/actions/commit-and-push@main
+        with:
+          ref: main
+          name: ${{ steps.credentials.outputs.name }}
+          email: ${{ steps.credentials.outputs.email }}
+          message: 'ci(release): ${{ steps.bumped-packages.outputs.packages }}'
+          tags: ${{ steps.bumped-packages.outputs.packages }}
+          signing-key-private: ${{ secrets.SIMBO_GITHUB_APP_SIGNING_KEY_PRIVATE }}
+          signing-key-public: ${{ secrets.SIMBO_GITHUB_APP_SIGNING_KEY_PUBLIC }}

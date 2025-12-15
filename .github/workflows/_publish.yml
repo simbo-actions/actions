@@ -1,0 +1,205 @@
+name: Publish 🚚
+
+#-------------------------------------------------------------------------------
+# "Publish" Workflow
+#
+# Publishes built action packages to their respective GitHub repositories.
+#-------------------------------------------------------------------------------
+
+on:
+  push:
+    tags:
+      - '*/v*.*.*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package Name'
+        required: true
+      version:
+        description: 'Version'
+        required: true
+
+concurrency:
+  cancel-in-progress: false
+  group: >
+    ${{
+      format(
+        '{0}--{1}',
+        github.workflow,
+        github.event_name == 'workflow_dispatch'
+          && format('{0}/v{1}', github.event.inputs.package, github.event.inputs.version)
+          || github.ref_name
+      )
+    }}
+
+run-name: >
+  ${{
+    format(
+      '{0} {1}',
+      github.workflow,
+      github.event_name == 'workflow_dispatch'
+        && format('{0}/v{1}', github.event.inputs.package, github.event.inputs.version)
+        || github.ref_name
+    )
+  }}
+
+env:
+  REF_NAME: >
+    ${{ github.event_name == 'workflow_dispatch'
+        && format('{0}/v{1}', github.event.inputs.package, github.event.inputs.version)
+        || github.ref_name
+    }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🪪 Retrieve Credentials
+        id: credentials
+        uses: simbo-actions/actions/actions/github-app-credentials@main
+        with:
+          app-id: ${{ secrets.SIMBO_GITHUB_APP_ID }}
+          app-private-key: ${{ secrets.SIMBO_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: 🔍 Parse Options
+        uses: actions/github-script@v8
+        id: options
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PACKAGE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.package || '' }}
+          VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || '' }}
+        with:
+          script: |
+            let package, version, ref;
+
+            const event = process.env.EVENT_NAME;
+            switch (event) {
+              case 'workflow_dispatch':
+                package = process.env.PACKAGE.trim();
+                version = process.env.VERSION.trim();
+                ref = `${package}/v${version}`;
+                break;
+              case 'push':
+                ref = process.env.REF_NAME.trim();
+                const parts = ref.split('/v');
+                package = parts[0].trim();
+                version = parts[1].trim();
+                break;
+              default:
+                throw new Error(`Unsupported event: ${event}`);
+            }
+
+            if (!/^[\w-]+$/.test(package)) {
+              throw new Error(`Invalid package name: "${package}"`);
+            }
+            if (!/^\d+\.\d+\.\d+(-.+)?$/.test(version)) {
+              throw new Error(`Invalid version: "${version}"`);
+            }
+            if (ref !== `${package}/v${version}`) {
+              throw new Error(`Invalid ref: "${ref}" (expected: "${package}/v${version}")`);
+            }
+
+            core.setOutput('package', package);
+            core.setOutput('version', version);
+            core.setOutput('ref', ref);
+
+      - name: 🛎️ Checkout Monorepo
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.credentials.outputs.token }}
+          path: monorepo
+          ref: ${{ steps.options.outputs.ref }}
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: monorepo/package.json
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: monorepo/.nvmrc
+          cache: pnpm
+          cache-dependency-path: monorepo/pnpm-lock.yaml
+
+      - name: 📥 Install
+        working-directory: monorepo
+        run: pnpm install --frozen-lockfile
+
+      - name: 👷 Build
+        working-directory: monorepo
+        env:
+          PACKAGE: ${{ steps.options.outputs.package }}
+        run: pnpm run --filter "$PACKAGE" build
+
+      - name: 🎁 Bundle
+        env:
+          PACKAGE: ${{ steps.options.outputs.package }}
+        run: pnpm run --filter "$PACKAGE" bundle
+
+      - name: 🪄 Create Action Repository If Necessary
+        uses: actions/github-script@v8
+        id: create-repo
+        env:
+          OWNER: ${{ github.repository_owner }}
+          PACKAGE: ${{ steps.options.outputs.package }}
+        with:
+          github-token: ${{ steps.credentials.outputs.token }}
+          script: |
+            const owner = process.env.OWNER.trim();
+            const repo = process.env.PACKAGE.trim();
+            try {
+              await github.rest.repos.get({ owner, repo });
+            } catch (error) {
+              if (error.status === 404) {
+                await github.rest.repos.createInOrg({
+                  org: owner,
+                  name: repo,
+                  private: false,
+                  auto_init: true
+                });
+              } else {
+                throw error;
+              }
+            }
+
+      - name: 🛎️ Checkout Action Repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.credentials.outputs.token }}
+          repository: ${{ github.repository_owner }}/${{ steps.options.outputs.package }}
+          path: action-repo
+          ref: main
+
+      - name: Integrate Built Artifacts
+        env:
+          FROM: monorepo/actions/${{ steps.options.outputs.package }}
+          TO: action-repo
+        run: |
+          set -euo pipefail
+
+          # Clean the destination directory
+          rm -rf "${TO:?}/"*
+
+          # Copy distribution artifacts
+          mkdir -p "${FROM}/dist"
+          cp -R "${FROM}/dist" "${TO}/"
+          cp "${FROM}/README.md" "${TO}/"
+          cp "${FROM}/CHANGELOG.md" "${TO}/"
+          cp "${FROM}/action.yml" "${TO}/"
+          cp "${FROM}/package.json" "${TO}/"
+          cp "monorepo/LICENSE.md" "${TO}/"
+
+      - name: 💾 Commit & Push Changes
+        uses: simbo-actions/actions/actions/commit-and-push@main
+        env:
+          VERSION: ${{ steps.options.outputs.version }}
+        with:
+          path: action-repo
+          ref: main
+          name: ${{ steps.credentials.outputs.name }}
+          email: ${{ steps.credentials.outputs.email }}
+          message: 'ci(release): v${{ steps.options.outputs.version }}'
+          tags: v${{ steps.options.outputs.version }}
+          signing-key-private: ${{ secrets.SIMBO_GITHUB_APP_SIGNING_KEY_PRIVATE }}
+          signing-key-public: ${{ secrets.SIMBO_GITHUB_APP_SIGNING_KEY_PUBLIC }}
