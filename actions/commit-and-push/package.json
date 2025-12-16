@@ -1,6 +1,6 @@
 {
   "name": "commit-and-push",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "A GitHub Action to commit and push changes to a repository. Supports user config, commit signing, and tagging.",
   "author": "Simon Lepel <simbo@simbo.de> (http://simbo.de)",
   "license": "MIT",
