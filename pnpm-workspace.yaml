@@ -1,0 +1,14 @@
+packages:
+  - actions/*
+  - changelog
+
+engineStrict: true
+
+verifyDepsBeforeRun: warn
+
+minimumReleaseAge: 2880
+
+trustPolicy: no-downgrade
+
+minimumReleaseAgeExclude:
+  - '@simbo/*'

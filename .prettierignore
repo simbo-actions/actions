@@ -1,0 +1,4 @@
+# (automatically includes entries from .gitignore)
+
+# Exclude lock files
+/pnpm-lock.yaml

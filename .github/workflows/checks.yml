@@ -1,0 +1,131 @@
+name: Checks 🧐
+
+#-------------------------------------------------------------------------------
+# "Checks" Workflow
+#
+# Runs tests, builds, and performs checks on pull requests and pushes to main.
+# Requires a changeset in pull requests, except for Dependabot pull requests
+# that only change workflows.
+# Dispatches the release workflow if changesets are present on main branch.
+#-------------------------------------------------------------------------------
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: >
+    ${{
+      format(
+        '{0}--{1}',
+        github.workflow,
+        github.ref_name
+      )
+    }}
+
+run-name: >
+  ${{
+    format(
+      '{0} {1}',
+      github.workflow,
+      github.event_name == 'pull_request'
+        && format('PR#{0} "{1}"', github.event.pull_request.number, github.event.pull_request.title)
+        || format('Branch {0}', github.ref_name)
+    )
+  }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has-changesets: ${{ steps.has-changesets.outputs.result }}
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          persist-credentials: false
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 📦 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 👷‍♂️ Build
+        run: pnpm run each:build
+
+      - name: 🎁 Bundle
+        run: pnpm run each:bundle
+
+      - name: 👨‍🔬 Test
+        run: pnpm run each:test
+
+      - name: 👨‍🏫 Check
+        run: pnpm run each:check
+
+      - name: 🧐 Root Checks
+        run: pnpm run check
+
+      - name: 📝 Require Changeset (Pull Requests)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+
+          range="origin/${BASE_REF}...HEAD"
+
+          if git diff --name-only --diff-filter=A "$range" -- '.changeset/*.md' | grep -q .; then
+            echo 'Changeset found.'
+            exit 0
+          fi
+
+          if [[ "$PR_AUTHOR" == 'dependabot[bot]' ]] \
+            && ! git diff --name-only "$range" | grep -qv '^\.github/workflows/'; then
+            echo 'Dependabot pull request changes only workflows; no changeset required.'
+            exit 0
+          fi
+
+          echo "::error title=Missing Changeset::Add a changeset (pnpm exec changeset, or --empty for changes without release)."
+          exit 1
+
+      - name: 🔍 Check for Changesets (Main Branch)
+        id: has-changesets
+        if: >
+          github.event_name == 'push' &&
+          github.ref_name == 'main'
+        run: |
+          set -euo pipefail
+          result=$(find .changeset -type f -name '*.md' -print -quit 2>/dev/null | grep -q . && echo 'true' || echo 'false')
+          echo "result=${result}" >> "$GITHUB_OUTPUT"
+
+  dispatch-release:
+    needs: checks
+    if: >
+      github.event_name == 'push' &&
+      github.ref_name == 'main' &&
+      needs.checks.outputs.has-changesets == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: '🎉 Workflow: Release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main

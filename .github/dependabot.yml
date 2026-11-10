@@ -1,0 +1,22 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /actions/*
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+      exclude:
+        - simbo-actions/*
+    groups:
+      simbo-actions:
+        patterns:
+          - simbo-actions/*
+      third-party-actions:
+        patterns:
+          - '*'
+        exclude-patterns:
+          - simbo-actions/*

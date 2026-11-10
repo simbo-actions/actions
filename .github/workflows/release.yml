@@ -1,0 +1,120 @@
+name: Release 📬
+
+#-------------------------------------------------------------------------------
+# "Release" Workflow
+#
+# Integrates changesets, creates release commit and tags.
+# Dispatched by the "Checks" workflow on main branch.
+#-------------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  cancel-in-progress: false
+  group: ${{ github.workflow }}
+
+run-name: ${{ github.workflow }}
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      contents: read
+    steps:
+      - name: 🛎️ Checkout Actions
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🪪 Retrieve Credentials
+        id: credentials
+        uses: ./actions/github-app-credentials
+        with:
+          app-id: ${{ secrets.SIMBO_ACTIONS_APP_ID }}
+          app-private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.credentials.outputs.token }}
+          ref: main
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 📥 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 📝 Integrate Changesets
+        run: |
+          set -euo pipefail
+
+          # Bump versions and update changelogs
+          pnpm exec changeset version
+
+          # Fail if no changes were made
+          if git diff --quiet; then
+            echo "::error title=No Changesets Integrated::No version bumps or changelog updates were made by 'changeset version'."
+            exit 1
+          fi
+
+          # Update the lockfile
+          pnpm install
+
+      - name: 🧾 Collect Bumped Packages
+        id: bumped-packages
+        run: |
+          set -euo pipefail
+
+          # Get the names of changes files
+          changedFiles=$(git diff --name-only HEAD)
+
+          # Initialize an array of package versions for release
+          packages=()
+
+          # Loop through the changed files and check for package.json files.
+          # Check if the package.json has a version change, extract the package folder name and version.
+          # Join them with a slash and add it to the released packages list.
+          for file in $changedFiles; do
+            if [[ "$file" =~ ^(actions/[^/]+|changelog)/package\.json$ ]]; then
+              oldVersion=$(git show HEAD:"$file" | jq -r .version 2>/dev/null || echo)
+              newVersion=$(jq -r .version "$file")
+              if [[ -n "$oldVersion" && -n "$newVersion" && "$oldVersion" != "$newVersion" ]]; then
+                packageName=$(jq -r .name "$file")
+                packages+=("${packageName}/v${newVersion}")
+              fi
+            fi
+          done
+
+          # Fail if no packages are found
+          if [[ ${#packages[@]} -eq 0 ]]; then
+            echo "::error title=No Packages Found::No packages were found to release."
+            exit 1
+          fi
+
+          # Output the packages
+          echo "packages=${packages[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: 💾 Commit & Push Changes
+        uses: ./actions/commit-and-push
+        with:
+          ref: main
+          name: ${{ steps.credentials.outputs.name }}
+          email: ${{ steps.credentials.outputs.email }}
+          message: 'ci(release): ${{ steps.bumped-packages.outputs.packages }}'
+          tags: ${{ steps.bumped-packages.outputs.packages }}
