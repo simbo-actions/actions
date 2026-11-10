@@ -3,7 +3,14 @@ name: Publish 🚚
 #-------------------------------------------------------------------------------
 # "Publish" Workflow
 #
-# Publishes built action packages to their respective GitHub repositories.
+# Publishes a released action to its own repository "simbo-actions/<action>":
+# builds the action, creates and configures the repository if necessary,
+# commits the build artifacts as signed commit with the tag "v<version>", and
+# creates a GitHub release (draft, assets, publish).
+#
+# Order matters: all third-party code (install, build) runs before the app
+# credentials are retrieved. Every token is restricted to the repository and
+# the permissions of the steps that use it.
 #-------------------------------------------------------------------------------
 
 on:
@@ -68,6 +75,7 @@ jobs:
         id: options
         env:
           EVENT_NAME: ${{ github.event_name }}
+          OWNER: ${{ github.repository_owner }}
           PACKAGE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.package || '' }}
           VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || '' }}
         with:
@@ -91,7 +99,7 @@ jobs:
                 throw new Error(`Unsupported event: ${event}`);
             }
 
-            if (!/^[\w-]+$/.test(package)) {
+            if (!/^[\w-]+$/.test(package) || package === 'changelog') {
               throw new Error(`Invalid package name: "${package}"`);
             }
             if (!/^\d+\.\d+\.\d+(-.+)?$/.test(version)) {
@@ -104,6 +112,8 @@ jobs:
             core.setOutput('package', package);
             core.setOutput('version', version);
             core.setOutput('ref', ref);
+            core.setOutput('tag', `v${version}`);
+            core.setOutput('repository', `${process.env.OWNER}/${package}`);
 
       - name: 🛎️ Checkout Monorepo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -132,7 +142,7 @@ jobs:
         working-directory: monorepo
         env:
           PACKAGE: ${{ steps.options.outputs.package }}
-        run: pnpm run --filter "$PACKAGE" --if-present build
+        run: pnpm run --filter "$PACKAGE" --filter signed-commit --if-present build
 
       - name: 🎁 Bundle
         working-directory: monorepo
@@ -140,11 +150,57 @@ jobs:
           PACKAGE: ${{ steps.options.outputs.package }}
         run: pnpm run --filter "$PACKAGE" --if-present bundle
 
+      - name: 🧩 Assemble Release Content
+        id: content
+        env:
+          FROM: monorepo/actions/${{ steps.options.outputs.package }}
+          PACKAGE: ${{ steps.options.outputs.package }}
+          VERSION: ${{ steps.options.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f "${FROM}/action.yml" ]]; then
+            echo "::error title=Not an Action::${FROM}/action.yml does not exist."
+            exit 1
+          fi
+
+          content="${RUNNER_TEMP}/release/content"
+          assets="${RUNNER_TEMP}/release/assets"
+          notes="${RUNNER_TEMP}/release/notes.md"
+          mkdir -p "$content" "$assets"
+
+          # Copy distribution artifacts
+          if [[ -d "${FROM}/dist" ]]; then
+            cp -R "${FROM}/dist" "${content}/"
+          fi
+          cp "${FROM}/README.md" "${FROM}/CHANGELOG.md" "${FROM}/action.yml" "${FROM}/package.json" "${content}/"
+          cp monorepo/LICENSE.md "${content}/"
+
+          # Create release assets
+          archive="${PACKAGE}-v${VERSION}.tar.gz"
+          tar --create --gzip --file "${assets}/${archive}" --directory "$content" --sort=name --owner=0 --group=0 --numeric-owner .
+          (cd "$assets" && sha256sum "$archive" > SHA256SUMS)
+
+          # Extract the release notes of this version from the changelog
+          awk -v version="$VERSION" '
+            $0 ~ "^## " version "$" { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' "${FROM}/CHANGELOG.md" > "$notes"
+          if [[ ! -s "$notes" ]]; then
+            echo "::error title=Missing Release Notes::No changelog section found for version ${VERSION}."
+            exit 1
+          fi
+
+          echo "content=${content}" >> "$GITHUB_OUTPUT"
+          echo "assets=${assets}" >> "$GITHUB_OUTPUT"
+          echo "notes=${notes}" >> "$GITHUB_OUTPUT"
+
       - name: 🔍 Check Action Repository
         id: repo-exists
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository_owner }}/${{ steps.options.outputs.package }}
+          REPO: ${{ steps.options.outputs.repository }}
         run: |
           set -euo pipefail
           if gh api "repos/${REPO}" --silent 2>/dev/null; then
@@ -153,14 +209,13 @@ jobs:
             echo "result=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 🪪 Retrieve Credentials (Administration)
-        id: credentials-admin
+      - name: 🪪 Retrieve Credentials (Create Repository)
+        id: credentials-create
         if: steps.repo-exists.outputs.result == 'false'
         uses: ./monorepo/actions/github-app-credentials
         with:
           app-id: ${{ secrets.SIMBO_ACTIONS_APP_ID }}
           app-private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
-          repositories: '*'
           permission-administration: write
 
       - name: 🪄 Create Action Repository
@@ -169,19 +224,58 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
           PACKAGE: ${{ steps.options.outputs.package }}
+          PACKAGE_JSON: monorepo/actions/${{ steps.options.outputs.package }}/package.json
         with:
-          github-token: ${{ steps.credentials-admin.outputs.token }}
+          github-token: ${{ steps.credentials-create.outputs.token }}
           script: |
+            const { readFile } = await import('node:fs/promises');
+            const { description } = JSON.parse(await readFile(process.env.PACKAGE_JSON, 'utf8'));
             await github.rest.repos.createInOrg({
-              org: process.env.OWNER.trim(),
-              name: process.env.PACKAGE.trim(),
+              org: process.env.OWNER,
+              name: process.env.PACKAGE,
+              description,
+              homepage: `https://github.com/${context.repo.owner}/${context.repo.repo}`,
               private: false,
               auto_init: true,
+              has_issues: false,
               has_wiki: false,
               has_projects: false,
             });
+            core.info(`Created repository ${process.env.OWNER}/${process.env.PACKAGE}.`);
 
-      - name: 🪪 Retrieve Credentials (Contents)
+      - name: 🪪 Retrieve Credentials (Configure Repository)
+        id: credentials-configure
+        uses: ./monorepo/actions/github-app-credentials
+        with:
+          app-id: ${{ secrets.SIMBO_ACTIONS_APP_ID }}
+          app-private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          repositories: ${{ steps.options.outputs.package }}
+          permission-administration: write
+
+      - name: ⚙️ Configure Action Repository
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          OWNER: ${{ github.repository_owner }}
+          PACKAGE: ${{ steps.options.outputs.package }}
+          PACKAGE_JSON: monorepo/actions/${{ steps.options.outputs.package }}/package.json
+          SCRIPT: monorepo/.github/scripts/configure-action-repository.js
+        with:
+          github-token: ${{ steps.credentials-configure.outputs.token }}
+          script: |
+            const { readFile } = await import('node:fs/promises');
+            const { resolve } = await import('node:path');
+            const { description } = JSON.parse(await readFile(process.env.PACKAGE_JSON, 'utf8'));
+            const { configureActionRepository } = await import(resolve(process.env.SCRIPT));
+            await configureActionRepository({
+              github,
+              core,
+              owner: process.env.OWNER,
+              repo: process.env.PACKAGE,
+              description,
+              homepage: `https://github.com/${context.repo.owner}/${context.repo.repo}`,
+            });
+
+      - name: 🪪 Retrieve Credentials (Publish)
         id: credentials
         uses: ./monorepo/actions/github-app-credentials
         with:
@@ -193,38 +287,53 @@ jobs:
       - name: 🛎️ Checkout Action Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          token: ${{ steps.credentials.outputs.token }}
-          repository: ${{ github.repository_owner }}/${{ steps.options.outputs.package }}
+          repository: ${{ steps.options.outputs.repository }}
           path: action-repo
           ref: main
+          persist-credentials: false
 
-      - name: 🧩 Integrate Built Artifacts
+      - name: 🔄 Replace Content
         env:
-          FROM: monorepo/actions/${{ steps.options.outputs.package }}
+          FROM: ${{ steps.content.outputs.content }}
           TO: action-repo
         run: |
           set -euo pipefail
-
-          # Clean the destination directory
           find "$TO" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R "${FROM}/." "${TO}/"
 
-          # Copy distribution artifacts
-          if [[ -d "${FROM}/dist" ]]; then
-            cp -R "${FROM}/dist" "${TO}/"
-          fi
-          cp "${FROM}/README.md" "${TO}/"
-          cp "${FROM}/CHANGELOG.md" "${TO}/"
-          cp "${FROM}/action.yml" "${TO}/"
-          cp "${FROM}/package.json" "${TO}/"
-          cp "monorepo/LICENSE.md" "${TO}/"
-
-      - name: 💾 Commit & Push Changes
-        uses: ./monorepo/actions/commit-and-push
+      - name: 💾 Commit and Tag
+        id: commit
+        uses: ./monorepo/actions/signed-commit
         with:
-          path: action-repo
-          ref: main
-          add: '-A'
-          name: ${{ steps.credentials.outputs.name }}
-          email: ${{ steps.credentials.outputs.email }}
-          message: 'ci(release): v${{ steps.options.outputs.version }}'
-          tags: v${{ steps.options.outputs.version }}
+          token: ${{ steps.credentials.outputs.token }}
+          repository: ${{ steps.options.outputs.repository }}
+          branch: main
+          working-directory: action-repo
+          message: 'ci(release): ${{ steps.options.outputs.tag }}'
+          tags: ${{ steps.options.outputs.tag }}
+          sync: false
+
+      - name: 🎁 Create GitHub Release
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          OWNER: ${{ github.repository_owner }}
+          PACKAGE: ${{ steps.options.outputs.package }}
+          TAG: ${{ steps.options.outputs.tag }}
+          NOTES: ${{ steps.content.outputs.notes }}
+          ASSETS: ${{ steps.content.outputs.assets }}
+          SCRIPT: monorepo/.github/scripts/publish-release.js
+        with:
+          github-token: ${{ steps.credentials.outputs.token }}
+          script: |
+            const { resolve } = await import('node:path');
+            const { publishRelease } = await import(resolve(process.env.SCRIPT));
+            await publishRelease({
+              github,
+              core,
+              owner: process.env.OWNER,
+              repo: process.env.PACKAGE,
+              tag: process.env.TAG,
+              name: `${process.env.PACKAGE} ${process.env.TAG}`,
+              notesFile: process.env.NOTES,
+              assetsDirectory: process.env.ASSETS,
+            });

@@ -39,15 +39,62 @@ graph LR
 
 1. A push to `main` runs the "Checks" workflow. If changesets are present, it
    dispatches the "Release" workflow.
-2. "Release" integrates the changesets, commits the version bumps and changelogs
-   to `main`, and creates a tag `<action>/vX.Y.Z` per released package.
-3. Each tag runs the "Publish" workflow. It builds the action, creates the
-   action repository if necessary, replaces its content with the build
-   artifacts, and creates the tag `vX.Y.Z` there.
+2. "Release" integrates the changesets and creates a signed commit with the
+   version bumps and changelogs on `main`, together with a tag `<action>/vX.Y.Z`
+   per released package. Every tag is created on its own, so every tag triggers
+   its own "Publish" run.
+3. "Publish" builds the action and publishes it to its repository:
+   1. Creates the repository if necessary and applies the standard settings and
+      rulesets (on every publish).
+   2. Replaces the content with the build artifacts and creates a signed commit
+      with the tag `vX.Y.Z`.
+   3. Creates a GitHub release as draft, uploads the assets
+      (`<action>-vX.Y.Z.tar.gz` with the published content and `SHA256SUMS`),
+      and publishes the release. The release notes are the version's section of
+      the changelog.
+
+All commits and tags are created via the GitHub API with
+[`signed-commit`](actions/signed-commit/README.md), so they are verified.
+
+### Identity and Permissions
 
 Release and publish run as the GitHub App `simbo-actions[bot]`. Their jobs use
 the environment `release`, which is limited to `main` and release tags. Every
-step requests a token restricted to the repository and the permissions it needs.
+step requests its own token, restricted to one repository and the permissions it
+needs: `administration` only to create and configure an action repository,
+otherwise `contents`.
+
+Third-party code runs first: install and build finish before any app token is
+requested, and no Git credentials are stored in a checkout.
+
+### Settings of Action Repositories
+
+The publish process applies these settings to every action repository:
+
+- Issues, wiki, and projects off; issues and contributions go to this
+  repository.
+- Squash merges only, auto-merge allowed, branches deleted after merge.
+- Secret scanning with push protection, Dependabot alerts, and private
+  vulnerability reporting on. Dependabot security updates and code scanning off:
+  the content is generated and overwritten by every publish; the source is
+  scanned in this repository.
+- Actions: SHA pinning required, `GITHUB_TOKEN` read-only, no pull request
+  approvals.
+- Ruleset "Main Branch": no deletion, no force push, linear history, signed
+  commits, pull requests with squash only.
+- Ruleset "Release Tags" for `v*.*.*`: creating, updating, and deleting only via
+  bypass.
+- Bypass for both rulesets: the app `simbo-actions` and organization admins.
+
+### New Action Repositories
+
+A new action repository is created with `auto_init` and the description from the
+action's `package.json`. GitHub creates the initial commit with a generated
+`README.md`; that commit is verified. The first publish replaces the content.
+
+Option, not used yet: create new repositories from a template repository, if
+they should start with fixed files. Rulesets and settings are not copied from
+templates and are still set by the publish process.
 
 ## Requirements for Action Workspaces
 

@@ -33,7 +33,7 @@ jobs:
 
 <!-- PACKAGES -->
 
-There are currently _**2**_ GitHub Actions managed in this repository.
+There are currently _**3**_ GitHub Actions managed in this repository.
 
 <!-- /PACKAGES -->
 

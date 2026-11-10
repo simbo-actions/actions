@@ -12,6 +12,27 @@ on: pull_request
 
 permissions: {}
 
+concurrency:
+  cancel-in-progress: true
+  group: >
+    ${{
+      format(
+        '{0}--PR#{1}',
+        github.workflow,
+        github.event.pull_request.number
+      )
+    }}
+
+run-name: >
+  ${{
+    format(
+      '{0} PR#{1} "{2}"',
+      github.workflow,
+      github.event.pull_request.number,
+      github.event.pull_request.title
+    )
+  }}
+
 jobs:
   automerge:
     if: github.event.pull_request.user.login == 'dependabot[bot]'

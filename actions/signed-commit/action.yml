@@ -1,0 +1,84 @@
+name: Signed Commit
+
+description: A GitHub Action to create signed commits and tags via the GitHub API, shown as verified.
+
+author: Simon Lepel <simbo@simbo.de> (https://simbo.de/)
+
+branding:
+  icon: git-commit
+  color: green
+
+inputs:
+  token:
+    description: >
+      The token to authenticate with, for example a GitHub App installation
+      token. Needs "contents: write" (and "workflows: write" to change workflow
+      files).
+    required: true
+  message:
+    description: The commit message; the first line is the headline, the remaining lines are the body.
+    required: true
+  repository:
+    description: The repository to commit to, in the format "owner/repo".
+    required: false
+    default: ${{ github.repository }}
+  branch:
+    description: The existing branch to commit to.
+    required: false
+    default: ${{ github.ref_name }}
+  working-directory:
+    description: >
+      The directory with the files to commit. Must be the root of the Git
+      repository when detecting changes. Paths are relative to it.
+    required: false
+    default: .
+  additions:
+    description: Files to add or update, one path per line. Take precedence over detected changes.
+    required: false
+    default: ''
+  deletions:
+    description: Files to delete, one path per line. Take precedence over detected changes.
+    required: false
+    default: ''
+  detect-changes:
+    description: >
+      Which Git changes to commit: "all" (working tree, including untracked
+      files), "staged" (index only), or "none" (only "additions" and
+      "deletions").
+    required: false
+    default: all
+  tags:
+    description: Tags to create on the new commit, separated by whitespace. Each tag is created with its own API call.
+    required: false
+    default: ''
+  if-no-changes:
+    description: 'What to do if there is nothing to commit: "error", "warn", or "ignore".'
+    required: false
+    default: error
+  sync:
+    description: >
+      Whether to update the local checkout after the commit: fetch the branch,
+      move HEAD to the new commit, and create the tags locally. Files in the
+      working tree are not changed.
+    required: false
+    default: 'true'
+  expected-head-oid:
+    description: >
+      The commit SHA the branch must point to. Defaults to the local HEAD of the
+      working directory, or to the current remote head outside of a Git
+      repository. Use "remote" to always commit on top of the current remote
+      head.
+    required: false
+    default: ''
+
+outputs:
+  committed:
+    description: Whether a commit was created ("true" or "false").
+  commit-sha:
+    description: The SHA of the new commit; empty if no commit was created.
+  files:
+    description: 'The committed paths as JSON: {"additions": [...], "deletions": [...]}.'
+
+runs:
+  using: node24
+  main: dist/index.js
