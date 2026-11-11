@@ -3,9 +3,9 @@ import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, posix } from 'node:path';
 
 import { warning } from '@actions/core';
-import { getGitChanges } from '@simbo/git-changes';
+import { getGitChanges, GitChangeStatus } from '@simbo/git-changes';
 
-import { existsInHead, getIndexMode, getRepositoryRoot, gitBuffer, gitSucceeds, listUntrackedFiles } from './git.js';
+import { existsInHead, getIndexMode, getRepositoryRoot, gitBuffer, gitSucceeds } from './git.js';
 import {
   EXECUTABLE_PERMISSION_BITS,
   GIT_MODE_EXECUTABLE,
@@ -144,17 +144,20 @@ async function assertRepositoryRoot(workingDirectory: string): Promise<void> {
 
 /**
  * Collects all paths affected by Git changes. Renames and copies contribute
- * both paths; their actual state is resolved separately, so the order in
- * which they are reported does not matter.
+ * both paths; the actual state of every path is resolved separately.
  *
  * @param workingDirectory - The root of the Git repository.
  * @param detectChanges - Which changes to detect.
  * @returns The affected paths, sorted.
+ * @throws {Error} if a path has merge conflicts.
  */
 async function getCandidatePaths(workingDirectory: string, detectChanges: DetectChangesOption): Promise<string[]> {
   const candidates = new Set<string>();
   const changes = await getGitChanges(workingDirectory);
   for (const change of changes.values()) {
+    if (change.staged === GitChangeStatus.Unmerged || change.unstaged === GitChangeStatus.Unmerged) {
+      throw new Error(`Cannot commit a path with merge conflicts: ${change.path}`);
+    }
     if (detectChanges === 'staged' && !change.staged) {
       continue;
     }
@@ -171,22 +174,9 @@ async function getCandidatePaths(workingDirectory: string, detectChanges: Detect
  *
  * @param collection - The collection to add to.
  * @param path - The repository path.
- * @param skip - Paths to ignore (given explicitly).
  */
-async function resolveWorkingTreePath(collection: Collection, path: string, skip: Set<string>): Promise<void> {
+async function resolveWorkingTreePath(collection: Collection, path: string): Promise<void> {
   const root = collection.workingDirectory;
-
-  if (path.endsWith('/')) {
-    // untracked directory: add all untracked, not ignored files below it
-    const files = await listUntrackedFiles(root, path);
-    for (const file of files) {
-      if (!skip.has(file)) {
-        await addWorkingTreeFile(collection, file, false);
-      }
-    }
-    return;
-  }
-
   const exists = (await lstatIfExists(join(root, path))) !== undefined;
   const inHead = await existsInHead(root, path);
 
@@ -269,9 +259,7 @@ export async function getFilesToCommit(inputs: FilesToCommitInputs): Promise<Fil
       if (explicitPaths.has(path)) {
         continue;
       }
-      await (detectChanges === 'all'
-        ? resolveWorkingTreePath(collection, path, explicitPaths)
-        : resolveIndexPath(collection, path));
+      await (detectChanges === 'all' ? resolveWorkingTreePath(collection, path) : resolveIndexPath(collection, path));
     }
   }
 

@@ -225,8 +225,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       '@simbo/git-changes':
-        specifier: ^2.1.0
-        version: 2.1.2
+        specifier: ^3.0.0
+        version: 3.0.0
       '@simbo/stringify-error':
         specifier: ^2.0.0
         version: 2.0.0
@@ -1288,8 +1288,8 @@ packages:
     resolution: {integrity: sha512-suaBicCviuPKEcCyF2jm3+7XffhZoYX1k4j7YzuEr0UEE/F+onBAT5HzMaiCaHiWjl7nYqbFZnaX6f0vAk2VHw==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
-  '@simbo/git-changes@2.1.2':
-    resolution: {integrity: sha512-goWvShyV0yQ5YdDuOzY6tVoZh7WEYYYgTVITSbrqWCuowg2Gjs4DzcfNLNdLjmjKmDgiMayLwrO+6GbQ/eAgiw==}
+  '@simbo/git-changes@3.0.0':
+    resolution: {integrity: sha512-8X3ESbsXWSwAomAIhDIgoC61BsXWHtB1qkSOboF6EQwvyrku9iBUrD1zKMP3c6Qq/XfMCtfyvdVHhP52hrovyQ==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
   '@simbo/git-constants@2.0.0':
@@ -3958,7 +3958,7 @@ snapshots:
       normalize-package-data: 9.0.0
       type-fest: 5.10.0
 
-  '@simbo/git-changes@2.1.2':
+  '@simbo/git-changes@3.0.0':
     dependencies:
       '@simbo/find-git-repository-root': 2.0.0
       execa: 10.2.1

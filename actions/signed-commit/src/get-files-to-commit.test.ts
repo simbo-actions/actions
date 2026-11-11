@@ -177,6 +177,28 @@ describe('getFilesToCommit', () => {
       await expect(collect(fixture, 'all')).rejects.toThrow('Symbolic links are not supported: link.txt');
     });
 
+    it('rejects a file replaced by a symbolic link', async () => {
+      await rm(join(fixture.dir, 'modify.txt'));
+      await symlink('keep.txt', join(fixture.dir, 'modify.txt'));
+      await expect(collect(fixture, 'all')).rejects.toThrow('Symbolic links are not supported: modify.txt');
+    });
+
+    it('rejects paths with merge conflicts', async () => {
+      fixture.git('checkout', '--quiet', '-b', 'other');
+      await fixture.write('modify.txt', 'other');
+      fixture.git('commit', '--quiet', '-am', 'other');
+      fixture.git('checkout', '--quiet', 'main');
+      await fixture.write('modify.txt', 'main');
+      fixture.git('commit', '--quiet', '-am', 'main');
+      try {
+        fixture.git('merge', '--quiet', 'other');
+      } catch {
+        // expected merge conflict
+      }
+      await expect(collect(fixture, 'all')).rejects.toThrow('merge conflicts: modify.txt');
+      await expect(collect(fixture, 'staged')).rejects.toThrow('merge conflicts: modify.txt');
+    });
+
     it('works in a repository without commits', async () => {
       const empty = await createGitFixture();
       try {

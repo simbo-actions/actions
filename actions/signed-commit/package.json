@@ -27,7 +27,7 @@
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
     "@simbo/accessible": "^2.0.0",
-    "@simbo/git-changes": "^2.1.0",
+    "@simbo/git-changes": "^3.0.0",
     "@simbo/stringify-error": "^2.0.0"
   },
   "devDependencies": {

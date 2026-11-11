@@ -96,15 +96,3 @@ export async function getIndexMode(cwd: string, path: string): Promise<string | 
 export async function existsInHead(cwd: string, path: string): Promise<boolean> {
   return gitSucceeds(cwd, ['cat-file', '-e', `HEAD:${path}`]);
 }
-
-/**
- * Lists untracked, not ignored files below a path.
- *
- * @param cwd - The directory of the Git repository.
- * @param path - The path relative to the repository root.
- * @returns The untracked file paths relative to the repository root.
- */
-export async function listUntrackedFiles(cwd: string, path: string): Promise<string[]> {
-  const output = await gitBuffer(cwd, ['ls-files', '-z', '--others', '--exclude-standard', '--', `:(literal)${path}`]);
-  return output.toString('utf8').split('\0').filter(Boolean);
-}
