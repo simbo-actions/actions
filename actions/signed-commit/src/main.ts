@@ -5,7 +5,7 @@ import { parseActionInputs } from './action-inputs.js';
 import { getFilesToCommit } from './get-files-to-commit.js';
 import { getHeadOid, getRepositoryRoot } from './git.js';
 import { createCommitOnBranch, createTag, getBranchHeadOid } from './github-api.js';
-import { EXPECTED_HEAD_OID_REMOTE } from './signed-commit-constants.js';
+import { EXPECTED_HEAD_OID_REMOTE, TAGS_RATE_LIMIT_WARNING_THRESHOLD } from './signed-commit-constants.js';
 import type { FileChanges, ParsedActionInputs } from './signed-commit.types.js';
 import { syncLocal } from './sync-local.js';
 
@@ -136,6 +136,12 @@ export async function main(): Promise<void> {
   info(`Created verified commit ${commitOid} on ${owner}/${repo}@${branch}.`);
 
   // One API call per tag, so that every tag triggers its own push event.
+  if (tags.length > TAGS_RATE_LIMIT_WARNING_THRESHOLD) {
+    warning(
+      `Creating ${tags.length} tags: GitHub limits content creation to 80 requests per minute, ` +
+        'so the action may wait for the rate limit.',
+    );
+  }
   for (const tag of tags) {
     const created = await createTag(octokit, repository, tag, commitOid);
     info(created ? `Created tag ${tag}.` : `Tag ${tag} already points to ${commitOid}.`);

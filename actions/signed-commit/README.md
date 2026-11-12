@@ -21,6 +21,7 @@ updates the local checkout afterwards.
 - [Protection Against Overwriting](#protection-against-overwriting)
 - [Tags](#tags)
 - [Syncing the Local Checkout](#syncing-the-local-checkout)
+- [Rate Limits](#rate-limits)
 - [Empty Repositories and Missing Branches](#empty-repositories-and-missing-branches)
 - [Limitations](#limitations)
 
@@ -297,6 +298,30 @@ The sync is skipped if the working directory is not a Git repository or its
 `expected-head-oid: remote`. If fetching fails, the action only warns; the
 commit itself was created. Fetching uses the remote `origin` and the credentials
 of the checkout.
+
+## Rate Limits
+
+GitHub limits API requests per identity, shared by all workflow runs that use
+the same token identity, for example all repositories using the same GitHub App:
+
+- **Primary rate limit:** 5,000 requests per hour for an installation token
+  (more for large organizations), 1,000 per hour per repository for
+  `GITHUB_TOKEN`. A run needs one request to read the branch, one for the
+  commit, and one per tag.
+- **Secondary rate limit for creating content:** at most 80 requests per minute
+  and 500 per hour. Every commit and every tag counts.
+
+When GitHub reports a rate limit, the action waits as long as GitHub asks for
+(`retry-after`, or until `x-ratelimit-reset`; one minute if GitHub gives no
+time) and retries the request, up to 5 attempts. It fails instead if GitHub asks
+to wait more than 15 minutes. Requests run one after another, never in parallel,
+as GitHub recommends.
+
+With more than 80 tags in one run, the action warns before creating them: the
+run may slow down, but every tag is still created with its own request and
+triggers its own `push` event. Many parallel runs, for example one publish run
+per tag of a large release, share the same limits; spread them, for example with
+a matrix and `max-parallel`.
 
 ## Empty Repositories and Missing Branches
 

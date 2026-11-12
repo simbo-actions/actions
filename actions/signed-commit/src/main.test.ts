@@ -108,6 +108,19 @@ describe('main', () => {
     expect(info).toHaveBeenCalledWith(`Tag b/v2.0.0 already points to ${commitOid}.`);
   });
 
+  it('warns before creating many tags', async () => {
+    setup({ tags: Array.from({ length: 81 }, (_, index) => `pkg-${index}/v1.0.0`) });
+    await main();
+    expect(warning).toHaveBeenCalledWith(expect.stringContaining('Creating 81 tags'));
+    expect(createTag).toHaveBeenCalledTimes(81);
+  });
+
+  it('does not warn for up to 80 tags', async () => {
+    setup({ tags: Array.from({ length: 80 }, (_, index) => `pkg-${index}/v1.0.0`) });
+    await main();
+    expect(warning).not.toHaveBeenCalled();
+  });
+
   it('does not sync when disabled', async () => {
     setup({ sync: false });
     await main();

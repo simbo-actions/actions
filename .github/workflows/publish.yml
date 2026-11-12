@@ -272,22 +272,27 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           PACKAGE: ${{ needs.target.outputs.package }}
           PACKAGE_JSON: monorepo/actions/${{ needs.target.outputs.package }}/package.json
+          SCRIPT: monorepo/.github/scripts/rate-limit.js
         with:
           github-token: ${{ steps.app-token-create.outputs.token }}
           script: |
             const { readFile } = await import('node:fs/promises');
+            const { resolve } = await import('node:path');
+            const { withRateLimitRetry } = await import(resolve(process.env.SCRIPT));
             const { description } = JSON.parse(await readFile(process.env.PACKAGE_JSON, 'utf8'));
-            await github.rest.repos.createInOrg({
-              org: process.env.OWNER,
-              name: process.env.PACKAGE,
-              description,
-              homepage: `https://github.com/${context.repo.owner}/${context.repo.repo}`,
-              private: false,
-              auto_init: true,
-              has_issues: false,
-              has_wiki: false,
-              has_projects: false,
-            });
+            await withRateLimitRetry(core, 'creating the repository', async () =>
+              github.rest.repos.createInOrg({
+                org: process.env.OWNER,
+                name: process.env.PACKAGE,
+                description,
+                homepage: `https://github.com/${context.repo.owner}/${context.repo.repo}`,
+                private: false,
+                auto_init: true,
+                has_issues: false,
+                has_wiki: false,
+                has_projects: false,
+              }),
+            );
             core.info(`Created repository ${process.env.OWNER}/${process.env.PACKAGE}.`);
 
       - name: 🔑 Get App Token (Configure Repository)

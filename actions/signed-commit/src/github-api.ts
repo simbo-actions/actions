@@ -1,5 +1,6 @@
 import type { getOctokit } from '@actions/github';
 
+import { withRateLimitRetry } from './rate-limit.js';
 import { HTTP_STATUS_UNPROCESSABLE_ENTITY } from './signed-commit-constants.js';
 import type { CommitMessage, FileChanges } from './signed-commit.types.js';
 
@@ -51,11 +52,13 @@ export async function getBranchHeadOid(
     }
   `;
 
-  const result = await octokit.graphql<{ repository: { ref: { target: { oid: string } } | null } | null }>(query, {
-    owner: repository.owner,
-    repo: repository.repo,
-    qualifiedRef: `refs/heads/${branch}`,
-  });
+  const result = await withRateLimitRetry('reading the branch head', async () =>
+    octokit.graphql<{ repository: { ref: { target: { oid: string } } | null } | null }>(query, {
+      owner: repository.owner,
+      repo: repository.repo,
+      qualifiedRef: `refs/heads/${branch}`,
+    }),
+  );
 
   if (!result.repository) {
     throw new Error(`Repository not found or not accessible: ${repository.owner}/${repository.repo}`);
@@ -95,17 +98,19 @@ export async function createCommitOnBranch(
     }
   `;
 
-  const result = await octokit.graphql<{ createCommitOnBranch: { commit: { oid: string } } }>(mutation, {
-    input: {
-      branch: {
-        repositoryNameWithOwner: `${params.repository.owner}/${params.repository.repo}`,
-        branchName: params.branch,
+  const result = await withRateLimitRetry('creating the commit', async () =>
+    octokit.graphql<{ createCommitOnBranch: { commit: { oid: string } } }>(mutation, {
+      input: {
+        branch: {
+          repositoryNameWithOwner: `${params.repository.owner}/${params.repository.repo}`,
+          branchName: params.branch,
+        },
+        expectedHeadOid: params.expectedHeadOid,
+        message: params.message,
+        fileChanges: params.fileChanges,
       },
-      expectedHeadOid: params.expectedHeadOid,
-      message: params.message,
-      fileChanges: params.fileChanges,
-    },
-  });
+    }),
+  );
 
   return result.createCommitOnBranch.commit.oid;
 }
@@ -120,7 +125,9 @@ export async function createCommitOnBranch(
  */
 async function getTagSha(octokit: Octokit, repository: RepositoryRef, tag: string): Promise<string | undefined> {
   try {
-    const { data } = await octokit.rest.git.getRef({ ...repository, ref: `tags/${tag}` });
+    const { data } = await withRateLimitRetry(`reading the tag ${tag}`, async () =>
+      octokit.rest.git.getRef({ ...repository, ref: `tags/${tag}` }),
+    );
     return data.object.sha;
   } catch {
     return;
@@ -145,7 +152,9 @@ export async function createTag(
   sha: string,
 ): Promise<boolean> {
   try {
-    await octokit.rest.git.createRef({ ...repository, ref: `refs/tags/${tag}`, sha });
+    await withRateLimitRetry(`creating the tag ${tag}`, async () =>
+      octokit.rest.git.createRef({ ...repository, ref: `refs/tags/${tag}`, sha }),
+    );
     return true;
   } catch (error) {
     if (!hasStatus(error, HTTP_STATUS_UNPROCESSABLE_ENTITY)) {

@@ -80,9 +80,18 @@ otherwise `contents`.
 Third-party code runs first: install and build finish before any app token is
 requested, and no Git credentials are stored in a checkout.
 
+### Rate Limits
+
+All API requests of release and publish run as `simbo-actions[bot]` and share
+its rate limits, also across parallel runs. Requests that hit a rate limit are
+retried after the wait time GitHub asks for, both in `signed-commit` and in the
+scripts in `.github/scripts/`.
+
 ### Settings of Action Repositories
 
-The publish process applies these settings to every action repository:
+The publish process applies these settings to every action repository. It reads
+the current state first and writes only what differs, so manual changes are
+reset without unnecessary write requests:
 
 - Issues, wiki, and projects off; issues and contributions go to this
   repository.
