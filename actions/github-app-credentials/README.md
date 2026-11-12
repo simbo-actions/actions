@@ -5,7 +5,8 @@ App.
 
 ## Usage
 
-Pin the action by commit SHA, with the version as a comment:
+This action is not published to a repository of its own. Use it from this
+monorepo, pinned by commit SHA:
 
 ```yaml
 jobs:
@@ -13,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get GitHub App Credentials
-        uses: simbo-actions/github-app-credentials@<SHA> # vX.Y.Z
+        uses: simbo-actions/actions/actions/github-app-credentials@<SHA>
         with:
           client-id: ${{ secrets.GITHUB_APP_CLIENT_ID }}
           app-private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
@@ -54,13 +55,10 @@ installation. `*` always means all repositories of the installation.
 
 > [!NOTE]
 >
-> Only the build artifacts for this action are provided in the repository
-> [`simbo-actions/github-app-credentials`](https://github.com/simbo-actions/github-app-credentials).
->
-> The source repository for this action is
+> The source of this action is part of the monorepo
 > [`simbo-actions/actions`](https://github.com/simbo-actions/actions).
 >
-> 💁‍♂️ For issues and contributions, please refer to the source repository.
+> 💁‍♂️ For issues and contributions, please refer to the monorepo.
 
 ## License
 

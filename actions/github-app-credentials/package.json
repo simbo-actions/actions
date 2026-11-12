@@ -4,7 +4,7 @@
   "description": "A GitHub Action to obtain token, slug, user ID, name, and email for a GitHub App.",
   "author": "Simon Lepel <simbo@simbo.de> (http://simbo.de)",
   "license": "MIT",
-  "homepage": "http://github.com/simbo-actions/github-app-credentials",
+  "homepage": "https://github.com/simbo-actions/actions/tree/main/actions/github-app-credentials#readme",
   "bugs": "http://github.com/simbo-actions/actions/issues",
   "repository": "github:simbo-actions/actions",
   "private": true,

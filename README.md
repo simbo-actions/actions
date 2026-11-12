@@ -11,9 +11,9 @@
 This repository contains a collection of GitHub Actions developed and maintained
 by Simon Lepel ([simbo](http://github.com/simbo)).
 
-All actions are automatically published to their respective repositories under
-the [simbo-actions](http://github.com/simbo-actions) organization and can be
-easily integrated into your own GitHub workflows.
+Actions are automatically published to their respective repositories under the
+[simbo-actions](http://github.com/simbo-actions) organization and can be easily
+integrated into your own GitHub workflows.
 
 The generic usage pattern for an action from this monorepo is as follows. Pin
 the action by the commit SHA of a release tag, with the version as a comment:
@@ -28,6 +28,11 @@ jobs:
         with:
           # action-specific inputs
 ```
+
+Actions that are not published to a repository of their own are used from this
+monorepo, pinned by commit SHA: `simbo-actions/actions/actions/<ACTION>@<SHA>`.
+[`ACTIONS.md`](https://github.com/simbo-actions/actions/blob/main/ACTIONS.md)
+shows how to use each action.
 
 ## Actions
 

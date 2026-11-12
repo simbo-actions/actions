@@ -4,12 +4,13 @@ A GitHub Action to commit and push changes to a repository. Supports user
 config, commit signing, and tagging.
 
 > [!NOTE]  
-> This action is kept for existing workflows only. It will be replaced by an
-> action that creates verified commits via the GitHub API.
+> This action is kept for existing workflows only and will be removed. Use
+> [`signed-commit`](../signed-commit/README.md) instead.
 
 ## Usage
 
-Pin the action by commit SHA, with the version as a comment:
+This action is not published to a repository of its own. Use it from this
+monorepo, pinned by commit SHA:
 
 ```yaml
 jobs:
@@ -17,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Commit and Push Changes
-        uses: simbo-actions/commit-and-push@<SHA> # vX.Y.Z
+        uses: simbo-actions/actions/actions/commit-and-push@<SHA>
         with:
           message: 'ci(release): ${{ env.VERSION }}'
           tags: ${{ env.VERSION }}
@@ -46,13 +47,10 @@ jobs:
 
 > [!NOTE]
 >
-> Only the build artifacts for this action are provided in the repository
-> [`simbo-actions/commit-and-push`](https://github.com/simbo-actions/commit-and-push).
->
-> The source repository for this action is
+> The source of this action is part of the monorepo
 > [`simbo-actions/actions`](https://github.com/simbo-actions/actions).
 >
-> 💁‍♂️ For issues and contributions, please refer to the source repository.
+> 💁‍♂️ For issues and contributions, please refer to the monorepo.
 
 ## License
 

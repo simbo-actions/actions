@@ -15,28 +15,26 @@ There are currently _**3**_ GitHub Actions managed in this repository.
   > A GitHub Action to commit and push changes to a repository. Supports user
   > config, commit signing, and tagging.
 
-  ⚙️ **`simbo-actions/commit-and-push@<SHA> # v0.0.0`**
+  ⚙️ **`simbo-actions/actions/actions/commit-and-push@<SHA>`**
 
-  Latest Version: `0.0.0`
+  Not published to a repository of its own; use it from this monorepo.
 
-  [Repository](https://github.com/simbo-actions/commit-and-push)  • 
-  [README.md](https://github.com/simbo-actions/commit-and-push/blob/main/README.md)  • 
-  [CHANGELOG.md](https://github.com/simbo-actions/commit-and-push/blob/main/CHANGELOG.md)  • 
-  [Tags](https://github.com/simbo-actions/commit-and-push/tags)
+  [Source](https://github.com/simbo-actions/actions/tree/main/actions/commit-and-push)
+  •
+  [README.md](https://github.com/simbo-actions/actions/tree/main/actions/commit-and-push/README.md)
 
 - ### **GitHub App Credentials _(GitHub Action)_**
 
   > A GitHub Action to obtain token, slug, user ID, name, and email for a GitHub
   > App.
 
-  ⚙️ **`simbo-actions/github-app-credentials@<SHA> # v0.0.0`**
+  ⚙️ **`simbo-actions/actions/actions/github-app-credentials@<SHA>`**
 
-  Latest Version: `0.0.0`
+  Not published to a repository of its own; use it from this monorepo.
 
-  [Repository](https://github.com/simbo-actions/github-app-credentials)  • 
-  [README.md](https://github.com/simbo-actions/github-app-credentials/blob/main/README.md)  • 
-  [CHANGELOG.md](https://github.com/simbo-actions/github-app-credentials/blob/main/CHANGELOG.md)  • 
-  [Tags](https://github.com/simbo-actions/github-app-credentials/tags)
+  [Source](https://github.com/simbo-actions/actions/tree/main/actions/github-app-credentials)
+  •
+  [README.md](https://github.com/simbo-actions/actions/tree/main/actions/github-app-credentials/README.md)
 
 - ### **Signed Commit _(GitHub Action)_**
 
@@ -47,9 +45,10 @@ There are currently _**3**_ GitHub Actions managed in this repository.
 
   Latest Version: `0.0.0`
 
-  [Repository](https://github.com/simbo-actions/signed-commit)  • 
-  [README.md](https://github.com/simbo-actions/signed-commit/blob/main/README.md)  • 
-  [CHANGELOG.md](https://github.com/simbo-actions/signed-commit/blob/main/CHANGELOG.md)  • 
-  [Tags](https://github.com/simbo-actions/signed-commit/tags)
+  [Repository](https://github.com/simbo-actions/signed-commit) •
+  [README.md](https://github.com/simbo-actions/signed-commit/blob/main/README.md)
+  •
+  [CHANGELOG.md](https://github.com/simbo-actions/signed-commit/blob/main/CHANGELOG.md)
+  • [Releases](https://github.com/simbo-actions/signed-commit/releases)
 
 <!-- /PACKAGES -->

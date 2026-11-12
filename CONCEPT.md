@@ -43,7 +43,9 @@ graph LR
    version bumps and changelogs on `main`, together with a tag `<action>/vX.Y.Z`
    per released package. Every tag is created on its own, so every tag triggers
    its own "Publish" run.
-3. "Publish" builds the action and publishes it to its repository:
+3. "Publish" builds the action and publishes it to its repository, if the action
+   is meant to be published (see
+   [Published and Unpublished Actions](#published-and-unpublished-actions)):
    1. Creates the repository if necessary and applies the standard settings and
       rulesets (on every publish).
    2. Replaces the content with the build artifacts and creates a signed commit
@@ -55,6 +57,17 @@ graph LR
 
 All commits and tags are created via the GitHub API with
 [`signed-commit`](actions/signed-commit/README.md), so they are verified.
+
+### Published and Unpublished Actions
+
+An action is published to its own repository only if its `package.json` names
+the target in `actionRepository`, for example
+`"actionRepository": "simbo-actions/signed-commit"`. The repository name must
+match the workspace name.
+
+Actions without `actionRepository` are released only in this monorepo, with the
+tag `<action>/vX.Y.Z`. They are used from the monorepo, pinned by commit SHA,
+for example `simbo-actions/actions/actions/<action>@<SHA>`.
 
 ### Identity and Permissions
 
@@ -107,7 +120,8 @@ workspace must meet the following requirements:
 
 - A `package.json` file defining the action's workspace/package name, version,
   scripts, dependencies, etc. _(This is required even for non-Node.js actions to
-  manage the workspace/package structure.)_
+  manage the workspace/package structure.)_ To publish the action to its own
+  repository, it must contain `actionRepository`.
 
 - If the action is implemented in JavaScript/TypeScript:
   - It should target Node.js 24 as the runtime environment.

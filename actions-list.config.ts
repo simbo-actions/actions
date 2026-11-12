@@ -26,27 +26,34 @@ export default defineConfig([
     before: beforeTemplate,
 
     templateFn: async (workspace: WorkspaceMetadata): Promise<string> => {
-      const { name, title, version, description } = workspace;
+      const { name, title, version, description, packageJson } = workspace;
+      const actionRepository = (packageJson as { actionRepository?: string }).actionRepository;
 
-      const repoName = `simbo-actions/${name}`;
-      const repoUrl = `https://github.com/${repoName}`;
-      const readmeUrl = `${repoUrl}/blob/main/README.md`;
-      const changelogUrl = `${repoUrl}/blob/main/CHANGELOG.md`;
-      const tagsUrl = `${repoUrl}/tags`;
+      if (!actionRepository) {
+        const sourceUrl = `https://github.com/simbo-actions/actions/tree/main/actions/${name}`;
+        return [
+          `- ### **${title}**`,
+          `  > ${description}`,
+          `  ⚙️ **\`simbo-actions/actions/actions/${name}@<SHA>\`**`,
+          `  Not published to a repository of its own; use it from this monorepo.`,
+          `  [Source](${sourceUrl})  •  [README.md](${sourceUrl}/README.md)`,
+        ].join('\n\n');
+      }
 
+      const repoUrl = `https://github.com/${actionRepository}`;
       const links: string[] = [
         `[Repository](${repoUrl})`,
-        `[README.md](${readmeUrl})`,
-        `[CHANGELOG.md](${changelogUrl})`,
-        `[Tags](${tagsUrl})`,
+        `[README.md](${repoUrl}/blob/main/README.md)`,
+        `[CHANGELOG.md](${repoUrl}/blob/main/CHANGELOG.md)`,
+        `[Releases](${repoUrl}/releases)`,
       ];
 
       return [
         `- ### **${title}**`,
         `  > ${description}`,
-        `  ⚙️ **\`${repoName}@<SHA> # v${version}\`**`,
+        `  ⚙️ **\`${actionRepository}@<SHA> # v${version}\`**`,
         `  Latest Version: \`${version}\``,
-        `  ${links.join('  •  ')}`,
+        `  ${links.join('  •  ')}`,
       ].join('\n\n');
     },
   },
