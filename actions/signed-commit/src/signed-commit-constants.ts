@@ -44,33 +44,7 @@ export const GIT_MAX_BUFFER_BYTES = 1_073_741_824;
 export const HTTP_STATUS_UNPROCESSABLE_ENTITY = 422;
 
 /**
- * Maximum number of attempts for an API request that hits a rate limit.
- */
-export const RATE_LIMIT_MAX_ATTEMPTS = 5;
-
-/**
- * Wait time in milliseconds after a secondary rate limit without retry information.
- * GitHub recommends to wait at least one minute.
- */
-export const RATE_LIMIT_DEFAULT_WAIT_MS = 60_000;
-
-/**
- * Longest wait time in milliseconds for a rate limit; longer waits fail instead.
- */
-export const RATE_LIMIT_MAX_WAIT_MS = 900_000;
-
-/**
  * Number of tags from which GitHub's secondary rate limit for creating content
  * (80 requests per minute) may slow the action down.
  */
 export const TAGS_RATE_LIMIT_WARNING_THRESHOLD = 80;
-
-/**
- * HTTP status of the GitHub API for a forbidden request, also used for rate limits.
- */
-export const HTTP_STATUS_FORBIDDEN = 403;
-
-/**
- * HTTP status of the GitHub API for too many requests.
- */
-export const HTTP_STATUS_TOO_MANY_REQUESTS = 429;

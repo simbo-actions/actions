@@ -2,9 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createCommitOnBranch, createTag, getBranchHeadOid, type Octokit } from './github-api.js';
 
-vi.mock('@actions/core', () => ({ warning: vi.fn() }));
-vi.mock('node:timers/promises', () => ({ setTimeout: vi.fn(async () => {}) }));
-
 const repository = { owner: 'owner', repo: 'repo' };
 const sha = 'a'.repeat(40);
 
@@ -117,15 +114,6 @@ describe('createTag', () => {
       getRef: vi.fn().mockRejectedValue(httpError(404)),
     });
     await expect(createTag(octokit, repository, 'v1.0.0', sha)).rejects.toThrow('Failed to create tag');
-  });
-
-  it('retries after a rate limit', async () => {
-    const createRef = vi
-      .fn()
-      .mockRejectedValueOnce(Object.assign(httpError(403), { response: { headers: { 'retry-after': '1' } } }))
-      .mockResolvedValue({});
-    expect(await createTag(fakeOctokit({ createRef }), repository, 'v1.0.0', sha)).toBe(true);
-    expect(createRef).toHaveBeenCalledTimes(2);
   });
 
   it('passes other errors through', async () => {

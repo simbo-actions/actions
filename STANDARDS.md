@@ -51,6 +51,13 @@ Required:
   environment `release` and run only on `main` or release tags.
 - No own cryptography: tokens, signatures, and hashes come from established
   libraries or GitHub.
+- Automation acts through a dedicated GitHub App with the least installation
+  permissions. Every permission is justified in
+  [ARCHITECTURE.md](ARCHITECTURE.md#github-app) and added only together with the
+  step that needs it.
+- All dependencies are scanned for known vulnerabilities and malicious packages
+  on every pull request, every push to `main`, and weekly. Findings are fixed or
+  accepted with a reason and an expiry date.
 - Secret scanning with push protection, code scanning (CodeQL), Dependabot
   alerts, and private vulnerability reporting are on.
 - Vulnerabilities are reported privately, see [SECURITY.md](SECURITY.md).
@@ -66,6 +73,7 @@ Required:
   (artifact attestation, SLSA Build Level 2).
 - Third-party actions are pinned by full commit SHA, with the version as a
   comment. Own actions in this repository are used via `./actions/<name>`.
+- Tools downloaded in workflows are pinned by version and verified by checksum.
 - No moving tags (`vX`, `vX.Y`, `latest`). Consumers pin by SHA.
 - Immutable releases: a published version is final; corrections are new patch
   releases.
@@ -102,8 +110,9 @@ Required:
 - [Semantic versioning](https://semver.org/) per action. Breaking changes only
   in a major version, described in the changelog.
 - Deprecations are announced in a minor version before the removal.
-- Actions run on the current Node.js runtime of GitHub Actions (`node24`). A
-  runtime change is a major version.
+- The GitHub Actions runner sets the Node.js version: actions use the newest
+  runtime it offers (`node24`), and development, CI, and `@types/node` use the
+  same major version. A runtime change is a major version of every action.
 - Limitations are documented.
 
 ### Documentation
@@ -129,16 +138,24 @@ Required:
 
 - **Necessary:** it solves something that cannot be built cleanly with
   reasonable effort, or that must not be built by ourselves (cryptography).
-- **License:** production dependencies use only permissive licenses: `MIT`,
-  `ISC`, `BSD-2-Clause`, `BSD-3-Clause`, `Apache-2.0`, `0BSD`. Checked in CI
-  (`pnpm run check:licenses`).
+- **License:** two lists apply, both checked in CI.
+
+  | Dependencies                      | Allowed licenses                                                                                                    | Checked by                       |
+  | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+  | Bundled (production dependencies) | `0BSD`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `MIT`                                                  | `pnpm run check:licenses`        |
+  | All, including development tools  | additionally `BlueOak-1.0.0`, `CC0-1.0`, `CC-BY-3.0`, `CC-BY-4.0`, `CC-BY-SA-4.0`, `MPL-2.0`, `Python-2.0`, `WTFPL` | `pnpm run check:vulnerabilities` |
+
+  Strong copyleft (GPL, AGPL, LGPL) is not allowed anywhere.
+
 - **Maintained:** active maintenance, an identifiable maintainer or
   organization, no abandoned packages.
 - **Behavior:** no install scripts (pnpm blocks them), no network access on
   import, no telemetry.
 - **Small:** few transitive dependencies.
 - **Locked:** versions are locked in `pnpm-lock.yaml`; new versions are
-  installed only after a minimum age of two days.
+  installed only after a minimum age of two days. Security fixes of indirect
+  dependencies are set as `overrides` in `pnpm-workspace.yaml` until their
+  dependents require them.
 
 Preferred:
 
@@ -161,6 +178,7 @@ Required:
 
 - Fixed vulnerabilities in bundled dependencies are shipped with a new patch
   release.
+- Recurring tasks follow the runbooks in [MAINTAINING.md](MAINTAINING.md).
 - Support policy and supported versions: [SUPPORT.md](SUPPORT.md) and
   [SECURITY.md](SECURITY.md).
 
@@ -209,6 +227,10 @@ Required:
 Required:
 
 - An action is published only with `actionRepository` in its `package.json`.
+- The name of every published action is free in the
+  [GitHub Marketplace](https://github.com/marketplace?type=actions): no action,
+  user, or organization with that name exists. The action repository meets the
+  Marketplace requirements (one `action.yml` at the root, no workflow files).
 - Release content: `action.yml`, `dist/` (if any), `README.md`, `CHANGELOG.md`,
   `LICENSE.md`, `package.json`.
 - Release order: build, attest, draft release, upload assets, publish.
@@ -232,7 +254,8 @@ Planned, not yet required:
 | Types, lint, format, spelling    | `pnpm run each:check`, `pnpm run check` in the workflow `checks`                 |
 | Tests and coverage               | `pnpm run each:test` (Vitest thresholds)                                         |
 | Workflows and `action.yml`       | actionlint with ShellCheck in `checks`                                           |
-| Licenses of dependencies         | `pnpm run check:licenses`                                                        |
+| Licenses of bundled dependencies | `pnpm run check:licenses` (license-checker-rseidelsohn)                          |
+| Vulnerabilities, all licenses    | `pnpm run check:vulnerabilities` (osv-scanner), weekly workflow `security`       |
 | License file and year per action | `pnpm run check:action-licenses`                                                 |
 | Changeset per change             | `checks` on pull requests                                                        |
 | Pinned actions                   | Actions setting "require SHA pinning"                                            |

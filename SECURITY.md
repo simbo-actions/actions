@@ -26,10 +26,12 @@ What to expect:
 Security fixes are provided for the **latest major version** of each published
 action.
 
-| Action                                                                        | Supported  |
-| ----------------------------------------------------------------------------- | ---------- |
-| [`signed-commit`](https://github.com/simbo-actions/signed-commit)             | latest 1.x |
-| [`github-app-bot-user`](https://github.com/simbo-actions/github-app-bot-user) | latest 1.x |
+| Action                                                                                    | Supported  |
+| ----------------------------------------------------------------------------------------- | ---------- |
+| [`signed-commit`](https://github.com/simbo-actions/signed-commit)                         | latest 1.x |
+| [`github-app-bot-user`](https://github.com/simbo-actions/github-app-bot-user)             | latest 1.x |
+| [`apply-repository-settings`](https://github.com/simbo-actions/apply-repository-settings) | latest 1.x |
+| [`staged-release`](https://github.com/simbo-actions/staged-release)                       | latest 1.x |
 
 ## Security Practices
 
@@ -43,6 +45,8 @@ short:
 - Verified commits and protected tags; releases only from CI, with checksums and
   build provenance; immutable releases.
 - Secret scanning with push protection, code scanning, and Dependabot alerts.
+- All dependencies scanned with osv-scanner for vulnerabilities and malicious
+  packages, on every pull request and weekly.
 
 ## Verifying a Release
 

@@ -4,7 +4,8 @@ name: Checks 🧐
 # "Checks" Workflow
 #
 # Runs tests, builds, and performs checks on pull requests and pushes to main,
-# including a smoke test of github-app-bot-user against the GitHub API.
+# including license and vulnerability checks (osv-scanner) and a smoke test of
+# github-app-bot-user against the GitHub API.
 # Requires a changeset in pull requests, except for Dependabot pull requests
 # that only change workflows.
 # Dispatches the release workflow if changesets are present on main branch.
@@ -96,6 +97,22 @@ jobs:
 
       - name: 👨‍🏫 Check
         run: pnpm run each:check
+
+      - name: 🛡️ Install osv-scanner
+        env:
+          OSV_SCANNER_VERSION: 2.7.0
+          OSV_SCANNER_SHA256: 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b
+        run: |
+          set -euo pipefail
+
+          # Download osv-scanner and verify its checksum.
+          mkdir -p "${RUNNER_TEMP}/bin"
+          binary="${RUNNER_TEMP}/bin/osv-scanner"
+          curl --fail --silent --show-error --location --output "$binary" \
+            "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  ${binary}" | sha256sum --check --strict
+          chmod +x "$binary"
+          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
 
       - name: 🧐 Root Checks
         run: pnpm run check
@@ -212,7 +229,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 👷 Build Signed Commit Action
-        run: pnpm run --filter signed-commit build
+        run: pnpm exec turbo run build --filter=signed-commit
 
       - name: 📝 Create Changeset for Dependency Updates
         id: changeset

@@ -1,5 +1,5 @@
 import { info, setOutput } from '@actions/core';
-import { getOctokit } from '@actions/github';
+import { createOctokit } from '@simbo-actions/octokit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseActionInputs } from './action-inputs.js';
@@ -7,7 +7,7 @@ import { getBotUser, toBotUser } from './get-bot-user.js';
 import { main } from './main.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), setOutput: vi.fn() }));
-vi.mock('@actions/github', () => ({ getOctokit: vi.fn(() => ({})) }));
+vi.mock('@simbo-actions/octokit', () => ({ createOctokit: vi.fn(() => ({})) }));
 vi.mock('./action-inputs.js', () => ({ parseActionInputs: vi.fn() }));
 vi.mock('./get-bot-user.js', async importOriginal => ({
   ...(await importOriginal<typeof import('./get-bot-user.js')>()),
@@ -25,7 +25,7 @@ describe('main', () => {
 
     await main();
 
-    expect(getOctokit).toHaveBeenCalledWith('token');
+    expect(createOctokit).toHaveBeenCalledWith('token');
     expect(getBotUser).toHaveBeenCalledWith(expect.anything(), 'my-app');
     expect(vi.mocked(setOutput).mock.calls).toEqual([
       ['id', '42'],

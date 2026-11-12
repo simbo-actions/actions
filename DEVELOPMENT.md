@@ -20,11 +20,15 @@ change meets, see [STANDARDS.md](STANDARDS.md).
 
 - macOS or Linux
 - [Node.js](https://nodejs.org/) as in [`.nvmrc`](.nvmrc), for example via
-  [nvm](https://github.com/nvm-sh/nvm)
+  [nvm](https://github.com/nvm-sh/nvm). The major version matches the runtime
+  the GitHub Actions runner offers to actions (`node24`), see
+  [ARCHITECTURE.md](ARCHITECTURE.md#nodejs-runtime).
 - [pnpm](https://pnpm.io/) 12 (the exact version is set in `package.json` under
   `packageManager`; [Corepack](https://nodejs.org/api/corepack.html) picks it
   up)
 - Git
+- [osv-scanner](https://github.com/google/osv-scanner), for
+  `pnpm run check:vulnerabilities`: `brew install osv-scanner`
 
 ## Setup
 
@@ -46,7 +50,9 @@ workflow `checks` does. It ends with "All Checks Passed!".
 ├── actions/
 │   └── <name>/            one action: action.yml, src/, tests, README.md, LICENSE.md
 ├── changelog/             changelog of the monorepo itself
-├── tooling/               scripts for checks, release, and publish, with tests
+├── shared/
+│   └── <name>/            code shared by actions, bundled into them
+├── tooling/               monorepo checks and helpers, with tests
 ├── .changeset/            pending changesets
 └── .github/
     ├── workflows/         checks, release, publish, automerge
@@ -59,19 +65,20 @@ How the pieces work together is described in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Root scripts (run with `pnpm run <script>`):
 
-| Script                   | What it does                                               |
-| ------------------------ | ---------------------------------------------------------- |
-| `preflight`              | Install, build, bundle, test, and check everything         |
-| `each:build`             | Build all workspaces (Turbo)                               |
-| `each:bundle`            | Run post-build bundling steps                              |
-| `each:test`              | Run all tests with coverage                                |
-| `each:check`             | Type check and lint all workspaces                         |
-| `check`                  | Format, boundaries, spelling, licenses, and license files  |
-| `check:licenses`         | Check the licenses of all production dependencies          |
-| `check:action-licenses`  | Check `LICENSE.md` and the license link of every action    |
-| `fix:format`             | Format all files with Prettier                             |
-| `actions-list`           | Update the generated lists in `README.md` and `ACTIONS.md` |
-| `ncu:patch`, `ncu:minor` | Update dependencies interactively                          |
+| Script                   | What it does                                                           |
+| ------------------------ | ---------------------------------------------------------------------- |
+| `preflight`              | Install, build, bundle, test, and check everything                     |
+| `each:build`             | Build all workspaces (Turbo)                                           |
+| `each:bundle`            | Run post-build bundling steps                                          |
+| `each:test`              | Run all tests with coverage                                            |
+| `each:check`             | Type check and lint all workspaces                                     |
+| `check`                  | Format, boundaries, spelling, licenses, license files, vulnerabilities |
+| `check:licenses`         | Check the licenses of the production dependencies of every action      |
+| `check:vulnerabilities`  | Scan all dependencies with osv-scanner                                 |
+| `check:action-licenses`  | Check `LICENSE.md` and the license link of every action                |
+| `fix:format`             | Format all files with Prettier                                         |
+| `actions-list`           | Update the generated lists in `README.md` and `ACTIONS.md`             |
+| `ncu:patch`, `ncu:minor` | Update dependencies interactively                                      |
 
 Workspace scripts (run inside a workspace, or with
 `pnpm --filter <name> run <script>`):
@@ -119,19 +126,23 @@ Workspace scripts (run inside a workspace, or with
 
 ## Adding an Action
 
-1. Create `actions/<name>/`, for example by copying the structure of
+1. Check that the name is free in the GitHub Marketplace:
+   `https://github.com/marketplace/actions/<name>` must not exist, and no user
+   or organization may have that name (`gh api users/<name>` fails).
+2. Create `actions/<name>/`, for example by copying the structure of
    [`actions/github-app-bot-user`](actions/github-app-bot-user/README.md):
    `action.yml`, `package.json`, `src/`, `eslint.config.js`, `rollup.config.js`,
-   `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`.
-2. In `package.json`, set `name` to the folder name, a `description`, and
+   `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`. Create the API
+   client with `createOctokit` from `@simbo-actions/octokit`.
+3. In `package.json`, set `name` to the folder name, a `description`, and
    `"version": "0.0.0"`. To publish the action to its own repository, add
    `"actionRepository": "simbo-actions/<name>"`.
-3. Add `LICENSE.md` with the current year, and link it in the README as
+4. Add `LICENSE.md` with the current year, and link it in the README as
    `https://simbo.mit-license.org/@<year>`.
-4. Write the README with all sections required by [STANDARDS.md](STANDARDS.md).
-5. Write the code and tests; add a smoke test to the workflow `checks` if the
+5. Write the README with all sections required by [STANDARDS.md](STANDARDS.md).
+6. Write the code and tests; add a smoke test to the workflow `checks` if the
    action can run without secrets.
-6. Add a changeset with a major bump for the first release (1.0.0), and run
+7. Add a changeset with a major bump for the first release (1.0.0), and run
    `pnpm run actions-list`.
 
 The first release creates the repository `simbo-actions/<name>` and configures

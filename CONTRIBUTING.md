@@ -59,6 +59,10 @@ Checklist for every pull request:
 - This project is maintained in spare time; reviews may take some days. See
   [SUPPORT.md](SUPPORT.md).
 
+## For Maintainers
+
+Recurring maintenance tasks are described in [MAINTAINING.md](MAINTAINING.md).
+
 ## Code of Conduct
 
 Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).

@@ -1,5 +1,5 @@
 import { info, setOutput, warning } from '@actions/core';
-import { getOctokit } from '@actions/github';
+import { createOctokit } from '@simbo-actions/octokit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseActionInputs } from './action-inputs.js';
@@ -17,7 +17,7 @@ vi.mock('@actions/core', () => ({
   startGroup: vi.fn(),
   warning: vi.fn(),
 }));
-vi.mock('@actions/github', () => ({ getOctokit: vi.fn(() => ({})) }));
+vi.mock('@simbo-actions/octokit', () => ({ createOctokit: vi.fn(() => ({})) }));
 vi.mock('./action-inputs.js', () => ({ parseActionInputs: vi.fn() }));
 vi.mock('./get-files-to-commit.js', () => ({ getFilesToCommit: vi.fn() }));
 vi.mock('./git.js', () => ({ getHeadOid: vi.fn(), getRepositoryRoot: vi.fn() }));
@@ -78,7 +78,7 @@ describe('main', () => {
     setup({}, { localHead: remoteHead });
     await main();
 
-    expect(getOctokit).toHaveBeenCalledWith('token');
+    expect(createOctokit).toHaveBeenCalledWith('token');
     expect(createCommitOnBranch).toHaveBeenCalledWith(expect.anything(), {
       repository: { owner: 'owner', repo: 'repo' },
       branch: 'main',

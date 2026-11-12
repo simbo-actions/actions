@@ -1,5 +1,5 @@
 import { endGroup, info, setOutput, startGroup, warning } from '@actions/core';
-import { getOctokit } from '@actions/github';
+import { createOctokit } from '@simbo-actions/octokit';
 
 import { parseActionInputs } from './action-inputs.js';
 import { getFilesToCommit } from './get-files-to-commit.js';
@@ -79,7 +79,7 @@ export async function main(): Promise<void> {
   const inputs = parseActionInputs();
   const { owner, repo, branch, message, tags, ifNoChanges } = inputs;
   const repository = { owner, repo };
-  const octokit = getOctokit(inputs.token);
+  const octokit = createOctokit(inputs.token);
 
   const remoteHeadOid = await getBranchHeadOid(octokit, repository, branch);
   if (!remoteHeadOid) {

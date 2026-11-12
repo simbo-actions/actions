@@ -1,0 +1,45 @@
+name: Apply Repository Settings
+
+description: A GitHub Action to apply repository settings, security features, Actions permissions, and rulesets from a configuration file, writing only what differs.
+
+author: Simon Lepel <simbo@simbo.de> (https://simbo.de/)
+
+branding:
+  icon: sliders
+  color: green
+
+inputs:
+  token:
+    description: >
+      The token to authenticate with. Needs "administration: write" on the
+      repository, for example a GitHub App installation token.
+    required: true
+  repository:
+    description: The repository to configure, in the format "owner/repo".
+    required: false
+    default: ${{ github.repository }}
+  config:
+    description: The path to the JSON configuration file.
+    required: true
+  description:
+    description: Overrides "repository.description" of the configuration.
+    required: false
+    default: ''
+  homepage:
+    description: Overrides "repository.homepage" of the configuration.
+    required: false
+    default: ''
+  dry-run:
+    description: Whether to only report the changes without applying them.
+    required: false
+    default: 'false'
+
+outputs:
+  changed:
+    description: Whether settings differed ("true" or "false"); in a dry run, whether they would change.
+  changes:
+    description: 'The changes as JSON: [{"setting": ..., "change": ...}].'
+
+runs:
+  using: node24
+  main: dist/index.js

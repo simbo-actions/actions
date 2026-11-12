@@ -1,5 +1,5 @@
 import { info, setOutput } from '@actions/core';
-import { getOctokit } from '@actions/github';
+import { createOctokit } from '@simbo-actions/octokit';
 
 import { parseActionInputs } from './action-inputs.js';
 import { getBotUser } from './get-bot-user.js';
@@ -11,7 +11,7 @@ import { getBotUser } from './get-bot-user.js';
  */
 export async function main(): Promise<void> {
   const { appSlug, token } = parseActionInputs();
-  const botUser = await getBotUser(getOctokit(token), appSlug);
+  const botUser = await getBotUser(createOctokit(token), appSlug);
 
   setOutput('id', String(botUser.id));
   setOutput('login', botUser.login);

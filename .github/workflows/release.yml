@@ -52,7 +52,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 👷 Build Signed Commit Action
-        run: pnpm run --filter signed-commit build
+        run: pnpm exec turbo run build --filter=signed-commit
 
       - name: 📝 Integrate Changesets
         run: |

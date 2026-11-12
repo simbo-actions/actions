@@ -27,5 +27,6 @@ asks for it; keep it to about one screen.
   without a release.
 - Keep the workflow style: emoji names, header comment, `run-name`,
   `concurrency`, `set -euo pipefail`.
+- Maintenance tasks follow the runbooks in [MAINTAINING.md](MAINTAINING.md).
 - Verify with `pnpm run preflight` and report checks that were not run.
 - Preserve the shared `@simbo` configurations; ask before changing their rules.

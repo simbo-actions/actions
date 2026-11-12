@@ -313,10 +313,11 @@ the same token identity, for example all repositories using the same GitHub App:
   and 500 per hour. Every commit and every tag counts.
 
 When GitHub reports a rate limit, the action waits as long as GitHub asks for
-(`retry-after`, or until `x-ratelimit-reset`; one minute if GitHub gives no
-time) and retries the request, up to 5 attempts. It fails instead if GitHub asks
-to wait more than 15 minutes. Requests run one after another, never in parallel,
-as GitHub recommends.
+and retries the request, up to 4 times, with a warning in the log. This is done
+by the official Octokit plugin
+[`@octokit/plugin-throttling`](https://github.com/octokit/plugin-throttling.js),
+which also queues requests as GitHub recommends. Requests run one after another,
+never in parallel.
 
 With more than 80 tags in one run, the action warns before creating them: the
 run may slow down, but every tag is still created with its own request and

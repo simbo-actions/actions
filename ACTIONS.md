@@ -8,7 +8,24 @@ more information about the monorepo itself.
 
 <!-- PACKAGES -->
 
-There are currently _**2**_ GitHub Actions managed in this repository.
+There are currently _**4**_ GitHub Actions managed in this repository.
+
+- ### **Apply Repository Settings _(GitHub Action)_**
+
+  > A GitHub Action to apply repository settings, security features, Actions
+  > permissions, and rulesets from a configuration file, writing only what
+  > differs.
+
+  ⚙️ **`simbo-actions/apply-repository-settings@<SHA> # v0.0.0`**
+
+  Latest Version: `0.0.0`
+
+  [Repository](https://github.com/simbo-actions/apply-repository-settings) •
+  [README.md](https://github.com/simbo-actions/apply-repository-settings/blob/main/README.md)
+  •
+  [CHANGELOG.md](https://github.com/simbo-actions/apply-repository-settings/blob/main/CHANGELOG.md)
+  •
+  [Releases](https://github.com/simbo-actions/apply-repository-settings/releases)
 
 - ### **GitHub App Bot User _(GitHub Action)_**
 
@@ -39,5 +56,20 @@ There are currently _**2**_ GitHub Actions managed in this repository.
   •
   [CHANGELOG.md](https://github.com/simbo-actions/signed-commit/blob/main/CHANGELOG.md)
   • [Releases](https://github.com/simbo-actions/signed-commit/releases)
+
+- ### **Staged Release _(GitHub Action)_**
+
+  > A GitHub Action to create a complete GitHub release: draft, assets, then
+  > publish. Works with immutable releases.
+
+  ⚙️ **`simbo-actions/staged-release@<SHA> # v0.0.0`**
+
+  Latest Version: `0.0.0`
+
+  [Repository](https://github.com/simbo-actions/staged-release) •
+  [README.md](https://github.com/simbo-actions/staged-release/blob/main/README.md)
+  •
+  [CHANGELOG.md](https://github.com/simbo-actions/staged-release/blob/main/CHANGELOG.md)
+  • [Releases](https://github.com/simbo-actions/staged-release/releases)
 
 <!-- /PACKAGES -->

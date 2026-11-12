@@ -1,0 +1,92 @@
+name: Security 🛡️
+
+#-------------------------------------------------------------------------------
+# "Security" Workflow
+#
+# Scans all dependencies with osv-scanner for known vulnerabilities, malicious
+# packages, and licenses, and uploads the results to code scanning.
+# Runs weekly, so that newly published vulnerabilities in unchanged
+# dependencies are found, and on every push to main.
+# Pull requests are scanned by the "Checks" workflow.
+#-------------------------------------------------------------------------------
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}
+
+run-name: >
+  ${{
+    format(
+      '{0} ({1})',
+      github.workflow,
+      github.event_name == 'schedule' && 'weekly' || github.event_name
+    )
+  }}
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🛡️ Install osv-scanner
+        env:
+          OSV_SCANNER_VERSION: 2.7.0
+          OSV_SCANNER_SHA256: 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b
+        run: |
+          set -euo pipefail
+
+          # Download osv-scanner and verify its checksum.
+          mkdir -p "${RUNNER_TEMP}/bin"
+          binary="${RUNNER_TEMP}/bin/osv-scanner"
+          curl --fail --silent --show-error --location --output "$binary" \
+            "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  ${binary}" | sha256sum --check --strict
+          chmod +x "$binary"
+          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
+
+      - name: 🔍 Scan Dependencies
+        id: scan
+        run: |
+          set -uo pipefail
+
+          # Same scan as "pnpm run check:vulnerabilities", with SARIF output.
+          # The exit code is checked after the upload, so that findings reach code scanning.
+          osv-scanner scan source \
+            --lockfile pnpm-lock.yaml \
+            --config osv-scanner.toml \
+            --format sarif \
+            --output "${RUNNER_TEMP}/osv-scanner.sarif"
+          echo "exit-code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: 📤 Upload Results to Code Scanning
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: ${{ runner.temp }}/osv-scanner.sarif
+          category: osv-scanner
+
+      - name: 🚦 Fail on Findings
+        env:
+          EXIT_CODE: ${{ steps.scan.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+          if [[ "$EXIT_CODE" != '0' ]]; then
+            echo "::error title=Vulnerabilities Found::osv-scanner found vulnerabilities; see code scanning for details."
+            exit 1
+          fi
