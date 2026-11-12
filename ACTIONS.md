@@ -10,18 +10,20 @@ more information about the monorepo itself.
 
 There are currently _**3**_ GitHub Actions managed in this repository.
 
-- ### **Commit and Push _(GitHub Action)_**
+- ### **GitHub App Bot User _(GitHub Action)_**
 
-  > A GitHub Action to commit and push changes to a repository. Supports user
-  > config, commit signing, and tagging.
+  > A GitHub Action to get the bot user of a GitHub App: user ID, login, name,
+  > and email for Git.
 
-  ⚙️ **`simbo-actions/actions/actions/commit-and-push@<SHA>`**
+  ⚙️ **`simbo-actions/github-app-bot-user@<SHA> # v0.0.0`**
 
-  Not published to a repository of its own; use it from this monorepo.
+  Latest Version: `0.0.0`
 
-  [Source](https://github.com/simbo-actions/actions/tree/main/actions/commit-and-push)
+  [Repository](https://github.com/simbo-actions/github-app-bot-user) •
+  [README.md](https://github.com/simbo-actions/github-app-bot-user/blob/main/README.md)
   •
-  [README.md](https://github.com/simbo-actions/actions/tree/main/actions/commit-and-push/README.md)
+  [CHANGELOG.md](https://github.com/simbo-actions/github-app-bot-user/blob/main/CHANGELOG.md)
+  • [Releases](https://github.com/simbo-actions/github-app-bot-user/releases)
 
 - ### **GitHub App Credentials _(GitHub Action)_**
 

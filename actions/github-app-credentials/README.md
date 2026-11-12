@@ -3,6 +3,12 @@
 A GitHub Action to obtain token, slug, user ID, name, and email for a GitHub
 App.
 
+> [!NOTE]  
+> This action is kept for existing workflows only and will be replaced. Use
+> [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token)
+> together with [`github-app-bot-user`](../github-app-bot-user/README.md)
+> instead.
+
 ## Usage
 
 This action is not published to a repository of its own. Use it from this

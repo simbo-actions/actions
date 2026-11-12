@@ -256,13 +256,13 @@ jobs:
             echo "result=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 🪪 Retrieve Credentials (Create Repository)
-        id: credentials-create
+      - name: 🔑 Get App Token (Create Repository)
+        id: app-token-create
         if: steps.repo-exists.outputs.result == 'false'
-        uses: ./monorepo/actions/github-app-credentials
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.SIMBO_ACTIONS_APP_ID }}
-          app-private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
           permission-administration: write
 
       - name: 🪄 Create Action Repository
@@ -273,7 +273,7 @@ jobs:
           PACKAGE: ${{ needs.target.outputs.package }}
           PACKAGE_JSON: monorepo/actions/${{ needs.target.outputs.package }}/package.json
         with:
-          github-token: ${{ steps.credentials-create.outputs.token }}
+          github-token: ${{ steps.app-token-create.outputs.token }}
           script: |
             const { readFile } = await import('node:fs/promises');
             const { description } = JSON.parse(await readFile(process.env.PACKAGE_JSON, 'utf8'));
@@ -290,12 +290,12 @@ jobs:
             });
             core.info(`Created repository ${process.env.OWNER}/${process.env.PACKAGE}.`);
 
-      - name: 🪪 Retrieve Credentials (Configure Repository)
-        id: credentials-configure
-        uses: ./monorepo/actions/github-app-credentials
+      - name: 🔑 Get App Token (Configure Repository)
+        id: app-token-configure
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.SIMBO_ACTIONS_APP_ID }}
-          app-private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
           repositories: ${{ needs.target.outputs.package }}
           permission-administration: write
 
@@ -307,7 +307,7 @@ jobs:
           PACKAGE_JSON: monorepo/actions/${{ needs.target.outputs.package }}/package.json
           SCRIPT: monorepo/.github/scripts/configure-action-repository.js
         with:
-          github-token: ${{ steps.credentials-configure.outputs.token }}
+          github-token: ${{ steps.app-token-configure.outputs.token }}
           script: |
             const { readFile } = await import('node:fs/promises');
             const { resolve } = await import('node:path');
@@ -322,12 +322,12 @@ jobs:
               homepage: `https://github.com/${context.repo.owner}/${context.repo.repo}`,
             });
 
-      - name: 🪪 Retrieve Credentials (Publish)
-        id: credentials
-        uses: ./monorepo/actions/github-app-credentials
+      - name: 🔑 Get App Token (Publish)
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.SIMBO_ACTIONS_APP_ID }}
-          app-private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
           repositories: ${{ needs.target.outputs.package }}
           permission-contents: write
 
@@ -352,7 +352,7 @@ jobs:
         id: commit
         uses: ./monorepo/actions/signed-commit
         with:
-          token: ${{ steps.credentials.outputs.token }}
+          token: ${{ steps.app-token.outputs.token }}
           repository: ${{ needs.target.outputs.repository }}
           branch: main
           working-directory: action-repo
@@ -370,7 +370,7 @@ jobs:
           ASSETS: ${{ steps.content.outputs.assets }}
           SCRIPT: monorepo/.github/scripts/publish-release.js
         with:
-          github-token: ${{ steps.credentials.outputs.token }}
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const { resolve } = await import('node:path');
             const { publishRelease } = await import(resolve(process.env.SCRIPT));

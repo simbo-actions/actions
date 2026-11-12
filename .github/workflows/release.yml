@@ -104,18 +104,18 @@ jobs:
           # Output the packages
           echo "packages=${packages[*]}" >> "$GITHUB_OUTPUT"
 
-      - name: 🪪 Retrieve Credentials
-        id: credentials
-        uses: ./actions/github-app-credentials
+      - name: 🔑 Get App Token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.SIMBO_ACTIONS_APP_ID }}
-          app-private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
           permission-contents: write
 
       - name: 💾 Commit Release and Create Tags
         uses: ./actions/signed-commit
         with:
-          token: ${{ steps.credentials.outputs.token }}
+          token: ${{ steps.app-token.outputs.token }}
           branch: main
           message: 'ci(release): ${{ steps.bumped-packages.outputs.packages }}'
           tags: ${{ steps.bumped-packages.outputs.packages }}

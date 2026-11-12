@@ -3,7 +3,8 @@ name: Checks 🧐
 #-------------------------------------------------------------------------------
 # "Checks" Workflow
 #
-# Runs tests, builds, and performs checks on pull requests and pushes to main.
+# Runs tests, builds, and performs checks on pull requests and pushes to main,
+# including a smoke test of github-app-bot-user against the GitHub API.
 # Requires a changeset in pull requests, except for Dependabot pull requests
 # that only change workflows.
 # Dispatches the release workflow if changesets are present on main branch.
@@ -80,6 +81,33 @@ jobs:
 
       - name: 🧐 Root Checks
         run: pnpm run check
+
+      - name: 🤖 Smoke Test GitHub App Bot User
+        id: bot-user
+        uses: ./actions/github-app-bot-user
+        with:
+          app-slug: simbo-actions
+
+      - name: 🔍 Verify GitHub App Bot User
+        env:
+          ID: ${{ steps.bot-user.outputs.id }}
+          LOGIN: ${{ steps.bot-user.outputs.login }}
+          NAME: ${{ steps.bot-user.outputs.name }}
+          EMAIL: ${{ steps.bot-user.outputs.email }}
+          AUTHOR: ${{ steps.bot-user.outputs.author }}
+        run: |
+          set -euo pipefail
+
+          expected_email='355043706+simbo-actions[bot]@users.noreply.github.com'
+          if [[ "$ID" != '355043706' \
+            || "$LOGIN" != 'simbo-actions[bot]' \
+            || "$NAME" != 'simbo-actions[bot]' \
+            || "$EMAIL" != "$expected_email" \
+            || "$AUTHOR" != "simbo-actions[bot] <${expected_email}>" ]]; then
+            echo "::error title=Unexpected Bot User::id=${ID} login=${LOGIN} name=${NAME} email=${EMAIL} author=${AUTHOR}"
+            exit 1
+          fi
+          echo "Bot user: ${AUTHOR} (ID ${ID})"
 
       - name: 📝 Require Changeset (Pull Requests)
         if: github.event_name == 'pull_request'
