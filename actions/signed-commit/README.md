@@ -22,6 +22,7 @@ updates the local checkout afterwards.
 - [Tags](#tags)
 - [Syncing the Local Checkout](#syncing-the-local-checkout)
 - [Rate Limits](#rate-limits)
+- [Security](#security)
 - [Empty Repositories and Missing Branches](#empty-repositories-and-missing-branches)
 - [Limitations](#limitations)
 
@@ -323,6 +324,29 @@ triggers its own `push` event. Many parallel runs, for example one publish run
 per tag of a large release, share the same limits; spread them, for example with
 a matrix and `max-parallel`.
 
+## Security
+
+- **Token:** the action uses the token only for the GitHub API; it never writes
+  it to disk or to the Git configuration. Use a token restricted to the target
+  repository and `contents: write`.
+- **Inputs:** all inputs are validated; paths outside the working directory,
+  symbolic links, and submodules are rejected.
+- **No overwriting:** the commit is created only if the branch still points to
+  the expected commit, see
+  [Protection Against Overwriting](#protection-against-overwriting).
+- **Verified commits:** GitHub signs every commit created by the action; commits
+  satisfy the ruleset rule "Require signed commits".
+- **Verifying a release:** pin the action by the commit SHA of a release tag.
+  Every release has an archive with a `SHA256SUMS` file and build provenance:
+
+  ```sh
+  sha256sum --check SHA256SUMS
+  gh attestation verify signed-commit-vX.Y.Z.tar.gz --repo simbo-actions/actions
+  ```
+
+- **Reporting vulnerabilities:** privately, see the
+  [security policy](https://github.com/simbo-actions/actions/blob/main/SECURITY.md).
+
 ## Empty Repositories and Missing Branches
 
 `createCommitOnBranch` needs an existing branch; the action does not create
@@ -354,4 +378,4 @@ GitHub and is verified as well.
 
 ## License
 
-[MIT © Simon Lepel](http://simbo.mit-license.org/2025/)
+[MIT © Simon Lepel](https://simbo.mit-license.org/@2026)

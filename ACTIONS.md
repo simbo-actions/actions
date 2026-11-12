@@ -8,7 +8,7 @@ more information about the monorepo itself.
 
 <!-- PACKAGES -->
 
-There are currently _**3**_ GitHub Actions managed in this repository.
+There are currently _**2**_ GitHub Actions managed in this repository.
 
 - ### **GitHub App Bot User _(GitHub Action)_**
 
@@ -24,19 +24,6 @@ There are currently _**3**_ GitHub Actions managed in this repository.
   •
   [CHANGELOG.md](https://github.com/simbo-actions/github-app-bot-user/blob/main/CHANGELOG.md)
   • [Releases](https://github.com/simbo-actions/github-app-bot-user/releases)
-
-- ### **GitHub App Credentials _(GitHub Action)_**
-
-  > A GitHub Action to obtain token, slug, user ID, name, and email for a GitHub
-  > App.
-
-  ⚙️ **`simbo-actions/actions/actions/github-app-credentials@<SHA>`**
-
-  Not published to a repository of its own; use it from this monorepo.
-
-  [Source](https://github.com/simbo-actions/actions/tree/main/actions/github-app-credentials)
-  •
-  [README.md](https://github.com/simbo-actions/actions/tree/main/actions/github-app-credentials/README.md)
 
 - ### **Signed Commit _(GitHub Action)_**
 

@@ -1,8 +1,9 @@
 # Rules for assistants
 
 Monorepo for the GitHub Actions of `simbo-actions`. Read [README.md](README.md),
-[CONCEPT.md](CONCEPT.md), and [CONTRIBUTING.md](CONTRIBUTING.md) first. Change
-this file only when the owner asks for it; keep it to about one screen.
+[STANDARDS.md](STANDARDS.md), [ARCHITECTURE.md](ARCHITECTURE.md), and
+[DEVELOPMENT.md](DEVELOPMENT.md) first. Change this file only when the owner
+asks for it; keep it to about one screen.
 
 ## Collaboration
 
@@ -16,28 +17,15 @@ this file only when the owner asks for it; keep it to about one screen.
   accounts, or their state.
 - No new tooling, platforms, or dependencies without a request.
 
-## Actions
+## Standards
 
-- One workspace per action in `actions/<name>/`, published to
-  `simbo-actions/<name>`. `changelog/` holds the monorepo changelog.
-- Repositories outside this monorepo use the actions from `main` until they pin
-  the published repositories by SHA. Keep the interface on `main` compatible:
-  new inputs are optional; breaking changes only after the owner agrees.
-- Every change to an action comes with a changeset (`pnpm exec changeset`); use
-  `--empty` for changes without a release.
-
-## Workflows
-
-- `permissions: {}` at workflow level, the needed permissions per job.
-- Third-party actions pinned by SHA with the tag as a comment. Own actions via
-  `./actions/<name>`.
-- Inputs and secrets reach `run` scripts via `env`, never via `${{ }}` inside
-  the script.
-- Jobs that need the app secrets use
-  `environment: { name: release, deployment: false }` and run only on `main` or
-  release tags.
-
-## Checks
-
-- Verify with `pnpm preflight` and report checks that were not run.
+- [STANDARDS.md](STANDARDS.md) applies to every change, without exceptions:
+  Node.js actions in strict TypeScript, composite actions only to compose other
+  actions, at least 90 % test coverage, least privilege for tokens, third-party
+  actions pinned by SHA, inputs and secrets via `env` in scripts.
+- Every change to an action comes with a changeset; use `--empty` for changes
+  without a release.
+- Keep the workflow style: emoji names, header comment, `run-name`,
+  `concurrency`, `set -euo pipefail`.
+- Verify with `pnpm run preflight` and report checks that were not run.
 - Preserve the shared `@simbo` configurations; ask before changing their rules.

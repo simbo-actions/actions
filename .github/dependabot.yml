@@ -1,6 +1,7 @@
 version: 2
 
 updates:
+  # GitHub Actions in workflows and composite actions, daily
   - package-ecosystem: github-actions
     directories:
       - /
@@ -15,8 +16,34 @@ updates:
       simbo-actions:
         patterns:
           - simbo-actions/*
+      github-actions:
+        patterns:
+          - actions/*
+          - github/*
       third-party-actions:
         patterns:
           - '*'
         exclude-patterns:
           - simbo-actions/*
+          - actions/*
+          - github/*
+
+  # npm dependencies of all workspaces, weekly, minor and patch updates grouped
+  # (one pull request per workspace); major updates come as separate pull requests
+  - package-ecosystem: npm
+    directories:
+      - /
+      - /actions/*
+      - /changelog
+      - /tooling
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      npm-dependencies:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch

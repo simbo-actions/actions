@@ -6,7 +6,7 @@ name: Publish 🚚
 # Publishes a released action to its own repository "simbo-actions/<action>":
 # builds the action, creates and configures the repository if necessary,
 # commits the build artifacts as signed commit with the tag "v<version>", and
-# creates a GitHub release (draft, assets, publish).
+# creates a GitHub release (draft, assets with build provenance, publish).
 # Only actions with "actionRepository" in their package.json are published;
 # for all others, the publish job is skipped.
 #
@@ -161,6 +161,8 @@ jobs:
       deployment: false
     permissions:
       contents: read
+      id-token: write
+      attestations: write
     steps:
       - name: 🛎️ Checkout Monorepo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -220,8 +222,13 @@ jobs:
           if [[ -d "${FROM}/dist" ]]; then
             cp -R "${FROM}/dist" "${content}/"
           fi
-          cp "${FROM}/README.md" "${FROM}/CHANGELOG.md" "${FROM}/action.yml" "${FROM}/package.json" "${content}/"
-          cp monorepo/LICENSE.md "${content}/"
+          for file in README.md CHANGELOG.md LICENSE.md action.yml package.json; do
+            if [[ ! -f "${FROM}/${file}" ]]; then
+              echo "::error title=Missing File::${FROM}/${file} does not exist."
+              exit 1
+            fi
+            cp "${FROM}/${file}" "${content}/"
+          done
 
           # Create release assets
           archive="${PACKAGE}-v${VERSION}.tar.gz"
@@ -242,6 +249,11 @@ jobs:
           echo "content=${content}" >> "$GITHUB_OUTPUT"
           echo "assets=${assets}" >> "$GITHUB_OUTPUT"
           echo "notes=${notes}" >> "$GITHUB_OUTPUT"
+
+      - name: 📜 Attest Build Provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.content.outputs.assets }}/*.tar.gz
 
       - name: 🔍 Check Action Repository
         id: repo-exists
@@ -272,7 +284,7 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           PACKAGE: ${{ needs.target.outputs.package }}
           PACKAGE_JSON: monorepo/actions/${{ needs.target.outputs.package }}/package.json
-          SCRIPT: monorepo/.github/scripts/rate-limit.js
+          SCRIPT: monorepo/tooling/src/rate-limit.ts
         with:
           github-token: ${{ steps.app-token-create.outputs.token }}
           script: |
@@ -310,7 +322,7 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           PACKAGE: ${{ needs.target.outputs.package }}
           PACKAGE_JSON: monorepo/actions/${{ needs.target.outputs.package }}/package.json
-          SCRIPT: monorepo/.github/scripts/configure-action-repository.js
+          SCRIPT: monorepo/tooling/src/configure-action-repository.ts
         with:
           github-token: ${{ steps.app-token-configure.outputs.token }}
           script: |
@@ -373,7 +385,7 @@ jobs:
           TAG: ${{ needs.target.outputs.tag }}
           NOTES: ${{ steps.content.outputs.notes }}
           ASSETS: ${{ steps.content.outputs.assets }}
-          SCRIPT: monorepo/.github/scripts/publish-release.js
+          SCRIPT: monorepo/tooling/src/publish-release.ts
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |

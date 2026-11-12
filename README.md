@@ -1,61 +1,63 @@
 # 🔄 Simbo's Actions
 
-> A monorepo for my GitHub Actions.
+> GitHub Actions built for production use in security-conscious organizations.
 
-> [!NOTE]  
-> This repository is in the early stages of development. What is described here
-> may significantly change in the future or may not even be implemented at all.
-
-## About
-
-This repository contains a collection of GitHub Actions developed and maintained
-by Simon Lepel ([simbo](http://github.com/simbo)).
-
-Actions are automatically published to their respective repositories under the
-[simbo-actions](http://github.com/simbo-actions) organization and can be easily
-integrated into your own GitHub workflows.
-
-The generic usage pattern for an action from this monorepo is as follows. Pin
-the action by the commit SHA of a release tag, with the version as a comment:
-
-```yaml
-jobs:
-  example_job:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Use Simbo's Action
-        uses: simbo-actions/<ACTION>@<SHA> # vX.Y.Z
-        with:
-          # action-specific inputs
-```
-
-Actions that are not published to a repository of their own are used from this
-monorepo, pinned by commit SHA: `simbo-actions/actions/actions/<ACTION>@<SHA>`.
-[`ACTIONS.md`](https://github.com/simbo-actions/actions/blob/main/ACTIONS.md)
-shows how to use each action.
+Every action in this repository follows the same [standards](STANDARDS.md):
+least privilege, a pinned and verified supply chain, tested behavior, complete
+documentation, and reproducible releases with build provenance.
 
 ## Actions
 
 <!-- PACKAGES -->
 
-There are currently _**3**_ GitHub Actions managed in this repository.
+There are currently _**2**_ GitHub Actions managed in this repository.
+
+- [**github-app-bot-user**](https://github.com/simbo-actions/github-app-bot-user):
+  A GitHub Action to get the bot user of a GitHub App: user ID, login, name, and
+  email for Git.
+- [**signed-commit**](https://github.com/simbo-actions/signed-commit): A GitHub
+  Action to create signed commits and tags via the GitHub API, shown as
+  verified.
 
 <!-- /PACKAGES -->
 
-See the
-[`ACTIONS.md`](https://github.com/simbo-actions/actions/blob/main/ACTIONS.md)
-for a comprehensive list of all packages.
+[ACTIONS.md](ACTIONS.md) lists all actions with versions and links.
 
-## Further Information
+## Usage
 
-- [**`CONTRIBUTING.md`**](https://github.com/simbo-actions/actions/blob/main/CONTRIBUTING.md)  
-  _Development
-  and contribution guidelines_
+Every action is published to its own repository in the organization
+[`simbo-actions`](https://github.com/simbo-actions). Pin an action by the commit
+SHA of a release tag, with the version as a comment:
 
-- [**`CONCEPT.md`**](https://github.com/simbo-actions/actions/blob/main/CONCEPT.md)  
-  _Intention
-  and conceptual overview_
+```yaml
+jobs:
+  example:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 💾 Commit Changes
+        uses: simbo-actions/signed-commit@<SHA> # vX.Y.Z
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          message: 'chore: update generated files'
+```
+
+There are no moving tags such as `v1` or `latest`. Dependabot keeps SHA pins up
+to date. How to verify a release is described in
+[SECURITY.md](SECURITY.md#verifying-a-release).
+
+## Documentation
+
+| Document                           | For                                                   |
+| ---------------------------------- | ----------------------------------------------------- |
+| [ACTIONS.md](ACTIONS.md)           | All actions, with versions and links                  |
+| [STANDARDS.md](STANDARDS.md)       | The quality and security requirements of every action |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How actions are released, published, and managed      |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to report issues and contribute                   |
+| [DEVELOPMENT.md](DEVELOPMENT.md)   | Setup, scripts, tests, and adding an action           |
+| [SECURITY.md](SECURITY.md)         | Reporting vulnerabilities, supported versions         |
+| [SUPPORT.md](SUPPORT.md)           | Getting help, support policy                          |
+| [CHANGELOG.md](CHANGELOG.md)       | Where to find the changelogs                          |
 
 ## License
 
-[MIT © Simon Lepel](http://simbo.mit-license.org/2025/)
+[MIT © Simon Lepel](https://simbo.mit-license.org/@2026)

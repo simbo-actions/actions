@@ -1,0 +1,47 @@
+name: 🐛 Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for reporting a bug! Please do not report vulnerabilities
+        here; see SECURITY.md.
+  - type: dropdown
+    id: action
+    attributes:
+      label: Action
+      options:
+        - signed-commit
+        - github-app-bot-user
+        - Release or publish process of this repository
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The version you use, for example the tag your SHA pin points to.
+      placeholder: v1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow
+      description: A minimal workflow step that shows the problem. Remove secrets.
+      render: yaml
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The relevant log output. Remove secrets and tokens.
+      render: text

@@ -1,17 +1,17 @@
 {
   "name": "signed-commit",
-  "version": "0.0.0",
   "description": "A GitHub Action to create signed commits and tags via the GitHub API, shown as verified.",
-  "author": "Simon Lepel <simbo@simbo.de> (http://simbo.de)",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Simon Lepel <simbo@simbo.de> (https://simbo.de)",
   "license": "MIT",
-  "homepage": "http://github.com/simbo-actions/signed-commit",
-  "bugs": "http://github.com/simbo-actions/actions/issues",
+  "homepage": "https://github.com/simbo-actions/signed-commit#readme",
+  "bugs": "https://github.com/simbo-actions/actions/issues",
   "repository": "github:simbo-actions/actions",
   "actionRepository": "simbo-actions/signed-commit",
   "engines": {
     "node": ">=24"
   },
-  "private": true,
   "type": "module",
   "scripts": {
     "build": "rollup -c",

@@ -1,6 +1,7 @@
 packages:
   - actions/*
   - changelog
+  - tooling
 
 engineStrict: true
 

@@ -18,6 +18,7 @@ it gives a workflow both the token and the identity of the app.
 - [Inputs](#inputs)
 - [Outputs](#outputs)
 - [Token and Permissions](#token-and-permissions)
+- [Security](#security)
 - [Limitations](#limitations)
 
 ## How It Works
@@ -157,6 +158,24 @@ None of the outputs is secret.
 - The API URL follows the runner (`GITHUB_API_URL`), so the action also works
   with GitHub Enterprise Server.
 
+## Security
+
+- **No credentials:** the action reads a public user and needs no app key and no
+  permissions. It never handles a private key.
+- **Inputs:** the app slug is validated; the action checks that the user found
+  is the bot user of exactly this app.
+- **Outputs:** none of the outputs is secret.
+- **Verifying a release:** pin the action by the commit SHA of a release tag.
+  Every release has an archive with a `SHA256SUMS` file and build provenance:
+
+  ```sh
+  sha256sum --check SHA256SUMS
+  gh attestation verify github-app-bot-user-vX.Y.Z.tar.gz --repo simbo-actions/actions
+  ```
+
+- **Reporting vulnerabilities:** privately, see the
+  [security policy](https://github.com/simbo-actions/actions/blob/main/SECURITY.md).
+
 ## Limitations
 
 - The action does not create tokens; use `actions/create-github-app-token` for
@@ -178,4 +197,4 @@ None of the outputs is secret.
 
 ## License
 
-[MIT © Simon Lepel](http://simbo.mit-license.org/2025/)
+[MIT © Simon Lepel](https://simbo.mit-license.org/@2026)

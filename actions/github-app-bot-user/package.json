@@ -1,17 +1,17 @@
 {
   "name": "github-app-bot-user",
-  "version": "0.0.0",
   "description": "A GitHub Action to get the bot user of a GitHub App: user ID, login, name, and email for Git.",
-  "author": "Simon Lepel <simbo@simbo.de> (http://simbo.de)",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Simon Lepel <simbo@simbo.de> (https://simbo.de)",
   "license": "MIT",
-  "homepage": "https://github.com/simbo-actions/github-app-bot-user",
+  "homepage": "https://github.com/simbo-actions/github-app-bot-user#readme",
   "bugs": "https://github.com/simbo-actions/actions/issues",
   "repository": "github:simbo-actions/actions",
+  "actionRepository": "simbo-actions/github-app-bot-user",
   "engines": {
     "node": ">=24"
   },
-  "actionRepository": "simbo-actions/github-app-bot-user",
-  "private": true,
   "type": "module",
   "scripts": {
     "build": "rollup -c",

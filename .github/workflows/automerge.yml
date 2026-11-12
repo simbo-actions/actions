@@ -3,9 +3,10 @@ name: Auto-merge 🤖
 #-------------------------------------------------------------------------------
 # "Auto-merge" Workflow
 #
-# Merges Dependabot pull requests that only update simbo-actions/* actions and
-# only change files under .github/, once the required checks pass.
-# Assigns all other Dependabot pull requests to the owner.
+# Merges low-risk Dependabot pull requests once the required checks pass:
+# updates of simbo-actions/* actions, and minor or patch updates of actions by
+# GitHub (actions/*, github/*), if only files under .github/ change.
+# Assigns all other Dependabot pull requests to the owner for review.
 #-------------------------------------------------------------------------------
 
 on: pull_request
@@ -52,26 +53,35 @@ jobs:
           PR: ${{ github.event.pull_request.html_url }}
           ECOSYSTEM: ${{ steps.meta.outputs.package-ecosystem }}
           DEPENDENCIES: ${{ steps.meta.outputs.dependency-names }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
         run: |
           set -euo pipefail
 
           result=true
 
+          # Only GitHub Actions updates
           if [[ "$ECOSYSTEM" != 'github_actions' ]]; then
             result=false
           fi
 
+          # Only simbo-actions/* (any update) or actions/* and github/* (minor or patch)
           IFS=',' read -ra names <<< "$DEPENDENCIES"
           if [[ ${#names[@]} -eq 0 ]]; then
             result=false
           fi
           for name in "${names[@]}"; do
             name="$(echo "$name" | xargs)"
-            if [[ "$name" != simbo-actions/* ]]; then
-              result=false
+            if [[ "$name" == simbo-actions/* ]]; then
+              continue
             fi
+            if [[ "$name" == actions/* || "$name" == github/* ]] \
+              && [[ "$UPDATE_TYPE" == 'version-update:semver-minor' || "$UPDATE_TYPE" == 'version-update:semver-patch' ]]; then
+              continue
+            fi
+            result=false
           done
 
+          # Only files under .github/
           if gh pr diff "$PR" --name-only | grep -qv '^\.github/'; then
             result=false
           fi

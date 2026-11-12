@@ -1,11 +1,11 @@
 # 🔄 Simbo's Actions — Changelogs
 
-Every action has independent semantic versioning and its own changelog.
+Every action is versioned independently and has its own changelog, generated
+from changesets:
 
-See `./actions/<ACTION>/CHANGELOG.md`.
+- in the monorepo: `actions/<name>/CHANGELOG.md`,
+- in the action repository: `CHANGELOG.md` and the GitHub releases, for example
+  [`simbo-actions/signed-commit/releases`](https://github.com/simbo-actions/signed-commit/releases).
 
-The changelog for the monorepo itself is managed via the `changelog` package and
-can be found here:
-
-👉
-[`./changelog/CHANGELOG.md`](https://github.com/simbo-actions/actions/changelog/CHANGELOG.md)
+The changelog of the monorepo itself is
+[`changelog/CHANGELOG.md`](changelog/CHANGELOG.md).

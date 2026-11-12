@@ -8,6 +8,8 @@ name: Checks 🧐
 # Requires a changeset in pull requests, except for Dependabot pull requests
 # that only change workflows.
 # Dispatches the release workflow if changesets are present on main branch.
+# After a merged Dependabot update of npm dependencies, adds the changeset for
+# the affected actions, which then triggers the release.
 #-------------------------------------------------------------------------------
 
 on:
@@ -53,6 +55,22 @@ jobs:
         with:
           fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
           persist-credentials: false
+
+      - name: 🔎 Lint Workflows
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          set -euo pipefail
+
+          # Download actionlint and verify its checksum; shellcheck is preinstalled on the runner.
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location --output "${RUNNER_TEMP}/${archive}" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  ${RUNNER_TEMP}/${archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "${RUNNER_TEMP}/${archive}" --directory "$RUNNER_TEMP" actionlint
+
+          "${RUNNER_TEMP}/actionlint" -color -shellcheck "$(command -v shellcheck)"
 
       - name: 🚛 Install pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -124,9 +142,11 @@ jobs:
             exit 0
           fi
 
+          # Dependabot updates of workflows need no release. Dependabot updates of npm
+          # dependencies get their changeset after the merge (job "dependency-changeset").
           if [[ "$PR_AUTHOR" == 'dependabot[bot]' ]] \
-            && ! git diff --name-only "$range" | grep -qv '^\.github/workflows/'; then
-            echo 'Dependabot pull request changes only workflows; no changeset required.'
+            && ! git diff --name-only "$range" | grep -qvE '^(\.github/workflows/.+|(.+/)?package\.json|pnpm-lock\.yaml)$'; then
+            echo 'Dependabot pull request changes only workflows or dependencies; no changeset required.'
             exit 0
           fi
 
@@ -157,3 +177,63 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+  dependency-changeset:
+    needs: checks
+    if: >
+      github.event_name == 'push' &&
+      github.ref_name == 'main' &&
+      github.event.head_commit.author.username == 'dependabot[bot]' &&
+      needs.checks.outputs.has-changesets == 'false'
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      contents: read
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 📦 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 👷 Build Signed Commit Action
+        run: pnpm run --filter signed-commit build
+
+      - name: 📝 Create Changeset for Dependency Updates
+        id: changeset
+        env:
+          SHA: ${{ github.sha }}
+        run: node tooling/bin/create-dependency-changeset.ts "$SHA"
+
+      - name: 🔑 Get App Token
+        id: app-token
+        if: steps.changeset.outputs.created == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: 💾 Commit Changeset
+        if: steps.changeset.outputs.created == 'true'
+        uses: ./actions/signed-commit
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          branch: main
+          message: 'chore(deps): add changeset for dependency updates'
+          sync: false
