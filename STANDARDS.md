@@ -1,11 +1,16 @@
 # 🔄 Simbo's Actions — Standards
 
 The actions in this repository are built for production use in
-security-conscious organizations: least privilege, a pinned and verified supply
-chain, tested behavior, complete documentation, and reproducible releases.
+security-conscious organizations:
 
-This document is the measure every action and every change is held against. It
-has two parts: the [core](#core), which applies to everything in this
+- least privilege
+- a pinned and verified supply chain
+- tested behavior
+- complete documentation
+- reproducible releases
+
+This document is the measure every action and every change is held against.  
+It has two parts: the [core](#core), which applies to everything in this
 repository, and the [profile for GitHub Actions](#profile-github-actions).
 
 - **Required** means: every published action meets it, from version 1.0.0 on.
@@ -20,10 +25,12 @@ repository, and the [profile for GitHub Actions](#profile-github-actions).
   [ARCHITECTURE.md](ARCHITECTURE.md).
 
 The standard follows established frameworks without claiming certification:
-[OpenSSF Best Practices](https://www.bestpractices.dev/),
-[OpenSSF Scorecard](https://scorecard.dev/),
-[SLSA Build Level 2](https://slsa.dev/spec/v1.0/levels), and GitHub's
-[security hardening for GitHub Actions](https://docs.github.com/en/actions/reference/security/secure-use).
+
+- [OpenSSF Best Practices](https://www.bestpractices.dev/)
+- [OpenSSF Scorecard](https://scorecard.dev/)
+- [SLSA Build Level 2](https://slsa.dev/spec/v1.0/levels)
+- GitHub's
+  [security hardening for GitHub Actions](https://docs.github.com/en/actions/reference/security/secure-use)
 
 ## Contents
 
@@ -133,21 +140,34 @@ Required:
 Required:
 
 - Every action has a README that starts with a note that the action is developed
-  in this monorepo and published automatically, and has these sections: purpose
-  (introduction), **How It Works**, **Usage** (pinned by SHA), **Examples**,
-  **Inputs**, **Outputs**, **Token and Permissions**, **Security**,
-  **Limitations**, **License**. Checked in CI (`pnpm run check:actions`).
+  in this monorepo and published automatically.  
+  It has these sections, checked in CI (`pnpm run check:actions`):
+  - purpose (introduction)
+  - **How It Works**
+  - **Usage** (pinned by SHA)
+  - **Examples**
+  - **Inputs**
+  - **Outputs**
+  - **Token and Permissions**
+  - **Security**
+  - **Limitations**
+  - **License**
 - Every change to an action comes with a changeset; the changelog and the
   release notes are generated from it.
 - Architecture, development, and contribution are documented in
   [ARCHITECTURE.md](ARCHITECTURE.md), [DEVELOPMENT.md](DEVELOPMENT.md), and
   [CONTRIBUTING.md](CONTRIBUTING.md).
+- Documentation is easy to scan:
+  - one topic per paragraph;
+  - sentences that belong together but stand on their own each start a new line,
+    with a hard line break (two trailing spaces);
+  - enumerations of three or more items are lists.
 
 ### Dependencies
 
-A dependency becomes part of every action that bundles it. New dependencies are
-added only if they meet these criteria; the reasons are noted in the pull
-request.
+A dependency becomes part of every action that bundles it.  
+New dependencies are added only if they meet these criteria; the reasons are
+noted in the pull request.
 
 Required:
 
@@ -229,8 +249,10 @@ Required:
 | Composite action            | Only to compose other actions (`uses:`), without own logic | Workflow tests in `checks` for every input, output, and error case |
 | Docker or shell action      | Not used                                                   | –                                                                  |
 
-A composite action passes values between other actions. As soon as it would
-branch, compute, or parse, that logic belongs into a tested Node.js action.
+A composite action passes values between other actions.  
+As soon as it would branch, compute, or parse, that logic belongs into a tested
+Node.js action.
+
 Unavoidable glue in `run:` steps is a few lines, gets its inputs via `env`, and
 uses `set -euo pipefail`.
 

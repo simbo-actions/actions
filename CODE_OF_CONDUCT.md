@@ -10,6 +10,7 @@ discussions, and any other project space.
 ## Reporting
 
 Report unacceptable behavior to the maintainer at
-[simbo@simbo.de](mailto:simbo@simbo.de). All reports are handled confidentially.
+[simbo@simbo.de](mailto:simbo@simbo.de).  
+All reports are handled confidentially.  
 The maintainer decides on consequences as described in the Contributor
 Covenant's enforcement guidelines.

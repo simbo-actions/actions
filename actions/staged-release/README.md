@@ -1,20 +1,22 @@
 # Staged Release _(GitHub Action)_
 
 A GitHub Action to create a complete GitHub release: draft, assets, then
-publish. Works with immutable releases.
+publish.  
+Works with immutable releases.
 
 > [!NOTE]  
 > Developed and maintained in the monorepo
 > [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
-> published here automatically. Issues, questions, and contributions go to the
-> monorepo.
+> published here automatically.  
+> Issues, questions, and contributions go to the monorepo.
 
 Most release actions publish a release first and upload the assets afterwards.
+
 With
 [immutable releases](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/immutable-releases),
 uploads to a published release are rejected, and even without them, consumers
-may see a release before its assets exist. This action publishes a release only
-when it is complete.
+may see a release before its assets exist.  
+This action publishes a release only when it is complete.
 
 ## Contents
 
@@ -30,22 +32,25 @@ when it is complete.
 
 ## How It Works
 
-1. Resolves the `assets` patterns to files. A pattern without a match fails the
-   action before anything changes.
-2. Checks that the tag exists. The action never creates tags, so a release
-   cannot accidentally point to another commit.
-3. Removes leftover **draft** releases of the tag from a previous failed run. If
-   the tag is already **released**, the action fails.
+1. Resolves the `assets` patterns to files.  
+   A pattern without a match fails the action before anything changes.
+2. Checks that the tag exists.  
+   The action never creates tags, so a release cannot accidentally point to
+   another commit.
+3. Removes leftover **draft** releases of the tag from a previous failed run.  
+   If the tag is already **released**, the action fails.
 4. Creates the release as draft, with title and release notes.
 5. Uploads all assets to the draft.
 6. Publishes the release (or leaves it as draft with `publish: false`).
 
 ## Usage
 
-Pin the action by commit SHA, with the version as a comment. This is
-recommended: a SHA cannot change. For convenience, the floating tag `@vX`
-follows the latest stable release of major version `X`; it moves only forward
-and only by the release process, but it can change.
+Pin the action by commit SHA, with the version as a comment.  
+This is recommended: a SHA cannot change.
+
+For convenience, the floating tag `@vX` follows the latest stable release of
+major version `X`.  
+It moves only forward and only by the release process, but it can change.
 
 ```yaml
 jobs:
@@ -139,8 +144,9 @@ jobs:
 | `prerelease`        | Whether the release is a prerelease                                                 | false    | `false`                    |
 | `publish`           | Whether to publish the release; with `false`, it stays a draft                      | false    | `true`                     |
 
-Use either `body` or `body-file`. Asset names are the file names; two assets
-with the same name fail the action. Glob patterns support `*`, `**`, and `?`.
+- Use either `body` or `body-file`.
+- Asset names are the file names; two assets with the same name fail the action.
+- Glob patterns support `*`, `**`, and `?`.
 
 ## Outputs
 
@@ -163,10 +169,12 @@ The tag must exist before the action runs, for example created by a push or by
 ## Re-Runs and Failures
 
 - If the action fails after creating the draft, for example while uploading an
-  asset, the draft stays. A re-run removes it and starts again.
+  asset, the draft stays.  
+  A re-run removes it and starts again.
 - If the tag is already released, the action fails instead of changing the
-  release. With immutable releases, a published release cannot be changed
-  anyway; a correction is a new version.
+  release.  
+  With immutable releases, a published release cannot be changed anyway; a
+  correction is a new version.
 - API requests that hit a rate limit wait as long as GitHub asks for and are
   retried up to 4 times (`@octokit/plugin-throttling`).
 
@@ -178,7 +186,7 @@ The tag must exist before the action runs, for example created by a push or by
   uploaded.
 - **Token:** used only for the GitHub API; restrict it to the target repository
   and `contents: write`.
-- **Verifying a release:** pin the action by the commit SHA of a release tag.
+- **Verifying a release:** pin the action by the commit SHA of a release tag.  
   Every release has an archive with a `SHA256SUMS` file and build provenance:
 
   ```sh
@@ -194,18 +202,6 @@ The tag must exist before the action runs, for example created by a push or by
 - The action does not create or move tags.
 - Assets are uploaded with the content type `application/octet-stream`.
 - Existing published releases are never changed.
-
-## Source Repository
-
-> [!NOTE]
->
-> Only the build artifacts for this action are provided in the repository
-> [`simbo-actions/staged-release`](https://github.com/simbo-actions/staged-release).
->
-> The source repository for this action is
-> [`simbo-actions/actions`](https://github.com/simbo-actions/actions).
->
-> 💁‍♂️ For issues and contributions, please refer to the source repository.
 
 ## License
 

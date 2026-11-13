@@ -1,8 +1,10 @@
 # 🔄 Simbo's Actions — Maintaining
 
-Runbooks for the recurring tasks of maintainers. Every runbook has a trigger and
-steps to follow. For how things work, see [ARCHITECTURE.md](ARCHITECTURE.md);
-for the requirements, see [STANDARDS.md](STANDARDS.md).
+Runbooks for the recurring tasks of maintainers.  
+Every runbook has a trigger and steps to follow.
+
+- How things work: [ARCHITECTURE.md](ARCHITECTURE.md)
+- The requirements: [STANDARDS.md](STANDARDS.md)
 
 Commands are run from the repository root unless noted otherwise.
 
@@ -36,8 +38,9 @@ Low-risk updates are merged automatically (see
 2. For every update, read the release notes or changelog of the new versions.
    Look for breaking changes, new permissions, new network access, and
    unexpected maintainers.
-3. Wait for `checks`. If it fails, fix the cause on the branch or close the pull
-   request with a reason.
+3. Wait for `checks`.  
+   If it fails, fix the cause on the branch or close the pull request with a
+   reason.
 4. Merge with squash.
 5. For npm updates, the job `dependency-changeset` adds the changeset after the
    merge; check that the release starts.
@@ -69,14 +72,16 @@ not allowed.
 ## Secret Found
 
 Gitleaks reports a potential secret, as annotation in `checks` or in the
-pre-commit hook. The value is redacted everywhere.
+pre-commit hook.  
+The value is redacted everywhere.
 
 1. Find the location in the annotation or the job summary of `checks`, or run
    `gitleaks git -v --redact` locally.
 2. **Real secret:** revoke or rotate it at its provider **first**; a pushed
-   secret is compromised, also in a fork. Then remove it from the code. If it
-   reached `main`, check the audit log and the provider for misuse, and treat
-   the event as a [security report](#security-reports).
+   secret is compromised, also in a fork.  
+   Then remove it from the code.  
+   If it reached `main`, check the audit log and the provider for misuse, and
+   treat the event as a [security report](#security-reports).
 3. **False positive:** add the fingerprint that `gitleaks git -v` prints to
    `.gitleaksignore`, with a comment why, in the same pull request.
 
@@ -90,6 +95,7 @@ pre-commit hook. The value is redacted everywhere.
 ## Pinned Tools
 
 Dependabot does not update tools downloaded by workflows or built into actions.
+
 osv-scanner is not pinned here: Google's workflows bring it, and Dependabot
 updates them.
 
@@ -98,7 +104,8 @@ updates them.
 | actionlint | `.github/workflows/checks.yml` (Linux amd64)                                                                                   | [rhysd/actionlint](https://github.com/rhysd/actionlint/releases)   |
 | Gitleaks   | [`actions/gitleaks-scan/src/gitleaks-scan-constants.ts`](actions/gitleaks-scan/src/gitleaks-scan-constants.ts) (all platforms) | [gitleaks/gitleaks](https://github.com/gitleaks/gitleaks/releases) |
 
-1. Check the latest release. Use it only if it is at least 7 days old.
+1. Check the latest release.  
+   Use it only if it is at least 7 days old.
 2. Read the release notes.
 3. Take the SHA-256 checksums from the release's checksum file, for example:
 
@@ -107,8 +114,8 @@ updates them.
    ```
 
 4. Update the version and the checksums where the tool is pinned.
-5. For Gitleaks, add a patch changeset for `gitleaks-scan`; the new version
-   reaches all repositories with the next release of the action.
+5. For Gitleaks, add a patch changeset for `gitleaks-scan`.  
+   The new version reaches all repositories with the next release of the action.
 6. Update the local installations
    (`brew upgrade actionlint gitleaks osv-scanner shellcheck`).
 
@@ -135,31 +142,39 @@ new actions.
 1. Open the failed run of `release` or `publish` and find the failing step.
 2. **Before the release commit:** fix the cause on `main`; the next push with
    the changesets starts the release again.
-3. **After the tags were created:** re-run the failed publish run. Publishing is
-   idempotent: settings are applied again, an unchanged content creates no
-   commit, and leftover draft releases are removed.
-4. **If a version must be withdrawn:** this is possible only while immutable
-   releases are off. Delete the release and the tags (`<action>/vX.Y.Z` in the
-   monorepo, `vX.Y.Z` in the action repository) as organization admin. With
-   immutable releases on, publish a new patch version instead.
+3. **After the tags were created, with a cause outside the code:** for example a
+   timeout or a missing permission. Fix the cause and re-run the failed publish
+   run.  
+   Publishing is idempotent: settings are applied again, an unchanged content
+   creates no commit, and leftover draft releases are removed.
+4. **After the tags were created, with a cause in the code:** a re-run fails
+   again, because publish uses the actions and workflows at the release tag. Fix
+   the cause on `main` and release a new patch version.
+5. **If a version must be withdrawn:** this is possible only while immutable
+   releases are off.  
+   Delete the release and the tags (`<action>/vX.Y.Z` in the monorepo, `vX.Y.Z`
+   in the action repository) as organization admin.  
+   With immutable releases on, publish a new patch version instead.
 
 ## Settings of Action Repositories
 
 1. Change
    [`.github/managed-repository-settings.json`](.github/managed-repository-settings.json)
    in a pull request, with a changeset (`--empty` if no action changes).
-2. Every following publish applies the settings. To apply them to all action
-   repositories at once, run `apply-repository-settings` with `dry-run: true`
-   first and check the changes.
+2. Every following publish applies the settings.  
+   To apply them to all action repositories at once, run
+   `apply-repository-settings` with `dry-run: true` first and check the changes.
 3. Document the change in
    [ARCHITECTURE.md](ARCHITECTURE.md#managing-action-repositories).
 
 ## Organization Profile
 
-1. Change the files in [`organization/`](organization/README.md); the list of
-   actions in `organization/profile/README.md` is updated with
-   `pnpm run actions-list`.
-2. Merge to `main`. The workflow `publish-organization` publishes the content to
+1. Change the files in [`organization/`](organization/README.md).  
+   The list of actions in `organization/profile/README.md` is generated: run
+   `pnpm run actions-list` after changing an action's title or description; the
+   release commit updates the versions.
+2. Merge to `main`.  
+   The workflow `publish-organization` publishes the content to
    `simbo-actions/.github`.
 3. Check the profile on
    [github.com/simbo-actions](https://github.com/simbo-actions).
@@ -195,9 +210,11 @@ Yearly rotation:
    check that it works.
 4. Delete the old key in the app settings.
 
-Possibly leaked key: delete the key in the app settings **first**, then follow
-the steps above, and check the audit log and the recent workflow runs for
-unexpected activity.
+Possibly leaked key:
+
+1. Delete the key in the app settings **first**.
+2. Follow the steps of the yearly rotation.
+3. Check the audit log and the recent workflow runs for unexpected activity.
 
 ## App Permissions
 
@@ -222,6 +239,7 @@ When the GitHub Actions runner offers a new Node.js runtime:
 ## New Major Version
 
 1. Describe the breaking changes and the migration in the changeset.
-2. Update the supported versions in [SECURITY.md](SECURITY.md) and
-   [SUPPORT.md](SUPPORT.md).
-3. List the new version in the Marketplace.
+2. List the new version in the Marketplace.
+
+[SECURITY.md](SECURITY.md) and [SUPPORT.md](SUPPORT.md) describe the supported
+versions as a rule (the latest major version) and need no update.

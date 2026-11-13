@@ -3,9 +3,13 @@
 A family of GitHub Actions, each in its own repository, built and released
 automatically, signed and secure.
 
-Built for production use in security-conscious organizations: least privilege, a
-pinned and verified supply chain, tested behavior, complete documentation, and
-reproducible releases with build provenance.
+Built for production use in security-conscious organizations:
+
+- least privilege
+- a pinned and verified supply chain
+- tested behavior
+- complete documentation
+- reproducible releases with build provenance
 
 ## Actions
 
@@ -108,13 +112,13 @@ Pin an action by the commit SHA of a release tag, with the version as a comment:
 - uses: simbo-actions/<action>@<SHA> # vX.Y.Z
 ```
 
-For convenience, `@vX` follows the latest stable release of a major version. It
-moves only forward, only by the release process, but it can change; a SHA pin
+For convenience, `@vX` follows the latest stable release of a major version.  
+It moves only forward, only by the release process, but it can change; a SHA pin
 cannot.
 
 All actions are developed in the monorepo
 [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
-published to their repositories automatically. Issues, questions, and
-contributions go there; see its
+published to their repositories automatically.  
+Issues, questions, and contributions go there; see its
 [standards](https://github.com/simbo-actions/actions/blob/main/STANDARDS.md) and
 [security policy](https://github.com/simbo-actions/actions/blob/main/SECURITY.md).

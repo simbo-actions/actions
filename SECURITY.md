@@ -18,26 +18,28 @@ What to expect:
 - The maintainer aims to acknowledge a report within 7 days and keeps you
   informed about the progress.
 - Fixes are released as new versions; a security advisory is published with the
-  fix. You are credited, unless you prefer not to be.
+  fix.  
+  You are credited, unless you prefer not to be.
 - Please give a reasonable time to fix the issue before disclosing it.
 
 ## Supported Versions
 
 Security fixes are provided for the **latest major version** of every published
-action, as a new release of that version. Older major versions are not
-supported.
+action, as a new release of that version.  
+Older major versions are not supported.
 
 ## Security Practices
 
-The actions are built and released according to [STANDARDS.md](STANDARDS.md). In
-short:
+The actions are built and released according to [STANDARDS.md](STANDARDS.md).  
+In short:
 
 - Tokens with least privilege, restricted to the repositories a step needs.
 - No secrets in pull request workflows.
-- All third-party actions pinned by commit SHA; dependency updates with a
-  cooldown and review by risk.
-- Verified commits and protected tags; releases only from CI, with checksums and
-  build provenance; immutable releases.
+- All third-party actions pinned by commit SHA.
+- Dependency updates with a cooldown and review by risk.
+- Verified commits and protected tags.
+- Releases only from CI, with checksums and build provenance; immutable
+  releases.
 - Secret scanning with push protection, code scanning, and Dependabot alerts.
 - All dependencies scanned with osv-scanner for vulnerabilities and malicious
   packages, on every pull request, every push to `main`, and weekly.

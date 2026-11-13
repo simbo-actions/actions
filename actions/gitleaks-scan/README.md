@@ -7,13 +7,17 @@ checksum-verified binary, in one step.
 > [!NOTE]  
 > Developed and maintained in the monorepo
 > [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
-> published here automatically. Issues, questions, and contributions go to the
-> monorepo.
+> published here automatically.  
+> Issues, questions, and contributions go to the monorepo.
 
 Gitleaks is an open source tool (MIT) that finds secrets such as tokens and
-private keys in Git repositories. This action runs it as a single step: no
-license key, no secret, no Docker image, and the same in personal and
-organization repositories, including pull requests from forks.
+private keys in Git repositories.
+
+This action runs it as a single step:
+
+- no license key, no secret, no Docker image;
+- the same in personal and organization repositories, including pull requests
+  from forks.
 
 ## Contents
 
@@ -33,22 +37,26 @@ organization repositories, including pull requests from forks.
    8.30.1) from
    [github.com/gitleaks/gitleaks](https://github.com/gitleaks/gitleaks/releases)
    and verifies its SHA-256 checksum against the checksums built into this
-   action. A mismatch fails the action before anything runs.
+   action.  
+   A mismatch fails the action before anything runs.
 2. Adds the binary to the runner's tool cache.
-3. Scans the whole Git history of the repository with `gitleaks git --redact`. A
-   shallow clone is scanned too, with a warning that only its commits are
+3. Scans the whole Git history of the repository with `gitleaks git --redact`.  
+   A shallow clone is scanned too, with a warning that only its commits are
    covered.
 4. Reports every finding as error annotation at its file and line, so that it
-   shows in the pull request diff, and lists the findings in the job summary.
+   shows in the pull request diff, and lists the findings in the job summary.  
    Secrets are redacted; author names and emails are left out.
-5. Fails if anything was found. The SARIF report stays available as output.
+5. Fails if anything was found.  
+   The SARIF report stays available as output.
 
 ## Usage
 
-Pin the action by commit SHA, with the version as a comment. This is
-recommended: a SHA cannot change. For convenience, the floating tag `@vX`
-follows the latest stable release of major version `X`; it moves only forward
-and only by the release process, but it can change.
+Pin the action by commit SHA, with the version as a comment.  
+This is recommended: a SHA cannot change.
+
+For convenience, the floating tag `@vX` follows the latest stable release of
+major version `X`.  
+It moves only forward and only by the release process, but it can change.
 
 ```yaml
 jobs:
@@ -80,7 +88,7 @@ jobs:
 
 ### Upload to Code Scanning
 
-The findings show as annotations and in the job summary without further steps.
+The findings show as annotations and in the job summary without further steps.  
 To track them as code scanning alerts as well, upload the SARIF report:
 
 ```yaml
@@ -113,7 +121,8 @@ jobs:
 | `config`            | A Gitleaks configuration file, relative to `working-directory`; see [below](#findings-and-false-positives) | false    |         |
 
 The Gitleaks version is intentionally not an input: only the pinned and verified
-version runs. A new Gitleaks version comes with a new release of this action.
+version runs.  
+A new Gitleaks version comes with a new release of this action.
 
 ## Outputs
 
@@ -124,33 +133,36 @@ version runs. A new Gitleaks version comes with a new release of this action.
 
 ## Token and Permissions
 
-The action needs no token. The job needs `contents: read` for the checkout.
+The action needs no token.  
+The job needs `contents: read` for the checkout.  
 Uploading the SARIF report to code scanning additionally needs
 `security-events: write`.
 
 ## Findings and False Positives
 
 - **A real secret:** revoke or rotate it first; it is compromised as soon as it
-  was pushed. Then remove it from the code. Removing it from the history needs a
-  rewrite and a force push.
+  was pushed.  
+  Then remove it from the code.  
+  Removing it from the history needs a rewrite and a force push.
 - **A false positive:** add its fingerprint to `.gitleaksignore` in the
-  repository root. Gitleaks prints the fingerprint for every finding when run
-  locally with `gitleaks git -v`.
+  repository root.  
+  Gitleaks prints the fingerprint for every finding when run locally with
+  `gitleaks git -v`.
 - **Configuration:** without `config`, Gitleaks uses `.gitleaks.toml` in the
-  repository root if it exists, otherwise its default rules. A configuration can
-  extend the default rules and add allowlists, see the
+  repository root if it exists, otherwise its default rules.  
+  A configuration can extend the default rules and add allowlists, see the
   [Gitleaks documentation](https://github.com/gitleaks/gitleaks#configuration).
 
 ## Security
 
 - **Verified binary:** the archive is checked against a SHA-256 checksum built
   into the action, on every run, also when a self-hosted runner has it cached.
-- **No secrets needed:** the action works without a token or license key, so it
-  also runs safely in pull requests from forks.
+- **No secrets needed:** the action works without a token or license key.  
+  So it also runs safely in pull requests from forks.
 - **Redacted output:** secrets never appear in the log, the annotations, or the
   summary; author names and emails are left out.
 - **Network:** the action only downloads the Gitleaks release from GitHub.
-- **Verifying a release:** pin the action by the commit SHA of a release tag.
+- **Verifying a release:** pin the action by the commit SHA of a release tag.  
   Every release has an archive with a `SHA256SUMS` file and build provenance:
 
   ```sh

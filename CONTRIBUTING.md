@@ -1,17 +1,19 @@
 # 🔄 Simbo's Actions — Contributing
 
-Thank you for your interest in contributing! Bug reports, ideas, documentation
-improvements, and code are all welcome. This document explains how to get
-involved and what to expect.
+Thank you for your interest in contributing!  
+Bug reports, ideas, documentation improvements, and code are all welcome.
+
+This document explains how to get involved and what to expect.
 
 ## Ways to Contribute
 
 - **Report a bug:** open an
   [issue](https://github.com/simbo-actions/actions/issues/new/choose) with the
-  template "Bug report". A minimal workflow that shows the problem helps most.
+  template "Bug report".  
+  A minimal workflow that shows the problem helps most.
 - **Suggest a feature:** open an issue with the template "Feature request" and
-  describe the use case. Please discuss larger changes in an issue before
-  writing code.
+  describe the use case.  
+  Please discuss larger changes in an issue before writing code.
 - **Improve the documentation:** typos, unclear sections, missing examples;
   small fixes can go directly into a pull request.
 - **Contribute code:** fix a bug or implement an agreed feature.
@@ -24,9 +26,9 @@ involved and what to expect.
   requirements, for example tests with at least 90 % coverage and least
   privilege for tokens.
 - Read [DEVELOPMENT.md](DEVELOPMENT.md) for setup, scripts, and tests.
-- The actions are developed in this repository only. The action repositories
-  (`simbo-actions/<name>`) contain build artifacts and do not accept pull
-  requests.
+- The actions are developed in this repository only.  
+  The action repositories (`simbo-actions/<name>`) contain build artifacts and
+  do not accept pull requests.
 
 ## Pull Requests
 
@@ -52,12 +54,14 @@ Checklist for every pull request:
 ## Review and Merge
 
 - Workflows of pull requests from forks need the maintainer's approval before
-  they run. Please be patient; this protects the repository.
-- The workflow `checks` must pass. It builds, tests, lints, checks licenses, and
-  requires a changeset.
-- Pull requests are merged with squash. The release follows automatically.
-- This project is maintained in spare time; reviews may take some days. See
-  [SUPPORT.md](SUPPORT.md).
+  they run.  
+  Please be patient; this protects the repository.
+- The workflow `checks` must pass.  
+  It builds, tests, lints, scans, checks licenses, and requires a changeset.
+- Pull requests are merged with squash.  
+  The release follows automatically.
+- This project is maintained in spare time; reviews may take some days.  
+  See [SUPPORT.md](SUPPORT.md).
 
 ## For Maintainers
 

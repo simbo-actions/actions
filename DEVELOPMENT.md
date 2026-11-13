@@ -1,8 +1,9 @@
 # 🔄 Simbo's Actions — Development
 
-How to set up, build, test, and change the actions in this monorepo. For how to
-contribute, see [CONTRIBUTING.md](CONTRIBUTING.md); for the requirements every
-change meets, see [STANDARDS.md](STANDARDS.md).
+How to set up, build, test, and change the actions in this monorepo.
+
+- How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md)
+- The requirements every change meets: [STANDARDS.md](STANDARDS.md)
 
 ## Contents
 
@@ -20,9 +21,9 @@ change meets, see [STANDARDS.md](STANDARDS.md).
 
 - macOS or Linux
 - [Node.js](https://nodejs.org/) as in [`.nvmrc`](.nvmrc), for example via
-  [nvm](https://github.com/nvm-sh/nvm). The major version matches the runtime
-  the GitHub Actions runner offers to actions (`node24`), see
-  [ARCHITECTURE.md](ARCHITECTURE.md#nodejs-runtime).
+  [nvm](https://github.com/nvm-sh/nvm).  
+  The major version matches the runtime the GitHub Actions runner offers to
+  actions (`node24`), see [ARCHITECTURE.md](ARCHITECTURE.md#nodejs-runtime).
 - [pnpm](https://pnpm.io/) 12 (the exact version is set in `package.json` under
   `packageManager`; [Corepack](https://nodejs.org/api/corepack.html) picks it
   up)
@@ -30,12 +31,13 @@ change meets, see [STANDARDS.md](STANDARDS.md).
 - [osv-scanner](https://github.com/google/osv-scanner), for
   `pnpm run check:vulnerabilities`: `brew install osv-scanner`
 - [Gitleaks](https://github.com/gitleaks/gitleaks), for `pnpm run check:secrets`
-  and the pre-commit hook: `brew install gitleaks`. Without it, the hook skips
-  the scan with a warning; CI scans anyway.
+  and the pre-commit hook: `brew install gitleaks`.  
+  Without it, the hook skips the scan with a warning; CI scans anyway.
 - [actionlint](https://github.com/rhysd/actionlint) and
   [ShellCheck](https://www.shellcheck.net/), for `pnpm run check:workflows`:
-  `brew install actionlint shellcheck`. actionlint checks the scripts in
-  workflows with ShellCheck only if it is installed.
+  `brew install actionlint shellcheck`.  
+  actionlint checks the scripts in workflows with ShellCheck only if it is
+  installed.
 
 ## Setup
 
@@ -48,7 +50,8 @@ pnpm run preflight
 ```
 
 `pnpm run preflight` installs, builds, tests, and runs all checks, like the
-workflow `checks` does. It ends with "All Checks Passed!".
+workflow `checks` does.  
+It ends with "All Checks Passed!".
 
 ## Repository Layout
 
@@ -61,7 +64,8 @@ workflow `checks` does. It ends with "All Checks Passed!".
 ├── tooling/               monorepo checks and helpers, with tests
 ├── .changeset/            pending changesets
 └── .github/
-    ├── workflows/         checks, release, publish, automerge
+    ├── workflows/         checks, release, publish, publish-organization,
+    │                      security, automerge
     └── dependabot.yml     dependency updates
 ```
 
@@ -73,7 +77,7 @@ Root scripts (run with `pnpm run <script>`):
 
 | Script                   | What it does                                                                  |
 | ------------------------ | ----------------------------------------------------------------------------- |
-| `preflight`              | Install, build, bundle, test, check, and scan everything                      |
+| `preflight`              | Install, build, bundle, test, check, scan, and lint workflows                 |
 | `each:build`             | Build all workspaces (Turbo)                                                  |
 | `each:bundle`            | Run post-build bundling steps                                                 |
 | `each:test`              | Run all tests with coverage                                                   |
@@ -83,7 +87,7 @@ Root scripts (run with `pnpm run <script>`):
 | `check:vulnerabilities`  | Scan all dependencies with osv-scanner (needs a local installation)           |
 | `check:secrets`          | Scan the Git history with Gitleaks (needs a local installation)               |
 | `check:workflows`        | Lint all workflows with actionlint and ShellCheck (needs local installations) |
-| `check:actions`          | Check `LICENSE.md`, README sections, and the monorepo note of every action    |
+| `check:actions`          | Check license files, README sections, Octokit copies, and license lists       |
 | `fix:format`             | Format all files with Prettier                                                |
 | `actions-list`           | Update the generated list of actions in the organization profile              |
 | `ncu:patch`, `ncu:minor` | Update dependencies interactively                                             |
@@ -110,12 +114,14 @@ Workspace scripts (run inside a workspace, or with
    ```
 
    Choose the affected actions and the version bump (patch, minor, major), and
-   describe the change for the changelog. For changes without a release, for
-   example to the docs of the monorepo, use `pnpm exec changeset --empty`.
+   describe the change for the changelog.  
+   For changes without a release, for example to the docs of the monorepo, use
+   `pnpm exec changeset --empty`.
 
 4. Commit with a [Conventional Commits](https://www.conventionalcommits.org/)
-   message, for example `fix(signed-commit): handle renamed files`. A Git hook
-   checks the message.
+   message with a scope, for example `fix(signed-commit): handle renamed files`
+   or `docs(repo): …`.  
+   A Git hook checks the message.
 5. Run `pnpm run preflight`.
 6. Open a pull request.
 
@@ -124,13 +130,14 @@ Workspace scripts (run inside a workspace, or with
 - Tests use [Vitest](https://vitest.dev/) and live next to the code as
   `*.test.ts`.
 - Every workspace enforces at least 90 % line, statement, function, and branch
-  coverage. `pnpm run test` fails below that.
+  coverage.  
+  `pnpm run test` fails below that.
 - Test behavior, not implementation: one test per behavior and per error case,
   with meaningful assertions.
 - Code that runs Git is tested against temporary Git repositories (see
   `actions/signed-commit/tests/git-fixture.ts`).
-- Code that calls the GitHub API is tested with a fake Octokit client; no test
-  calls the real API, except the smoke tests in the workflow `checks`.
+- Code that calls the GitHub API is tested with a fake Octokit client.  
+  No test calls the real API, except the smoke tests in the workflow `checks`.
 
 ## Adding an Action
 
@@ -140,11 +147,12 @@ Workspace scripts (run inside a workspace, or with
 2. Create `actions/<name>/`, for example by copying the structure of
    [`actions/github-app-bot-user`](actions/github-app-bot-user/README.md):
    `action.yml`, `package.json`, `src/`, `eslint.config.js`, `rollup.config.js`,
-   `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`. If the action
-   uses the GitHub API, copy `src/create-octokit.ts` and its test unchanged, and
-   create the API client with `createOctokit`.
+   `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`.  
+   If the action uses the GitHub API, copy `src/create-octokit.ts` and its test
+   unchanged, and create the API client with `createOctokit`.
 3. In `package.json`, set `name` to the folder name, a `description`, and
-   `"version": "0.0.0"`. The action is published to `simbo-actions/<name>`.
+   `"version": "0.0.0"`.  
+   The action is published to `simbo-actions/<name>`.
 4. Add `LICENSE.md` with the current year, and link it in the README as
    `https://simbo.mit-license.org/@<year>`.
 5. Start the README with the note about the monorepo (copy it from another
@@ -161,8 +169,8 @@ it automatically.
 ## Releases
 
 Releases are fully automated: a merged pull request with a changeset starts the
-release, and every released action is published to its repository. See
-[ARCHITECTURE.md](ARCHITECTURE.md#from-changeset-to-release).
+release, and every released action is published to its repository.  
+See [ARCHITECTURE.md](ARCHITECTURE.md#from-changeset-to-release).
 
 ## Troubleshooting
 

@@ -4,8 +4,8 @@ How this monorepo develops, releases, and publishes GitHub Actions, and how it
 manages the action repositories in the organization
 [`simbo-actions`](https://github.com/simbo-actions).
 
-For the quality and security requirements, see [STANDARDS.md](STANDARDS.md). For
-local development, see [DEVELOPMENT.md](DEVELOPMENT.md).
+- The quality and security requirements: [STANDARDS.md](STANDARDS.md)
+- Local development: [DEVELOPMENT.md](DEVELOPMENT.md)
 
 ## Contents
 
@@ -30,22 +30,35 @@ local development, see [DEVELOPMENT.md](DEVELOPMENT.md).
 ## Why
 
 A JavaScript action must ship its build in its repository, and consumers expect
-moving version tags like `v1`. Done by hand, every release means building,
-committing the build, tagging, creating the release, and moving the tags, for
-every action. That is tedious and error-prone, and it happens exactly where an
-attacker would like to slip in a change: a workflow that runs an action executes
-whatever its tag points to.
+moving version tags like `v1`.
 
-This monorepo automates all of it from one source. Actions are developed and
-tested here; a release builds them in CI, commits the build to the action
-repository as a verified commit, creates the version tag and the release with
-build provenance, and moves the floating tag forward. Only the release process
-writes to an action repository, with short-lived tokens of a GitHub App.
+Done by hand, every release means, for every action:
+
+- building
+- committing the build
+- tagging
+- creating the release
+- moving the tags
+
+That is tedious and error-prone, and it happens exactly where an attacker would
+like to slip in a change: a workflow that runs an action executes whatever its
+tag points to.
+
+This monorepo automates all of it from one source.  
+Actions are developed and tested here. A release builds them in CI and then:
+
+- commits the build to the action repository as a verified commit,
+- creates the version tag and the release with build provenance,
+- moves the floating tag forward.
+
+Only the release process writes to an action repository, with short-lived tokens
+of a GitHub App.
 
 ## Overview
 
 All actions are developed in one place and published to repositories of their
-own. Consumers only use the action repositories, pinned by commit SHA.
+own.  
+Consumers only use the action repositories, pinned by commit SHA.
 
 ```mermaid
 flowchart LR
@@ -82,8 +95,9 @@ flowchart LR
 | `simbo-actions/<action>` | Build artifacts of one action: `action.yml`, `dist/`, README, changelog, license | Only the publish workflow            |
 
 The action repositories have issues, pull requests, discussions, wiki, and
-projects disabled; every action README starts with a note that points to the
-monorepo. Issues and contributions go to the monorepo.
+projects disabled.  
+Every action README starts with a note that points to the monorepo; issues and
+contributions go there.
 
 Workspaces in the monorepo:
 
@@ -105,8 +119,8 @@ Every action in `actions/<name>/` is published to `simbo-actions/<name>`.
 
 ## From Changeset to Release
 
-Every change to an action comes with a changeset. A push to `main` with
-changesets starts the release automatically.
+Every change to an action comes with a changeset.  
+A push to `main` with changesets starts the release automatically.
 
 ```mermaid
 sequenceDiagram
@@ -129,8 +143,8 @@ sequenceDiagram
 ```
 
 The release commit and the tags are created via the GitHub API with
-[`signed-commit`](actions/signed-commit/README.md), so they are verified. The
-tag `changelog/vX.Y.Z` of the monorepo changelog starts no publish run.
+[`signed-commit`](actions/signed-commit/README.md), so they are verified.  
+The tag `changelog/vX.Y.Z` of the monorepo changelog starts no publish run.
 
 ## Publishing an Action
 
@@ -156,7 +170,8 @@ flowchart TD
 ```
 
 All third-party code (install, build) runs before the first app token is
-requested. Each later step requests its own token, see
+requested.  
+Each later step requests its own token, see
 [Identity, Tokens, and Permissions](#identity-tokens-and-permissions).
 
 Release assets and how to verify them:
@@ -173,12 +188,13 @@ gh attestation verify signed-commit-v1.0.0.tar.gz --repo simbo-actions/actions
 
 ## Managing Action Repositories
 
-The publish process owns the action repositories. It creates a missing
-repository and, on every publish, applies the settings in
+The publish process owns the action repositories.  
+It creates a missing repository and, on every publish, applies the settings in
 [`.github/managed-repository-settings.json`](.github/managed-repository-settings.json)
 with [`apply-repository-settings`](actions/apply-repository-settings/README.md):
-it compares them with the current state and corrects what differs. Manual
-changes in an action repository are reset by the next publish.
+it compares them with the current state and corrects what differs.
+
+Manual changes in an action repository are reset by the next publish.
 
 ```mermaid
 stateDiagram-v2
@@ -209,25 +225,31 @@ Settings applied to every action repository:
 ## Organization Repository
 
 The repository
-[`simbo-actions/.github`](https://github.com/simbo-actions/.github) holds the
-organization profile (`profile/README.md`, shown on
-[github.com/simbo-actions](https://github.com/simbo-actions)) and the default
-community files, which GitHub shows in every repository of the organization
-without its own: `CONTRIBUTING.md`, `SECURITY.md`, `SUPPORT.md`,
-`CODE_OF_CONDUCT.md`. They all point to this monorepo.
+[`simbo-actions/.github`](https://github.com/simbo-actions/.github) holds:
 
-The content lives in [`organization/`](organization/README.md). The workflow
-`publish-organization` publishes it on every change on `main`, the same way as
-an action: it creates the repository if missing, applies the settings of
-`.github/managed-repository-settings.json`, and commits the content with
-`signed-commit`. The list of actions in the profile is generated with
-`pnpm run actions-list`. The release workflow updates it in every release
-commit, so the profile shows the latest versions.
+- the organization profile (`profile/README.md`, shown on
+  [github.com/simbo-actions](https://github.com/simbo-actions));
+- the default community files, which GitHub shows in every repository of the
+  organization without its own: `CONTRIBUTING.md`, `SECURITY.md`, `SUPPORT.md`,
+  `CODE_OF_CONDUCT.md`. They all point to this monorepo.
+
+The content lives in [`organization/`](organization/README.md).  
+The workflow `publish-organization` publishes it on every change on `main`, the
+same way as an action:
+
+- it creates the repository if missing,
+- applies the settings of `.github/managed-repository-settings.json`,
+- and commits the content with `signed-commit`.
+
+The list of actions in the profile is generated with `pnpm run actions-list`.  
+The release workflow updates it in every release commit, so the profile shows
+the latest versions.
 
 ## GitHub App
 
 All automation that writes in the organization acts as one GitHub App,
-`simbo-actions[bot]`. No personal tokens are used.
+`simbo-actions[bot]`.  
+No personal tokens are used.
 
 | Aspect                 | Setting                                                                                                                                  |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -237,9 +259,11 @@ All automation that writes in the organization acts as one GitHub App,
 | Credentials            | Private key in the environment `release` (`SIMBO_ACTIONS_APP_PRIVATE_KEY`), client ID as variable (`SIMBO_ACTIONS_APP_CLIENT_ID`)        |
 | Rulesets               | Bypass actor in the rulesets of the monorepo and of every action repository, together with organization admins                           |
 
-Two levels limit what a token can do: the installation permissions are the
-maximum; every step requests only a part of them, for one repository, see
-[Identity, Tokens, and Permissions](#identity-tokens-and-permissions).
+Two levels limit what a token can do:
+
+- the installation permissions are the maximum;
+- every step requests only a part of them, for one repository, see
+  [Identity, Tokens, and Permissions](#identity-tokens-and-permissions).
 
 - A permission is added to the installation only together with the step that
   needs it, and documented here.
@@ -248,8 +272,9 @@ maximum; every step requests only a part of them, for one repository, see
 
 ## Identity, Tokens, and Permissions
 
-Release and publish run as the GitHub App `simbo-actions[bot]`. Its private key
-lives in the environment `release`, which only `main` and release tags can use.
+Release and publish run as the GitHub App `simbo-actions[bot]`.  
+Its private key lives in the environment `release`, which only `main` and
+release tags can use.  
 Every step requests its own token, restricted to one repository and the
 permissions it needs.
 
@@ -274,8 +299,9 @@ flowchart LR
   token -- "contents: write<br/>action repository" --> publish["signed-commit, staged-release,<br/>floating-version-tags"]
 ```
 
-Tokens are revoked at the end of each job. No Git credentials are stored in a
-checkout; commits and tags are created via the API.
+Tokens are revoked at the end of each job.  
+No Git credentials are stored in a checkout; commits and tags are created via
+the API.
 
 ## Trust Boundaries
 
@@ -286,8 +312,9 @@ checkout; commits and tags are created via the API.
 | Jobs with environment `release` on `main` or release tags | app key | monorepo and action repositories, per step |
 | Organization admins                                       | –       | everything, via ruleset bypass             |
 
-Fork pull requests need approval before their workflows run. The rulesets apply
-to all automation; only the app and organization admins bypass them.
+Fork pull requests need approval before their workflows run.  
+The rulesets apply to all automation; only the app and organization admins
+bypass them.
 
 ## Tags and Versions
 
@@ -300,14 +327,17 @@ to all automation; only the app and organization admins bypass them.
 
 - Every action is versioned independently with semantic versioning.
 - **Recommended:** consumers pin the commit SHA of a release tag, with the
-  version as a comment; Dependabot updates such pins. A SHA cannot change.
+  version as a comment; Dependabot updates such pins.  
+  A SHA cannot change.
 - **Convenience:** the floating tag `vX` points to the latest stable release of
-  major version `X`. It is moved only by the publish workflow, with
+  major version `X`.  
+  It is moved only by the publish workflow, with
   [`floating-version-tags`](actions/floating-version-tags/README.md), and only
-  forward: to the highest stable version of its line, never to a prerelease. A
-  re-run of an older release does not move it back.
+  forward: to the highest stable version of its line, never to a prerelease.  
+  A re-run of an older release does not move it back.
 - There are no `vX.Y` or `latest` tags.
-- Release and floating tags are protected by the ruleset "Release Tags" (`v*`).
+- Release and floating tags are protected by the ruleset "Release Tags"
+  (`v*`).  
   With immutable releases, a published version is final; the floating tag is a
   plain tag and keeps moving.
 
@@ -338,8 +368,9 @@ flowchart TD
 ```
 
 Updates of third-party actions and npm packages wait 7 days after their release
-(cooldown). Dependabot pull requests never receive secrets; the changeset for
-npm updates is created after the merge, in a job with the environment `release`.
+(cooldown).  
+Dependabot pull requests never receive secrets; the changeset for npm updates is
+created after the merge, in a job with the environment `release`.
 
 ## Vulnerability, Secret, and License Checks
 
@@ -349,68 +380,82 @@ npm updates is created after the merge, in a job with the environment `release`.
 | Licenses allowed anywhere                    | osv-scanner (`--licenses`)                                                                              | all dependencies                        | `checks`, weekly `security`, locally                                            |
 | Secrets                                      | [Gitleaks](https://github.com/gitleaks/gitleaks) via [`gitleaks-scan`](actions/gitleaks-scan/README.md) | the whole Git history                   | `checks` (pull requests, `main`), locally, pre-commit hook                      |
 | Licenses allowed in bundled code             | [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn)               | production dependencies of every action | `checks`, locally                                                               |
-| License file, README sections, monorepo note | `tooling/bin/check-actions.ts`                                                                          | every action                            | `checks`, locally                                                               |
+| License file, README sections, monorepo note | `tooling/bin/check-actions.ts`, which also checks the Octokit copies and the license lists              | every action                            | `checks`, locally                                                               |
 
-The osv-scanner workflows upload their results to code scanning; on pull
-requests, only findings that the pull request adds fail. The release is
-dispatched only after the scan on `main` passed. The scan job has no secrets and
-only `contents: read` and `security-events: write`. Remaining risk: Google's
-workflow runs a Docker image referenced by tag, not by digest; it is accepted
-because the job cannot write code or reach secrets (see
+The osv-scanner workflows upload their results to code scanning.  
+On pull requests, only findings that the pull request adds fail.  
+The release is dispatched only after the scan on `main` passed.
+
+The scan job has no secrets and only `contents: read` and
+`security-events: write`.  
+Remaining risk: Google's workflow runs a Docker image referenced by tag, not by
+digest. It is accepted because the job cannot write code or reach secrets (see
 [STANDARDS.md](STANDARDS.md), "strictness follows permissions").
 
 `gitleaks-scan` runs in the job `checks` and reports findings as annotations and
-in the job summary, with secrets redacted. False positives go into
-`.gitleaksignore`. The allowed licenses appear in `package.json` and in the
-workflows; `pnpm run check:actions` checks that they match.
+in the job summary, with secrets redacted.  
+False positives go into `.gitleaksignore`.
+
+The allowed licenses appear in `package.json` and in the workflows;
+`pnpm run check:actions` checks that they match.
 
 Accepted findings are listed in [`osv-scanner.toml`](osv-scanner.toml), each
-with a reason and an expiry date; security fixes of indirect dependencies are
-set as `overrides` in [`pnpm-workspace.yaml`](pnpm-workspace.yaml).
+with a reason and an expiry date.  
+Security fixes of indirect dependencies are set as `overrides` in
+[`pnpm-workspace.yaml`](pnpm-workspace.yaml).
 
 ## Rate Limits
 
 All API requests of release and publish run as `simbo-actions[bot]` and share
-its rate limits, also across parallel runs. All actions create their API client
-with `createOctokit` from `src/create-octokit.ts`, which uses the official
-plugin `@octokit/plugin-throttling`: requests that hit a rate limit wait as long
-as GitHub asks for and are retried up to 4 times.
+its rate limits, also across parallel runs.  
+Settings of action repositories are written only where they differ, to save
+write requests.
+
+All actions create their API client with `createOctokit` from
+`src/create-octokit.ts`, which uses the official plugin
+`@octokit/plugin-throttling`: requests that hit a rate limit wait as long as
+GitHub asks for and are retried up to 4 times.
 
 Every action that uses the GitHub API has its own identical copy of
-`create-octokit.ts`; `pnpm run check:actions` fails if the copies differ. The
-copies are temporary, until the client moves to a published package. Settings of
-action repositories are written only where they differ, to save write requests.
+`create-octokit.ts`; `pnpm run check:actions` fails if the copies differ.  
+The copies are temporary, until the client moves to a published package.
 
 ## Marketplace
 
 Every published action can be listed in the
-[GitHub Marketplace](https://github.com/marketplace?type=actions). Listing is a
-manual step after a release (edit the release, "Publish this Action to the
-GitHub Marketplace"); not every patch version needs to be listed. The names of
-the actions are free in the Marketplace, and the action repositories meet its
-requirements: one `action.yml` at the root, no workflow files.
+[GitHub Marketplace](https://github.com/marketplace?type=actions).  
+Listing is a manual step after a release (edit the release, "Publish this Action
+to the GitHub Marketplace"); not every patch version needs to be listed.
+
+The names of the actions are free in the Marketplace, and the action
+repositories meet its requirements: one `action.yml` at the root, no workflow
+files.
 
 ## Node.js Runtime
 
 The GitHub Actions runner sets the Node.js version: actions run with the runtime
 named in `action.yml` (`using: node24`), and the runner offers only specific
-versions. Development and CI use the same major version (`.nvmrc`, `engines`,
-`@types/node`), so that code and types match the runtime. When the runner offers
-a new runtime, all actions move to it together, each in a major version; see
-[MAINTAINING.md](MAINTAINING.md).
+versions.
+
+Development and CI use the same major version (`.nvmrc`, `engines`,
+`@types/node`), so that code and types match the runtime.  
+When the runner offers a new runtime, all actions move to it together, each in a
+major version; see [MAINTAINING.md](MAINTAINING.md).
 
 ## Design Decisions
 
 - **One publish run per tag.** Why: every action publishes independently and can
-  be re-run on its own. Large releases share rate limits; a matrix with
-  `max-parallel` is the option if that becomes a problem.
+  be re-run on its own.  
+  Large releases share rate limits; a matrix with `max-parallel` is the option
+  if that becomes a problem.
 - **Commits and tags via the API.** Why: commits by a GitHub App are verified
   only when GitHub creates them; tags created one by one each trigger their own
   event.
 - **Repositories created with `auto_init`.** Why: the initial commit is created
-  by GitHub and verified. Creating repositories from a template repository is an
-  option if they should start with fixed files; settings and rulesets would
-  still be applied by the publish process.
+  by GitHub and verified.  
+  Creating repositories from a template repository is an option if they should
+  start with fixed files; settings and rulesets would still be applied by the
+  publish process.
 - **One `LICENSE.md` per action.** Why: the copyright year is the year an action
   was first published; a shared file would change the year of older actions.
 - **Settings enforced on every publish.** Why: action repositories are
@@ -418,5 +463,12 @@ a new runtime, all actions move to it together, each in a major version; see
 - **The release process uses its own actions.** Why: every release exercises the
   actions it publishes; a broken action fails the release before consumers see
   it.
-- **No reusable workflows.** Why: actions are versioned, tested, and pinned like
-  any dependency; workflows stay in each repository and readable on their own.
+- **No reusable workflows of our own.** Why: actions are versioned, tested, and
+  pinned like any dependency; workflows stay in each repository and readable on
+  their own.  
+  Reusable workflows of trusted publishers are used in read-only jobs, such as
+  Google's osv-scanner workflows.
+- **Octokit client copied into every action.** Why: an unpublished shared
+  package has no version, changelog, or release of its own.  
+  The copies are identical, checked by `pnpm run check:actions`, until the
+  client moves to a published package.

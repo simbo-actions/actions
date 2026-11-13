@@ -6,13 +6,14 @@ permissions, and rulesets from a configuration file, writing only what differs.
 > [!NOTE]  
 > Developed and maintained in the monorepo
 > [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
-> published here automatically. Issues, questions, and contributions go to the
-> monorepo.
+> published here automatically.  
+> Issues, questions, and contributions go to the monorepo.
 
 Keep the settings of a repository as code: a JSON file describes the intended
 state, and the action compares it with the current state and changes only what
-differs. Run it on a schedule to correct manual changes, or after creating a
-repository to set it up.
+differs.  
+Run it on a schedule to correct manual changes, or after creating a repository
+to set it up.
 
 ## Contents
 
@@ -28,22 +29,26 @@ repository to set it up.
 
 ## How It Works
 
-1. Reads and validates the configuration. Unknown keys and wrong types fail the
-   action, so typos never pass silently.
+1. Reads and validates the configuration.  
+   Unknown keys and wrong types fail the action, so typos never pass silently.
 2. Reads the current settings of the repository.
-3. Compares each configured setting with its current value. Rulesets are matched
-   by name; the order of rules and bypass actors does not matter.
+3. Compares each configured setting with its current value.  
+   Rulesets are matched by name; the order of rules and bypass actors does not
+   matter.
 4. Writes only the settings that differ, and lists every change in the log and
-   the output `changes`. With `dry-run: true`, it only lists them.
+   the output `changes`.  
+   With `dry-run: true`, it only lists them.
 
 Settings that are not in the configuration are left unchanged.
 
 ## Usage
 
-Pin the action by commit SHA, with the version as a comment. This is
-recommended: a SHA cannot change. For convenience, the floating tag `@vX`
-follows the latest stable release of major version `X`; it moves only forward
-and only by the release process, but it can change.
+Pin the action by commit SHA, with the version as a comment.  
+This is recommended: a SHA cannot change.
+
+For convenience, the floating tag `@vX` follows the latest stable release of
+major version `X`.  
+It moves only forward and only by the release process, but it can change.
 
 ```yaml
 jobs:
@@ -139,8 +144,8 @@ Every section and every key is optional; only what is configured is applied.
 | `rulesets`           | Rulesets as in the [GitHub API](https://docs.github.com/en/rest/repos/rules), each with a unique `name` and an `enforcement` (`active`, `evaluate`, `disabled`)                                                                                                                                                                                                                                                                                                           |
 | `immutable_releases` | boolean                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
-- Rulesets are created if missing and updated if they differ. Rulesets that are
-  not configured are kept.
+- Rulesets are created if missing and updated if they differ.  
+  Rulesets that are not configured are kept.
 - `actor_id` of a bypass actor: the app ID for `Integration`, `1` for
   `OrganizationAdmin`, the role ID for `RepositoryRole` (for example `5` for
   admins).
@@ -235,11 +240,12 @@ Configure a new repository with shared settings and its own description:
 ## Token and Permissions
 
 The action needs **`administration: write`** on the repository, even to read
-some settings (security features, rulesets). Use a GitHub App installation token
-restricted to the repository; the `GITHUB_TOKEN` cannot get this permission.
+some settings (security features, rulesets).  
+Use a GitHub App installation token restricted to the repository; the
+`GITHUB_TOKEN` cannot get this permission.
 
-Request the token only for this step. Administration access allows much more
-than the action does.
+Request the token only for this step.  
+Administration access allows much more than the action does.
 
 ## Security
 
@@ -251,7 +257,7 @@ than the action does.
 - **Dry run:** `dry-run: true` shows all changes without applying them.
 - **Rate limits:** requests that hit a rate limit wait as long as GitHub asks
   for and are retried up to 4 times (`@octokit/plugin-throttling`).
-- **Verifying a release:** pin the action by the commit SHA of a release tag.
+- **Verifying a release:** pin the action by the commit SHA of a release tag.  
   Every release has an archive with a `SHA256SUMS` file and build provenance:
 
   ```sh
@@ -270,18 +276,6 @@ than the action does.
 - Some features depend on the plan: for example, secret scanning and code
   scanning in private repositories need GitHub Advanced Security.
 - The configuration is JSON; YAML is not supported.
-
-## Source Repository
-
-> [!NOTE]
->
-> Only the build artifacts for this action are provided in the repository
-> [`simbo-actions/apply-repository-settings`](https://github.com/simbo-actions/apply-repository-settings).
->
-> The source repository for this action is
-> [`simbo-actions/actions`](https://github.com/simbo-actions/actions).
->
-> 💁‍♂️ For issues and contributions, please refer to the source repository.
 
 ## License
 

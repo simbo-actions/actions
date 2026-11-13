@@ -6,12 +6,14 @@ and email for Git.
 > [!NOTE]  
 > Developed and maintained in the monorepo
 > [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
-> published here automatically. Issues, questions, and contributions go to the
-> monorepo.
+> published here automatically.  
+> Issues, questions, and contributions go to the monorepo.
 
-Every GitHub App acts as a bot user named `<app-slug>[bot]`. This action looks
-up that user and provides its user ID and the Git identity GitHub expects for
-commits by the app, for example `123+my-app[bot]@users.noreply.github.com`.
+Every GitHub App acts as a bot user named `<app-slug>[bot]`.  
+This action looks up that user and provides its user ID and the Git identity
+GitHub expects for commits by the app, for example
+`123+my-app[bot]@users.noreply.github.com`.
+
 Combined with
 [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token),
 it gives a workflow both the token and the identity of the app.
@@ -30,22 +32,25 @@ it gives a workflow both the token and the identity of the app.
 ## How It Works
 
 1. Takes the app slug, for example the output `app-slug` of
-   `actions/create-github-app-token`. A `[bot]` suffix is removed.
+   `actions/create-github-app-token`.  
+   A `[bot]` suffix is removed.
 2. Requests the public user `<app-slug>[bot]` from the GitHub API and checks
    that it is a bot user with that login.
 3. Provides user ID, login, name, email, and the author string `Name <email>` as
    outputs.
 
 GitHub links commits to a bot user by the noreply email
-`<user ID>+<login>@users.noreply.github.com`. With that email, commits show the
-app's avatar and link to the app.
+`<user ID>+<login>@users.noreply.github.com`.  
+With that email, commits show the app's avatar and link to the app.
 
 ## Usage
 
-Pin the action by commit SHA, with the version as a comment. This is
-recommended: a SHA cannot change. For convenience, the floating tag `@vX`
-follows the latest stable release of major version `X`; it moves only forward
-and only by the release process, but it can change.
+Pin the action by commit SHA, with the version as a comment.  
+This is recommended: a SHA cannot change.
+
+For convenience, the floating tag `@vX` follows the latest stable release of
+major version `X`.  
+It moves only forward and only by the release process, but it can change.
 
 ```yaml
 jobs:
@@ -90,8 +95,8 @@ branch:
     git config user.email "$EMAIL"
 ```
 
-Commits created with Git this way are not signed. For verified commits, create
-them via the GitHub API, for example with
+Commits created with Git this way are not signed.  
+For verified commits, create them via the GitHub API, for example with
 [`simbo-actions/signed-commit`](https://github.com/simbo-actions/signed-commit).
 
 ### Inputs of Other Actions
@@ -160,8 +165,9 @@ None of the outputs is secret.
 
 ## Token and Permissions
 
-- The bot user is public. The action needs no permissions and no app
-  credentials; it never handles a private key.
+- The bot user is public.  
+  The action needs no permissions and no app credentials; it never handles a
+  private key.
 - The default `github.token` works even with `permissions: {}` and avoids the
   low rate limit of unauthenticated requests.
 - The API URL follows the runner (`GITHUB_API_URL`), so the action also works
@@ -170,11 +176,12 @@ None of the outputs is secret.
 ## Security
 
 - **No credentials:** the action reads a public user and needs no app key and no
-  permissions. It never handles a private key.
+  permissions.  
+  It never handles a private key.
 - **Inputs:** the app slug is validated; the action checks that the user found
   is the bot user of exactly this app.
 - **Outputs:** none of the outputs is secret.
-- **Verifying a release:** pin the action by the commit SHA of a release tag.
+- **Verifying a release:** pin the action by the commit SHA of a release tag.  
   Every release has an archive with a `SHA256SUMS` file and build provenance:
 
   ```sh
@@ -191,18 +198,6 @@ None of the outputs is secret.
   that.
 - It fails if no bot user exists for the slug, or if the user found is not a
   bot.
-
-## Source Repository
-
-> [!NOTE]
->
-> Only the build artifacts for this action are provided in the repository
-> [`simbo-actions/github-app-bot-user`](https://github.com/simbo-actions/github-app-bot-user).
->
-> The source repository for this action is
-> [`simbo-actions/actions`](https://github.com/simbo-actions/actions).
->
-> 💁‍♂️ For issues and contributions, please refer to the source repository.
 
 ## License
 

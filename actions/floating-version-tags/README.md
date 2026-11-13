@@ -6,14 +6,15 @@ safely: forward only, never to prereleases.
 > [!NOTE]  
 > Developed and maintained in the monorepo
 > [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
-> published here automatically. Issues, questions, and contributions go to the
-> monorepo.
+> published here automatically.  
+> Issues, questions, and contributions go to the monorepo.
 
 Consumers of GitHub Actions like to write `uses: owner/action@v1` and get every
-fix of the major version automatically. Maintaining these tags by hand is
-error-prone: a tag moved to the wrong commit, to an older version, or to a
-prerelease reaches every workflow that uses it. This action moves floating tags
-only by clear rules.
+fix of the major version automatically.
+
+Maintaining these tags by hand is error-prone: a tag moved to the wrong commit,
+to an older version, or to a prerelease reaches every workflow that uses it.  
+This action moves floating tags only by clear rules.
 
 ## Contents
 
@@ -28,15 +29,16 @@ only by clear rules.
 
 ## How It Works
 
-1. Validates the release tag: a stable version `vX.Y.Z`. Prereleases and build
-   metadata (`v1.2.3-beta.1`, `v1.2.3+build`) fail the action.
-2. Resolves the commit of the release tag, following annotated tags. A missing
-   tag fails the action.
+1. Validates the release tag: a stable version `vX.Y.Z`.  
+   Prereleases and build metadata (`v1.2.3-beta.1`, `v1.2.3+build`) fail the
+   action.
+2. Resolves the commit of the release tag, following annotated tags.  
+   A missing tag fails the action.
 3. Lists all stable version tags of the repository.
 4. For every enabled floating tag (`vX`, `vX.Y`, `latest`):
-   - If a higher stable version exists in its line, the tag is kept. A floating
-     tag never moves backward, so releasing a fix for an older line does not
-     change `latest`, and a re-run of an old release changes nothing.
+   - If a higher stable version exists in its line, the tag is kept.  
+     A floating tag never moves backward, so releasing a fix for an older line
+     does not change `latest`, and a re-run of an old release changes nothing.
    - If the tag already points to the release commit, it is kept.
    - Otherwise, the tag is created or moved to the release commit.
 5. Reports the created and moved tags in the output `moved`.
@@ -45,10 +47,12 @@ The action never deletes tags and never touches the release tags themselves.
 
 ## Usage
 
-Pin the action by commit SHA, with the version as a comment. This is
-recommended: a SHA cannot change. For convenience, the floating tag `@vX`
-follows the latest stable release of major version `X`; it moves only forward
-and only by the release process, but it can change.
+Pin the action by commit SHA, with the version as a comment.  
+This is recommended: a SHA cannot change.
+
+For convenience, the floating tag `@vX` follows the latest stable release of
+major version `X`.  
+It moves only forward and only by the release process, but it can change.
 
 Run the action after the release tag exists, for example after creating the
 release:
@@ -138,7 +142,8 @@ At least one of `major`, `minor`, and `latest` must be `true`.
 ## Token and Permissions
 
 - **`GITHUB_TOKEN`:** works with `permissions: contents: write` for tags in the
-  same repository. Tags created with it do not trigger other workflows.
+  same repository.  
+  Tags created with it do not trigger other workflows.
 - **GitHub App installation token:** for tags in other repositories, with
   `contents: write` on that repository.
 
@@ -148,7 +153,8 @@ bypass it, for example the GitHub App as bypass actor.
 ## Security
 
 - **Forward only:** a floating tag only moves to the highest stable version of
-  its line. A compromised or mistaken run with an older tag cannot move it back.
+  its line.  
+  A compromised or mistaken run with an older tag cannot move it back.
 - **No prereleases:** prereleases and build metadata never get floating tags.
 - **Exact target:** the target is the commit of the release tag, resolved via
   the API, never a branch or a commit given as input.
@@ -157,7 +163,7 @@ bypass it, for example the GitHub App as bypass actor.
   process can create, move, or delete them.
 - **Token:** used only for the GitHub API; restrict it to the target repository
   and `contents: write`.
-- **Verifying a release:** pin the action by the commit SHA of a release tag.
+- **Verifying a release:** pin the action by the commit SHA of a release tag.  
   Every release has an archive with a `SHA256SUMS` file and build provenance:
 
   ```sh

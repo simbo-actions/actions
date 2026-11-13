@@ -4,8 +4,12 @@
 > repositories with signed commits, tags, and releases.
 
 Every action in this repository follows the same [standards](STANDARDS.md):
-least privilege, a pinned and verified supply chain, tested behavior, complete
-documentation, and reproducible releases with build provenance.
+
+- least privilege
+- a pinned and verified supply chain
+- tested behavior
+- complete documentation
+- reproducible releases with build provenance
 
 ## Actions
 
@@ -15,8 +19,8 @@ each with a link to its repository and README.
 ## Usage
 
 Every action is published to its own repository in the organization
-[`simbo-actions`](https://github.com/simbo-actions). Pin an action by the commit
-SHA of a release tag, with the version as a comment:
+[`simbo-actions`](https://github.com/simbo-actions).  
+Pin an action by the commit SHA of a release tag, with the version as a comment:
 
 ```yaml
 jobs:
@@ -30,10 +34,15 @@ jobs:
           message: 'chore: update generated files'
 ```
 
-Dependabot keeps SHA pins up to date. For convenience, every action also has a
-floating tag for its major version, like `@v1`. It moves only forward, only by
-the release process, but it can change; a SHA pin cannot. How to verify a
-release is described in [SECURITY.md](SECURITY.md#verifying-a-release).
+Dependabot keeps SHA pins up to date.
+
+For convenience, every action also has a floating tag for its major version,
+like `@v1`.  
+It moves only forward, only by the release process, but it can change; a SHA pin
+cannot.
+
+How to verify a release is described in
+[SECURITY.md](SECURITY.md#verifying-a-release).
 
 ## Documentation
 
