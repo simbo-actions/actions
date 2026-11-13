@@ -3,6 +3,12 @@
 A GitHub Action to apply repository settings, security features, Actions
 permissions, and rulesets from a configuration file, writing only what differs.
 
+> [!NOTE]  
+> Developed and maintained in the monorepo
+> [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
+> published here automatically. Issues, questions, and contributions go to the
+> monorepo.
+
 Keep the settings of a repository as code: a JSON file describes the intended
 state, and the action compares it with the current state and changes only what
 differs. Run it on a schedule to correct manual changes, or after creating a
@@ -71,6 +77,7 @@ Every section and every key is optional; only what is configured is applied.
 {
   "repository": {
     "has_issues": true,
+    "has_pull_requests": true,
     "has_wiki": false,
     "allow_squash_merge": true,
     "allow_merge_commit": false,
@@ -79,6 +86,7 @@ Every section and every key is optional; only what is configured is applied.
     "allow_update_branch": true,
     "delete_branch_on_merge": true
   },
+  "topics": ["github-actions", "automation"],
   "security": {
     "secret_scanning": true,
     "secret_scanning_push_protection": true,
@@ -119,13 +127,14 @@ Every section and every key is optional; only what is configured is applied.
 }
 ```
 
-| Section              | Keys                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `repository`         | `description`, `homepage` (strings); `has_issues`, `has_projects`, `has_wiki`, `has_discussions`, `allow_squash_merge`, `allow_merge_commit`, `allow_rebase_merge`, `allow_auto_merge`, `allow_update_branch`, `delete_branch_on_merge`, `web_commit_signoff_required` (booleans); `squash_merge_commit_title`, `squash_merge_commit_message`, `merge_commit_title`, `merge_commit_message` (strings, as in the API) |
-| `security`           | `secret_scanning`, `secret_scanning_push_protection`, `dependabot_alerts`, `dependabot_security_updates`, `private_vulnerability_reporting` (booleans)                                                                                                                                                                                                                                                               |
-| `actions`            | `enabled`, `sha_pinning_required`, `can_approve_pull_request_reviews` (booleans); `allowed_actions` (`all`, `local_only`, `selected`); `default_workflow_permissions` (`read`, `write`)                                                                                                                                                                                                                              |
-| `rulesets`           | Rulesets as in the [GitHub API](https://docs.github.com/en/rest/repos/rules), each with a unique `name` and an `enforcement` (`active`, `evaluate`, `disabled`)                                                                                                                                                                                                                                                      |
-| `immutable_releases` | boolean                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Section              | Keys                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `repository`         | `description`, `homepage` (strings); `has_issues`, `has_pull_requests`, `has_projects`, `has_wiki`, `has_discussions`, `allow_squash_merge`, `allow_merge_commit`, `allow_rebase_merge`, `allow_auto_merge`, `allow_update_branch`, `delete_branch_on_merge`, `web_commit_signoff_required` (booleans); `pull_request_creation_policy`, `squash_merge_commit_title`, `squash_merge_commit_message`, `merge_commit_title`, `merge_commit_message` (strings, as in the API) |
+| `topics`             | Up to 20 topics: lowercase letters, digits, and hyphens; replaces all topics                                                                                                                                                                                                                                                                                                                                                                                              |
+| `security`           | `secret_scanning`, `secret_scanning_push_protection`, `dependabot_alerts`, `dependabot_security_updates`, `private_vulnerability_reporting` (booleans)                                                                                                                                                                                                                                                                                                                    |
+| `actions`            | `enabled`, `sha_pinning_required`, `can_approve_pull_request_reviews` (booleans); `allowed_actions` (`all`, `local_only`, `selected`); `default_workflow_permissions` (`read`, `write`)                                                                                                                                                                                                                                                                                   |
+| `rulesets`           | Rulesets as in the [GitHub API](https://docs.github.com/en/rest/repos/rules), each with a unique `name` and an `enforcement` (`active`, `evaluate`, `disabled`)                                                                                                                                                                                                                                                                                                           |
+| `immutable_releases` | boolean                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 - Rulesets are created if missing and updated if they differ. Rulesets that are
   not configured are kept.
@@ -187,6 +196,7 @@ Configure a new repository with shared settings and its own description:
     repository: my-org/${{ matrix.repository }}
     config: settings/standard.json
     description: ${{ matrix.description }}
+    topics: ${{ matrix.topics }}
 ```
 
 ### Preview Changes
@@ -209,6 +219,7 @@ Configure a new repository with shared settings and its own description:
 | `config`      | The path to the JSON configuration file                                             | true     |                            |
 | `description` | Overrides `repository.description` of the configuration                             | false    |                            |
 | `homepage`    | Overrides `repository.homepage` of the configuration                                | false    |                            |
+| `topics`      | Overrides `topics` of the configuration; separated by whitespace or commas          | false    |                            |
 | `dry-run`     | Whether to only report the changes without applying them                            | false    | `false`                    |
 
 ## Outputs

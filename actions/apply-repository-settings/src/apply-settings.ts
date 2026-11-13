@@ -64,6 +64,23 @@ export async function applyRepositorySettings(
 }
 
 /**
+ * Applies the topics, replacing all topics of the repository.
+ *
+ * @param client - The settings client.
+ * @param topics - The configured topics.
+ */
+export async function applyTopics(client: SettingsClient, topics: string[]): Promise<void> {
+  const { names } = await client.read<{ names: string[] }>('GET /repos/{owner}/{repo}/topics');
+  const current = names.toSorted((x, y) => x.localeCompare(y));
+  const expected = topics.toSorted((x, y) => x.localeCompare(y));
+  if (JSON.stringify(current) === JSON.stringify(expected)) {
+    return;
+  }
+  client.record({ setting: 'topics', change: formatChange(current, expected) });
+  await client.write('PUT /repos/{owner}/{repo}/topics', { names: expected });
+}
+
+/**
  * Applies a setting that is switched on with PUT and off with DELETE.
  *
  * @param client - The settings client.
@@ -243,6 +260,9 @@ export async function applySettings(client: SettingsClient, config: SettingsConf
 
   if (touchesRepository) {
     await applyRepositorySettings(client, config.repository ?? {}, security);
+  }
+  if (config.topics !== undefined) {
+    await applyTopics(client, config.topics);
   }
   await applySecurityFeatures(client, security);
   if (config.actions !== undefined) {

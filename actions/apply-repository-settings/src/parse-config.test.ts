@@ -11,7 +11,14 @@ describe('parseConfig', () => {
 
   it('accepts all sections', () => {
     const expected = {
-      repository: { description: 'An action.', has_issues: false, allow_squash_merge: true },
+      repository: {
+        description: 'An action.',
+        has_issues: false,
+        has_pull_requests: false,
+        pull_request_creation_policy: 'collaborators_only',
+        allow_squash_merge: true,
+      },
+      topics: ['github-actions', 'simbo-actions'],
       security: { secret_scanning: true, dependabot_security_updates: false },
       actions: { enabled: true, allowed_actions: 'all', default_workflow_permissions: 'read' },
       rulesets: [ruleset],
@@ -29,6 +36,11 @@ describe('parseConfig', () => {
     ['a non-object section', '{"security": true}', '"security" must be an object'],
     ['wrong security types', '{"security": {"secret_scanning": "on"}}', '"security.secret_scanning" must be a boolean'],
     ['invalid actions values', '{"actions": {"allowed_actions": "some"}}', 'must be one of: all, local_only, selected'],
+    ['non-array topics', '{"topics": "a"}', '"topics" must be an array'],
+    ['invalid topics', '{"topics": ["Upper"]}', '"topics[0]" must be lowercase'],
+    ['non-string topics', '{"topics": [1]}', '"topics[0]" must be lowercase'],
+    ['duplicate topics', '{"topics": ["a", "a"]}', 'must not contain duplicates'],
+    ['too many topics', JSON.stringify({ topics: Array.from({ length: 21 }, (_, i) => `t${i}`) }), 'at most 20'],
     ['non-array rulesets', '{"rulesets": {}}', '"rulesets" must be an array'],
     ['non-object rulesets', '{"rulesets": [1]}', '"rulesets[0]" must be an object'],
     ['rulesets without name', '{"rulesets": [{"enforcement": "active"}]}', '"rulesets[0].name" must be a string'],

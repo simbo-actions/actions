@@ -1,0 +1,169 @@
+name: Publish Organization 🏢
+
+#-------------------------------------------------------------------------------
+# "Publish Organization" Workflow
+#
+# Publishes the folder organization/ to the repository simbo-actions/.github:
+# the organization profile and the default community files. Creates and
+# configures the repository if necessary and commits the content as signed
+# commit.
+#
+# Order matters: all third-party code (install, build) runs before the app
+# credentials are retrieved. Every token is restricted to the repository and
+# the permissions of the steps that use it.
+#-------------------------------------------------------------------------------
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - organization/**
+      - .github/managed-repository-settings.json
+      - .github/workflows/publish-organization.yml
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  cancel-in-progress: false
+  group: ${{ github.workflow }}
+
+run-name: ${{ github.workflow }}
+
+env:
+  REPOSITORY: ${{ github.repository_owner }}/.github
+  DESCRIPTION: Profile and default community files of the simbo-actions organization.
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      contents: read
+    steps:
+      - name: 🛎️ Checkout Monorepo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: monorepo
+          persist-credentials: false
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          package_json_file: monorepo/package.json
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: monorepo/.nvmrc
+          cache: pnpm
+          cache-dependency-path: monorepo/pnpm-lock.yaml
+
+      - name: 📥 Install
+        working-directory: monorepo
+        run: pnpm install --frozen-lockfile
+
+      - name: 👷 Build
+        working-directory: monorepo
+        run: pnpm exec turbo run build --filter=signed-commit --filter=apply-repository-settings
+
+      - name: 🔍 Check Organization Repository
+        id: repo-exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/${REPOSITORY}" --silent 2>/dev/null; then
+            echo "result=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🔑 Get App Token (Create Repository)
+        id: app-token-create
+        if: steps.repo-exists.outputs.result == 'false'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          permission-administration: write
+
+      - name: 🪄 Create Organization Repository
+        if: steps.repo-exists.outputs.result == 'false'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ steps.app-token-create.outputs.token }}
+          retries: 3
+          script: |
+            const [org, name] = process.env.REPOSITORY.split('/');
+            await github.rest.repos.createInOrg({
+              org,
+              name,
+              description: process.env.DESCRIPTION,
+              homepage: `https://github.com/${context.repo.owner}/${context.repo.repo}`,
+              private: false,
+              auto_init: true,
+              has_issues: false,
+              has_wiki: false,
+              has_projects: false,
+            });
+            core.info(`Created repository ${process.env.REPOSITORY}.`);
+
+      - name: 🔑 Get App Token (Configure Repository)
+        id: app-token-configure
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          repositories: .github
+          permission-administration: write
+
+      - name: ⚙️ Apply Repository Settings
+        uses: ./monorepo/actions/apply-repository-settings
+        with:
+          token: ${{ steps.app-token-configure.outputs.token }}
+          repository: ${{ env.REPOSITORY }}
+          config: monorepo/.github/managed-repository-settings.json
+          description: ${{ env.DESCRIPTION }}
+          homepage: https://github.com/${{ github.repository }}
+
+      - name: 🔑 Get App Token (Publish)
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          repositories: .github
+          permission-contents: write
+
+      - name: 🛎️ Checkout Organization Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.REPOSITORY }}
+          path: organization-repo
+          ref: main
+          persist-credentials: false
+
+      - name: 🔄 Replace Content
+        env:
+          FROM: monorepo/organization
+          TO: organization-repo
+        run: |
+          set -euo pipefail
+          find "$TO" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R "${FROM}/." "${TO}/"
+
+      - name: 💾 Commit Changes
+        uses: ./monorepo/actions/signed-commit
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.REPOSITORY }}
+          branch: main
+          working-directory: organization-repo
+          message: 'docs(organization): update profile and community files'
+          if-no-changes: ignore
+          sync: false

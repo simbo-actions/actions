@@ -52,6 +52,7 @@ workflow `checks` does. It ends with "All Checks Passed!".
 ├── changelog/             changelog of the monorepo itself
 ├── shared/
 │   └── <name>/            code shared by actions, bundled into them
+├── organization/          content of simbo-actions/.github: profile, community files
 ├── tooling/               monorepo checks and helpers, with tests
 ├── .changeset/            pending changesets
 └── .github/
@@ -65,20 +66,20 @@ How the pieces work together is described in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Root scripts (run with `pnpm run <script>`):
 
-| Script                   | What it does                                                           |
-| ------------------------ | ---------------------------------------------------------------------- |
-| `preflight`              | Install, build, bundle, test, and check everything                     |
-| `each:build`             | Build all workspaces (Turbo)                                           |
-| `each:bundle`            | Run post-build bundling steps                                          |
-| `each:test`              | Run all tests with coverage                                            |
-| `each:check`             | Type check and lint all workspaces                                     |
-| `check`                  | Format, boundaries, spelling, licenses, license files, vulnerabilities |
-| `check:licenses`         | Check the licenses of the production dependencies of every action      |
-| `check:vulnerabilities`  | Scan all dependencies with osv-scanner                                 |
-| `check:action-licenses`  | Check `LICENSE.md` and the license link of every action                |
-| `fix:format`             | Format all files with Prettier                                         |
-| `actions-list`           | Update the generated lists in `README.md` and `ACTIONS.md`             |
-| `ncu:patch`, `ncu:minor` | Update dependencies interactively                                      |
+| Script                   | What it does                                                               |
+| ------------------------ | -------------------------------------------------------------------------- |
+| `preflight`              | Install, build, bundle, test, and check everything                         |
+| `each:build`             | Build all workspaces (Turbo)                                               |
+| `each:bundle`            | Run post-build bundling steps                                              |
+| `each:test`              | Run all tests with coverage                                                |
+| `each:check`             | Type check and lint all workspaces                                         |
+| `check`                  | Format, boundaries, spelling, licenses, license files, vulnerabilities     |
+| `check:licenses`         | Check the licenses of the production dependencies of every action          |
+| `check:vulnerabilities`  | Scan all dependencies with osv-scanner                                     |
+| `check:actions`          | Check `LICENSE.md`, README sections, and the monorepo note of every action |
+| `fix:format`             | Format all files with Prettier                                             |
+| `actions-list`           | Update the generated lists in `README.md` and `ACTIONS.md`                 |
+| `ncu:patch`, `ncu:minor` | Update dependencies interactively                                          |
 
 Workspace scripts (run inside a workspace, or with
 `pnpm --filter <name> run <script>`):
@@ -135,14 +136,15 @@ Workspace scripts (run inside a workspace, or with
    `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`. Create the API
    client with `createOctokit` from `@simbo-actions/octokit`.
 3. In `package.json`, set `name` to the folder name, a `description`, and
-   `"version": "0.0.0"`. To publish the action to its own repository, add
-   `"actionRepository": "simbo-actions/<name>"`.
+   `"version": "0.0.0"`. The action is published to `simbo-actions/<name>`.
 4. Add `LICENSE.md` with the current year, and link it in the README as
    `https://simbo.mit-license.org/@<year>`.
-5. Write the README with all sections required by [STANDARDS.md](STANDARDS.md).
-6. Write the code and tests; add a smoke test to the workflow `checks` if the
+5. Start the README with the note about the monorepo (copy it from another
+   action).
+6. Write the README with all sections required by [STANDARDS.md](STANDARDS.md).
+7. Write the code and tests; add a smoke test to the workflow `checks` if the
    action can run without secrets.
-7. Add a changeset with a major bump for the first release (1.0.0), and run
+8. Add a changeset with a major bump for the first release (1.0.0), and run
    `pnpm run actions-list`.
 
 The first release creates the repository `simbo-actions/<name>` and configures

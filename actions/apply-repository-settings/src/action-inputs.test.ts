@@ -48,12 +48,16 @@ describe('parseActionInputs', () => {
     setInput('repository', 'other/name');
     setInput('description', 'From input');
     setInput('homepage', 'https://example.com');
+    setInput('topics', 'github-actions, simbo-actions\nautomation');
     setInput('dry-run', 'TRUE');
     expect(await parseActionInputs()).toEqual({
       token: 'token',
       owner: 'other',
       repo: 'name',
-      config: { repository: { description: 'From input', has_issues: false, homepage: 'https://example.com' } },
+      config: {
+        repository: { description: 'From input', has_issues: false, homepage: 'https://example.com' },
+        topics: ['github-actions', 'simbo-actions', 'automation'],
+      },
       dryRun: true,
     });
   });
@@ -65,6 +69,11 @@ describe('parseActionInputs', () => {
   ])('rejects invalid %s', async (name, value, error) => {
     setInput(name, value);
     await expect(parseActionInputs()).rejects.toThrow(error);
+  });
+
+  it('rejects invalid topics', async () => {
+    setInput('topics', 'Not Valid');
+    await expect(parseActionInputs()).rejects.toThrow('"topics[0]" must be lowercase');
   });
 
   it('fails for a missing configuration file', async () => {

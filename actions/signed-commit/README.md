@@ -3,6 +3,12 @@
 A GitHub Action to create signed commits and tags via the GitHub API, shown as
 verified.
 
+> [!NOTE]  
+> Developed and maintained in the monorepo
+> [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
+> published here automatically. Issues, questions, and contributions go to the
+> monorepo.
+
 Instead of `git commit` and `git push`, the action sends the changes to the
 GitHub GraphQL API (`createCommitOnBranch`). GitHub creates and signs the
 commit, so it shows as **"Verified"** without any signing keys. It supports

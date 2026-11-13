@@ -7,8 +7,7 @@ name: Publish 🚚
 # builds the action, creates and configures the repository if necessary,
 # commits the build artifacts as signed commit with the tag "v<version>", and
 # creates a GitHub release (draft, assets with build provenance, publish).
-# Only actions with "actionRepository" in their package.json are published;
-# for all others, the publish job is skipped.
+# Every action in actions/<name> is published to <organization>/<name>.
 #
 # Order matters: all third-party code (install, build) runs before the app
 # credentials are retrieved. Every token is restricted to the repository and
@@ -63,22 +62,23 @@ env:
     }}
 
 jobs:
-  target:
+  publish:
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment:
+      name: release
+      deployment: false
     permissions:
       contents: read
-    outputs:
-      package: ${{ steps.options.outputs.package }}
-      version: ${{ steps.options.outputs.version }}
-      ref: ${{ steps.options.outputs.ref }}
-      tag: ${{ steps.options.outputs.tag }}
-      repository: ${{ steps.target.outputs.repository }}
+      id-token: write
+      attestations: write
     steps:
       - name: 🔍 Parse Options
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         id: options
         env:
           EVENT_NAME: ${{ github.event_name }}
+          OWNER: ${{ github.repository_owner }}
           PACKAGE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.package || '' }}
           VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || '' }}
         with:
@@ -116,59 +116,13 @@ jobs:
             core.setOutput('version', version);
             core.setOutput('ref', ref);
             core.setOutput('tag', `v${version}`);
+            core.setOutput('repository', `${process.env.OWNER}/${package}`);
 
-      - name: 🛎️ Checkout Monorepo
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: refs/tags/${{ steps.options.outputs.ref }}
-          sparse-checkout: actions/${{ steps.options.outputs.package }}/package.json
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
-
-      - name: 🎯 Determine Publish Target
-        id: target
-        env:
-          OWNER: ${{ github.repository_owner }}
-          PACKAGE: ${{ steps.options.outputs.package }}
-        run: |
-          set -euo pipefail
-
-          packageJson="actions/${PACKAGE}/package.json"
-          if [[ ! -f "$packageJson" ]]; then
-            echo "::error title=Unknown Action::${packageJson} does not exist."
-            exit 1
-          fi
-
-          repository=$(jq -r '.actionRepository // ""' "$packageJson")
-
-          if [[ -z "$repository" ]]; then
-            echo "::notice title=Not Published::${PACKAGE} has no actionRepository and is not published to a repository of its own."
-          elif [[ "$repository" != "${OWNER}/${PACKAGE}" ]]; then
-            echo "::error title=Invalid Publish Target::actionRepository must be \"${OWNER}/${PACKAGE}\", got \"${repository}\"."
-            exit 1
-          fi
-
-          echo "repository=${repository}" >> "$GITHUB_OUTPUT"
-
-  publish:
-    needs: target
-    if: >
-      needs.target.outputs.repository != '' &&
-      (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
-    runs-on: ubuntu-latest
-    environment:
-      name: release
-      deployment: false
-    permissions:
-      contents: read
-      id-token: write
-      attestations: write
-    steps:
       - name: 🛎️ Checkout Monorepo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: monorepo
-          ref: refs/tags/${{ needs.target.outputs.ref }}
+          ref: refs/tags/${{ steps.options.outputs.ref }}
           persist-credentials: false
 
       - name: 🚛 Install pnpm
@@ -190,7 +144,7 @@ jobs:
       - name: 👷 Build
         working-directory: monorepo
         env:
-          PACKAGE: ${{ needs.target.outputs.package }}
+          PACKAGE: ${{ steps.options.outputs.package }}
         run: >
           pnpm exec turbo run build
           --filter="$PACKAGE"
@@ -201,15 +155,15 @@ jobs:
       - name: 🎁 Bundle
         working-directory: monorepo
         env:
-          PACKAGE: ${{ needs.target.outputs.package }}
+          PACKAGE: ${{ steps.options.outputs.package }}
         run: pnpm run --filter "$PACKAGE" --if-present bundle
 
       - name: 🧩 Assemble Release Content
         id: content
         env:
-          FROM: monorepo/actions/${{ needs.target.outputs.package }}
-          PACKAGE: ${{ needs.target.outputs.package }}
-          VERSION: ${{ needs.target.outputs.version }}
+          FROM: monorepo/actions/${{ steps.options.outputs.package }}
+          PACKAGE: ${{ steps.options.outputs.package }}
+          VERSION: ${{ steps.options.outputs.version }}
         run: |
           set -euo pipefail
 
@@ -265,7 +219,7 @@ jobs:
         id: repo-exists
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ needs.target.outputs.repository }}
+          REPO: ${{ steps.options.outputs.repository }}
         run: |
           set -euo pipefail
           if gh api "repos/${REPO}" --silent 2>/dev/null; then
@@ -288,7 +242,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           OWNER: ${{ github.repository_owner }}
-          PACKAGE: ${{ needs.target.outputs.package }}
+          PACKAGE: ${{ steps.options.outputs.package }}
           DESCRIPTION: ${{ steps.content.outputs.description }}
         with:
           github-token: ${{ steps.app-token-create.outputs.token }}
@@ -313,17 +267,18 @@ jobs:
         with:
           client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
           private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
-          repositories: ${{ needs.target.outputs.package }}
+          repositories: ${{ steps.options.outputs.package }}
           permission-administration: write
 
       - name: ⚙️ Apply Repository Settings
         uses: ./monorepo/actions/apply-repository-settings
         with:
           token: ${{ steps.app-token-configure.outputs.token }}
-          repository: ${{ needs.target.outputs.repository }}
-          config: monorepo/.github/action-repository-settings.json
+          repository: ${{ steps.options.outputs.repository }}
+          config: monorepo/.github/managed-repository-settings.json
           description: ${{ steps.content.outputs.description }}
           homepage: https://github.com/${{ github.repository }}
+          topics: github-actions simbo-actions
 
       - name: 🔑 Get App Token (Publish)
         id: app-token
@@ -331,13 +286,13 @@ jobs:
         with:
           client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
           private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
-          repositories: ${{ needs.target.outputs.package }}
+          repositories: ${{ steps.options.outputs.package }}
           permission-contents: write
 
       - name: 🛎️ Checkout Action Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ needs.target.outputs.repository }}
+          repository: ${{ steps.options.outputs.repository }}
           path: action-repo
           ref: main
           persist-credentials: false
@@ -355,19 +310,19 @@ jobs:
         uses: ./monorepo/actions/signed-commit
         with:
           token: ${{ steps.app-token.outputs.token }}
-          repository: ${{ needs.target.outputs.repository }}
+          repository: ${{ steps.options.outputs.repository }}
           branch: main
           working-directory: action-repo
-          message: 'ci(release): ${{ needs.target.outputs.tag }}'
-          tags: ${{ needs.target.outputs.tag }}
+          message: 'ci(release): ${{ steps.options.outputs.tag }}'
+          tags: ${{ steps.options.outputs.tag }}
           sync: false
 
       - name: 🎁 Create GitHub Release
         uses: ./monorepo/actions/staged-release
         with:
           token: ${{ steps.app-token.outputs.token }}
-          repository: ${{ needs.target.outputs.repository }}
-          tag: ${{ needs.target.outputs.tag }}
-          name: ${{ needs.target.outputs.package }} ${{ needs.target.outputs.tag }}
+          repository: ${{ steps.options.outputs.repository }}
+          tag: ${{ steps.options.outputs.tag }}
+          name: ${{ steps.options.outputs.package }} ${{ steps.options.outputs.tag }}
           body-file: ${{ steps.content.outputs.notes }}
           assets: ${{ steps.content.outputs.assets }}/*

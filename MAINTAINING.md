@@ -8,22 +8,23 @@ Commands are run from the repository root unless noted otherwise.
 
 ## Overview
 
-| Task                                                                | When                                          |
-| ------------------------------------------------------------------- | --------------------------------------------- |
-| [Dependabot pull requests](#dependabot-pull-requests)               | weekly, or when assigned                      |
-| [Scanner findings](#scanner-findings)                               | `checks` or `security` fails on osv-scanner   |
-| [Expiring accepted findings](#expiring-accepted-findings)           | monthly                                       |
-| [Pinned tools](#pinned-tools)                                       | monthly                                       |
-| [Security fixes as overrides](#security-fixes-as-overrides)         | monthly                                       |
-| [Marketplace listing](#marketplace-listing)                         | after a release                               |
-| [Failed release](#failed-release)                                   | when release or publish fails                 |
-| [Settings of action repositories](#settings-of-action-repositories) | when a setting should change                  |
-| [Security reports](#security-reports)                               | when a report arrives                         |
-| [Pull requests from forks](#pull-requests-from-forks)               | when a contributor opens one                  |
-| [App private key](#app-private-key)                                 | yearly, and immediately if it may have leaked |
-| [App permissions](#app-permissions)                                 | when a step needs a new permission            |
-| [Node.js runtime](#nodejs-runtime)                                  | when GitHub announces a new runtime           |
-| [New major version](#new-major-version)                             | with every major release                      |
+| Task                                                                | When                                                  |
+| ------------------------------------------------------------------- | ----------------------------------------------------- |
+| [Dependabot pull requests](#dependabot-pull-requests)               | weekly, or when assigned                              |
+| [Scanner findings](#scanner-findings)                               | `checks` or `security` fails on osv-scanner           |
+| [Expiring accepted findings](#expiring-accepted-findings)           | monthly                                               |
+| [Pinned tools](#pinned-tools)                                       | monthly                                               |
+| [Security fixes as overrides](#security-fixes-as-overrides)         | monthly                                               |
+| [Marketplace listing](#marketplace-listing)                         | after a release                                       |
+| [Failed release](#failed-release)                                   | when release or publish fails                         |
+| [Settings of action repositories](#settings-of-action-repositories) | when a setting should change                          |
+| [Organization profile](#organization-profile)                       | when the organization should be presented differently |
+| [Security reports](#security-reports)                               | when a report arrives                                 |
+| [Pull requests from forks](#pull-requests-from-forks)               | when a contributor opens one                          |
+| [App private key](#app-private-key)                                 | yearly, and immediately if it may have leaked         |
+| [App permissions](#app-permissions)                                 | when a step needs a new permission                    |
+| [Node.js runtime](#nodejs-runtime)                                  | when GitHub announces a new runtime                   |
+| [New major version](#new-major-version)                             | with every major release                              |
 
 ## Dependabot Pull Requests
 
@@ -126,13 +127,23 @@ new actions.
 ## Settings of Action Repositories
 
 1. Change
-   [`.github/action-repository-settings.json`](.github/action-repository-settings.json)
+   [`.github/managed-repository-settings.json`](.github/managed-repository-settings.json)
    in a pull request, with a changeset (`--empty` if no action changes).
 2. Every following publish applies the settings. To apply them to all action
    repositories at once, run `apply-repository-settings` with `dry-run: true`
    first and check the changes.
 3. Document the change in
    [ARCHITECTURE.md](ARCHITECTURE.md#managing-action-repositories).
+
+## Organization Profile
+
+1. Change the files in [`organization/`](organization/README.md); the list of
+   actions in `organization/profile/README.md` is updated with
+   `pnpm run actions-list`.
+2. Merge to `main`. The workflow `publish-organization` publishes the content to
+   `simbo-actions/.github`.
+3. Check the profile on
+   [github.com/simbo-actions](https://github.com/simbo-actions).
 
 ## Security Reports
 

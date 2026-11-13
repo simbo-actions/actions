@@ -1,8 +1,10 @@
 {
   "repository": {
     "has_issues": false,
+    "has_pull_requests": false,
     "has_wiki": false,
     "has_projects": false,
+    "has_discussions": false,
     "allow_squash_merge": true,
     "allow_merge_commit": false,
     "allow_rebase_merge": false,
@@ -29,16 +31,37 @@
       "name": "Main Branch",
       "target": "branch",
       "enforcement": "active",
-      "conditions": { "ref_name": { "include": ["refs/heads/main"], "exclude": [] } },
+      "conditions": {
+        "ref_name": {
+          "include": ["refs/heads/main"],
+          "exclude": []
+        }
+      },
       "bypass_actors": [
-        { "actor_id": 5701490, "actor_type": "Integration", "bypass_mode": "always" },
-        { "actor_id": 1, "actor_type": "OrganizationAdmin", "bypass_mode": "always" }
+        {
+          "actor_id": 5701490,
+          "actor_type": "Integration",
+          "bypass_mode": "always"
+        },
+        {
+          "actor_id": 1,
+          "actor_type": "OrganizationAdmin",
+          "bypass_mode": "always"
+        }
       ],
       "rules": [
-        { "type": "deletion" },
-        { "type": "non_fast_forward" },
-        { "type": "required_linear_history" },
-        { "type": "required_signatures" },
+        {
+          "type": "deletion"
+        },
+        {
+          "type": "non_fast_forward"
+        },
+        {
+          "type": "required_linear_history"
+        },
+        {
+          "type": "required_signatures"
+        },
         {
           "type": "pull_request",
           "parameters": {
@@ -56,12 +79,35 @@
       "name": "Release Tags",
       "target": "tag",
       "enforcement": "active",
-      "conditions": { "ref_name": { "include": ["refs/tags/v*.*.*"], "exclude": [] } },
+      "conditions": {
+        "ref_name": {
+          "include": ["refs/tags/v*.*.*"],
+          "exclude": []
+        }
+      },
       "bypass_actors": [
-        { "actor_id": 5701490, "actor_type": "Integration", "bypass_mode": "always" },
-        { "actor_id": 1, "actor_type": "OrganizationAdmin", "bypass_mode": "always" }
+        {
+          "actor_id": 5701490,
+          "actor_type": "Integration",
+          "bypass_mode": "always"
+        },
+        {
+          "actor_id": 1,
+          "actor_type": "OrganizationAdmin",
+          "bypass_mode": "always"
+        }
       ],
-      "rules": [{ "type": "creation" }, { "type": "update" }, { "type": "deletion" }]
+      "rules": [
+        {
+          "type": "creation"
+        },
+        {
+          "type": "update"
+        },
+        {
+          "type": "deletion"
+        }
+      ]
     }
   ],
   "immutable_releases": false

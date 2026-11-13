@@ -3,6 +3,12 @@
 A GitHub Action to get the bot user of a GitHub App, with user ID, login, name,
 and email for Git.
 
+> [!NOTE]  
+> Developed and maintained in the monorepo
+> [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
+> published here automatically. Issues, questions, and contributions go to the
+> monorepo.
+
 Every GitHub App acts as a bot user named `<app-slug>[bot]`. This action looks
 up that user and provides its user ID and the Git identity GitHub expects for
 commits by the app, for example `123+my-app[bot]@users.noreply.github.com`.

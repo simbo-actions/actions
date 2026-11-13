@@ -119,9 +119,11 @@ Required:
 
 Required:
 
-- Every action has a README with these sections: purpose (introduction), **How
-  It Works**, **Usage** (pinned by SHA), **Examples**, **Inputs**, **Outputs**,
-  **Token and Permissions**, **Security**, **Limitations**, **License**.
+- Every action has a README that starts with a note that the action is developed
+  in this monorepo and published automatically, and has these sections: purpose
+  (introduction), **How It Works**, **Usage** (pinned by SHA), **Examples**,
+  **Inputs**, **Outputs**, **Token and Permissions**, **Security**,
+  **Limitations**, **License**. Checked in CI (`pnpm run check:actions`).
 - Every change to an action comes with a changeset; the changelog and the
   release notes are generated from it.
 - Architecture, development, and contribution are documented in
@@ -186,10 +188,18 @@ Required:
 
 Required:
 
-- MIT license. Every published action has its own `LICENSE.md` with the year of
-  its first release; its README links the license with the same year.
-- [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md),
-  issue and pull request templates.
+- MIT license. Every action has its own `LICENSE.md` with the year of its first
+  release; its README links the license with the same year.
+- **One place for the community:** issues, pull requests, discussions, security
+  reports, and the community files ([CONTRIBUTING.md](CONTRIBUTING.md),
+  [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [SECURITY.md](SECURITY.md),
+  [SUPPORT.md](SUPPORT.md), issue and pull request templates) are in this
+  repository only.
+- **Generated repositories accept nothing:** the action repositories and the
+  organization repository `simbo-actions/.github` are written only by the
+  publish process. They have issues, pull requests, discussions, wiki, and
+  projects disabled; every action README starts with a note that points to this
+  repository.
 - [Conventional Commits](https://www.conventionalcommits.org/), checked by
   commitlint.
 
@@ -226,7 +236,8 @@ Required:
 
 Required:
 
-- An action is published only with `actionRepository` in its `package.json`.
+- Every action in `actions/<name>` is published to the repository
+  `simbo-actions/<name>`; there are no unpublished actions.
 - The name of every published action is free in the
   [GitHub Marketplace](https://github.com/marketplace?type=actions): no action,
   user, or organization with that name exists. The action repository meets the
@@ -249,16 +260,16 @@ Planned, not yet required:
 
 ## How the Standard Is Enforced
 
-| Requirement                      | Enforced by                                                                      |
-| -------------------------------- | -------------------------------------------------------------------------------- |
-| Types, lint, format, spelling    | `pnpm run each:check`, `pnpm run check` in the workflow `checks`                 |
-| Tests and coverage               | `pnpm run each:test` (Vitest thresholds)                                         |
-| Workflows and `action.yml`       | actionlint with ShellCheck in `checks`                                           |
-| Licenses of bundled dependencies | `pnpm run check:licenses` (license-checker-rseidelsohn)                          |
-| Vulnerabilities, all licenses    | `pnpm run check:vulnerabilities` (osv-scanner), weekly workflow `security`       |
-| License file and year per action | `pnpm run check:action-licenses`                                                 |
-| Changeset per change             | `checks` on pull requests                                                        |
-| Pinned actions                   | Actions setting "require SHA pinning"                                            |
-| Verified commits                 | Ruleset "Main Branch" (signed commits)                                           |
-| Protected release tags           | Ruleset "Release Tags"                                                           |
-| Review                           | Pull requests with required checks; [CONTRIBUTING.md](CONTRIBUTING.md) checklist |
+| Requirement                                  | Enforced by                                                                      |
+| -------------------------------------------- | -------------------------------------------------------------------------------- |
+| Types, lint, format, spelling                | `pnpm run each:check`, `pnpm run check` in the workflow `checks`                 |
+| Tests and coverage                           | `pnpm run each:test` (Vitest thresholds)                                         |
+| Workflows and `action.yml`                   | actionlint with ShellCheck in `checks`                                           |
+| Licenses of bundled dependencies             | `pnpm run check:licenses` (license-checker-rseidelsohn)                          |
+| Vulnerabilities, all licenses                | `pnpm run check:vulnerabilities` (osv-scanner), weekly workflow `security`       |
+| License file, README sections, monorepo note | `pnpm run check:actions`                                                         |
+| Changeset per change                         | `checks` on pull requests                                                        |
+| Pinned actions                               | Actions setting "require SHA pinning"                                            |
+| Verified commits                             | Ruleset "Main Branch" (signed commits)                                           |
+| Protected release tags                       | Ruleset "Release Tags"                                                           |
+| Review                                       | Pull requests with required checks; [CONTRIBUTING.md](CONTRIBUTING.md) checklist |

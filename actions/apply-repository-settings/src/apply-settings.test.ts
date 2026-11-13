@@ -30,6 +30,7 @@ const config: SettingsConfig = {
     default_workflow_permissions: 'read',
     can_approve_pull_request_reviews: false,
   },
+  topics: ['github-actions', 'simbo-actions'],
   rulesets: [ruleset],
   immutable_releases: true,
 };
@@ -56,6 +57,7 @@ function configuredState(): Record<string, unknown> {
     workflow: { default_workflow_permissions: 'read', can_approve_pull_request_reviews: false },
     rulesets: [{ ...ruleset, id: 7, rules: [...(ruleset.rules ?? [])].toReversed() }],
     immutable: true,
+    topics: ['simbo-actions', 'github-actions'],
   };
 }
 
@@ -89,6 +91,7 @@ function setup(
     ['/actions/permissions/workflow', () => state.workflow],
     ['/rulesets', () => rulesets.map(({ id, name }) => ({ id, name }))],
     ['/immutable-releases', () => ({ enabled: state.immutable })],
+    ['/topics', () => ({ names: state.topics })],
   ]);
   const request = vi.fn(async (route: string, parameters: Record<string, unknown>) => {
     if (!route.startsWith('GET ')) {
@@ -129,6 +132,7 @@ describe('applySettings', () => {
       workflow: { default_workflow_permissions: 'write', can_approve_pull_request_reviews: true },
       rulesets: [],
       immutable: false,
+      topics: ['old'],
     });
     const { client, writes } = setup(state);
 
@@ -136,6 +140,7 @@ describe('applySettings', () => {
 
     expect(writes.map(({ route }) => route)).toEqual([
       'PATCH /repos/{owner}/{repo}',
+      'PUT /repos/{owner}/{repo}/topics',
       'PUT /repos/{owner}/{repo}/vulnerability-alerts',
       'DELETE /repos/{owner}/{repo}/automated-security-fixes',
       'PUT /repos/{owner}/{repo}/private-vulnerability-reporting',
@@ -153,7 +158,7 @@ describe('applySettings', () => {
         secret_scanning_push_protection: { status: 'enabled' },
       },
     });
-    expect(writes[4].parameters).toEqual({
+    expect(writes[5].parameters).toEqual({
       owner: 'o',
       repo: 'r',
       enabled: true,
@@ -163,6 +168,7 @@ describe('applySettings', () => {
     expect(client.changes).toContainEqual({ setting: 'repository.has_issues', change: 'true → false' });
     expect(client.changes).toContainEqual({ setting: 'security.secret_scanning', change: 'unset → "enabled"' });
     expect(client.changes).toContainEqual({ setting: 'ruleset "Main Branch"', change: 'create' });
+    expect(writes[1].parameters).toEqual({ owner: 'o', repo: 'r', names: ['github-actions', 'simbo-actions'] });
   });
 
   it('keeps unconfigured values of a group', async () => {

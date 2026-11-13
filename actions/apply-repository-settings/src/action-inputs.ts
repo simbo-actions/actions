@@ -8,7 +8,7 @@ import { parseConfig } from './parse-config.js';
 
 /**
  * Parses the action inputs from GitHub Actions and reads the configuration.
- * The inputs `description` and `homepage` override the configured values.
+ * The inputs `description`, `homepage`, and `topics` override the configured values.
  *
  * @returns The parsed action inputs.
  * @throws {Error} if an input is missing or invalid, or the configuration cannot be read.
@@ -36,6 +36,10 @@ export async function parseActionInputs(): Promise<ParsedActionInputs> {
   );
   if (Object.keys(overrides).length > 0) {
     config.repository = { ...config.repository, ...overrides };
+  }
+  const topics = getInput('topics');
+  if (topics) {
+    config.topics = parseConfig(JSON.stringify({ topics: topics.split(/[\s,]+/).filter(Boolean) })).topics;
   }
 
   const dryRun = getInput('dry-run').toLowerCase();

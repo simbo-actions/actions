@@ -55,6 +55,7 @@ export interface ActionsSettings {
  */
 export interface SettingsConfig {
   repository?: Record<string, string | boolean>;
+  topics?: string[];
   security?: SecuritySettings;
   actions?: ActionsSettings;
   rulesets?: Ruleset[];

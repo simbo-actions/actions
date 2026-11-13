@@ -21,8 +21,8 @@
   "type": "module",
   "scripts": {
     "actions-list": "monorepo-packages-list --config=actions-list.config.ts",
-    "check": "pnpm run check:format && pnpm run check:boundaries && pnpm run check:spelling && pnpm run check:licenses && pnpm run check:action-licenses && pnpm run check:vulnerabilities",
-    "check:action-licenses": "node tooling/bin/check-action-licenses.ts",
+    "check": "pnpm run check:format && pnpm run check:boundaries && pnpm run check:spelling && pnpm run check:licenses && pnpm run check:actions && pnpm run check:vulnerabilities",
+    "check:actions": "node tooling/bin/check-actions.ts",
     "check:boundaries": "turbo boundaries",
     "check:format": "prettier --check .",
     "check:licenses": "pnpm --recursive --filter \"./actions/*\" exec license-checker-rseidelsohn --production --excludePrivatePackages --onlyAllow \"0BSD;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;MIT\" --summary",

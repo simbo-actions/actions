@@ -1,8 +1,10 @@
 import {
   ALLOWED_ACTIONS_OPTIONS,
   CONFIG_SECTIONS,
+  MAX_TOPICS,
   REPOSITORY_SETTING_TYPES,
   SECURITY_SETTINGS,
+  TOPIC_PATTERN,
   WORKFLOW_PERMISSIONS_OPTIONS,
 } from './apply-repository-settings-constants.js';
 import type { ActionsSettings, Ruleset, SecuritySettings, SettingsConfig } from './apply-repository-settings.types.js';
@@ -66,6 +68,34 @@ function parseRepository(value: unknown): Record<string, string | boolean> {
     assertValue(setting, `repository.${key}`, REPOSITORY_SETTING_TYPES[key]);
   }
   return section as Record<string, string | boolean>;
+}
+
+/**
+ * Validates the section `topics`.
+ *
+ * @param value - The section.
+ * @returns The topics.
+ * @throws {Error} if the topics are not an array of valid, unique topics.
+ */
+function parseTopics(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    throw new TypeError('Invalid configuration: "topics" must be an array.');
+  }
+  if (value.length > MAX_TOPICS) {
+    throw new Error(`Invalid configuration: "topics" must have at most ${MAX_TOPICS} entries.`);
+  }
+  for (const [index, topic] of value.entries()) {
+    if (typeof topic !== 'string' || !TOPIC_PATTERN.test(topic)) {
+      throw new Error(
+        `Invalid configuration: "topics[${index}]" must be lowercase letters, digits, and hyphens (at most 50).`,
+      );
+    }
+  }
+  const unique = new Set(value);
+  if (unique.size !== value.length) {
+    throw new Error('Invalid configuration: "topics" must not contain duplicates.');
+  }
+  return value as string[];
 }
 
 /**
@@ -150,6 +180,9 @@ export function parseConfig(json: string): SettingsConfig {
 
   if (root.repository !== undefined) {
     config.repository = parseRepository(root.repository);
+  }
+  if (root.topics !== undefined) {
+    config.topics = parseTopics(root.topics);
   }
   if (root.security !== undefined) {
     config.security = parseSecurity(root.security);

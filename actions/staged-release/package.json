@@ -8,7 +8,6 @@
   "homepage": "https://github.com/simbo-actions/staged-release#readme",
   "bugs": "https://github.com/simbo-actions/actions/issues",
   "repository": "github:simbo-actions/actions",
-  "actionRepository": "simbo-actions/staged-release",
   "engines": {
     "node": ">=24"
   },

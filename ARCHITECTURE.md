@@ -14,6 +14,7 @@ local development, see [DEVELOPMENT.md](DEVELOPMENT.md).
 - [From Changeset to Release](#from-changeset-to-release)
 - [Publishing an Action](#publishing-an-action)
 - [Managing Action Repositories](#managing-action-repositories)
+- [Organization Repository](#organization-repository)
 - [GitHub App](#github-app)
 - [Identity, Tokens, and Permissions](#identity-tokens-and-permissions)
 - [Trust Boundaries](#trust-boundaries)
@@ -36,13 +37,15 @@ flowchart LR
     actions["actions/NAME/<br/>signed-commit, staged-release,<br/>apply-repository-settings,<br/>github-app-bot-user"]
     shared["shared/octokit<br/>API client with rate limits"]
     tooling["tooling/<br/>monorepo checks and helpers"]
-    workflows[".github/workflows/<br/>checks, release, publish, security"]
+    workflows[".github/workflows/<br/>checks, release, publish,<br/>publish-organization, security"]
+    organization["organization/<br/>profile, community files"]
   end
 
   bot(["simbo-actions[bot]<br/>GitHub App"])
 
   subgraph org["organization simbo-actions"]
     repos["simbo-actions/NAME<br/>one repository per action:<br/>build artifacts, tags, releases"]
+    profile["simbo-actions/.github<br/>profile, community files"]
   end
 
   consumer["consumer workflows<br/>uses: simbo-actions/NAME@SHA"]
@@ -50,8 +53,10 @@ flowchart LR
   shared --> actions
   actions -- "used via ./actions/NAME" --> workflows
   tooling --> workflows
+  organization --> workflows
   workflows -- "runs as" --> bot
   bot -- "creates, configures, publishes" --> repos
+  bot -- "publishes organization/" --> profile
   repos --> consumer
 ```
 
@@ -62,17 +67,19 @@ flowchart LR
 | `simbo-actions/actions`  | Source, tests, and docs of all actions; shared code; tooling; workflows          | Maintainers and contributors via PRs |
 | `simbo-actions/<action>` | Build artifacts of one action: `action.yml`, `dist/`, README, changelog, license | Only the publish workflow            |
 
-The action repositories have issues, wiki, and projects disabled. Issues and
-contributions go to the monorepo.
+The action repositories have issues, pull requests, discussions, wiki, and
+projects disabled; every action README starts with a note that points to the
+monorepo. Issues and contributions go to the monorepo.
 
 Workspaces in the monorepo:
 
-| Workspace         | Purpose                                                       |
-| ----------------- | ------------------------------------------------------------- |
-| `actions/<name>/` | One action: `action.yml`, `src/`, tests, README, `LICENSE.md` |
-| `shared/<name>/`  | Code shared by actions and bundled into them, not published   |
-| `tooling/`        | Monorepo-specific checks and helpers, with tests              |
-| `changelog/`      | Changelog of the monorepo itself                              |
+| Workspace         | Purpose                                                        |
+| ----------------- | -------------------------------------------------------------- |
+| `actions/<name>/` | One action: `action.yml`, `src/`, tests, README, `LICENSE.md`  |
+| `shared/<name>/`  | Code shared by actions and bundled into them, not published    |
+| `tooling/`        | Monorepo-specific checks and helpers, with tests               |
+| `changelog/`      | Changelog of the monorepo itself                               |
+| `organization/`   | Content of the organization repository `simbo-actions/.github` |
 
 The release and publish workflows use the actions of this repository via
 `./actions/<name>`: they publish themselves with
@@ -80,9 +87,7 @@ The release and publish workflows use the actions of this repository via
 [`apply-repository-settings`](actions/apply-repository-settings/README.md), and
 [`staged-release`](actions/staged-release/README.md).
 
-An action is published only if its `package.json` names the target repository in
-`actionRepository`, for example
-`"actionRepository": "simbo-actions/signed-commit"`.
+Every action in `actions/<name>/` is published to `simbo-actions/<name>`.
 
 ## From Changeset to Release
 
@@ -115,20 +120,14 @@ tag `changelog/vX.Y.Z` of the monorepo changelog starts no publish run.
 
 ## Publishing an Action
 
-One publish run per tag `<action>/vX.Y.Z`. A first job without secrets decides
-whether the action is published at all.
+One publish run per tag `<action>/vX.Y.Z`; the tag names the action and its
+repository `simbo-actions/<action>`.
 
 ```mermaid
 flowchart TD
-  tag(["tag ACTION/vX.Y.Z"]) --> target
+  tag(["tag ACTION/vX.Y.Z"]) --> build
 
-  subgraph job1["job: target (no secrets)"]
-    target["read actionRepository<br/>from package.json at the tag"]
-  end
-
-  target -- "if actionRepository is set" --> build
-
-  subgraph job2["job: publish (environment release)"]
+  subgraph job["job: publish (environment release)"]
     build["checkout at tag, install, build<br/>(no stored credentials)"]
     assemble["assemble content and assets,<br/>release notes from changelog"]
     attest["attest build provenance"]
@@ -140,9 +139,6 @@ flowchart TD
     build --> assemble --> attest --> create --> configure --> commit --> release
   end
 ```
-
-Actions without `actionRepository` are not published; their publish job is
-skipped.
 
 All third-party code (install, build) runs before the first app token is
 requested. Each later step requests its own token, see
@@ -164,7 +160,7 @@ gh attestation verify signed-commit-v1.0.0.tar.gz --repo simbo-actions/actions
 
 The publish process owns the action repositories. It creates a missing
 repository and, on every publish, applies the settings in
-[`.github/action-repository-settings.json`](.github/action-repository-settings.json)
+[`.github/managed-repository-settings.json`](.github/managed-repository-settings.json)
 with [`apply-repository-settings`](actions/apply-repository-settings/README.md):
 it compares them with the current state and corrects what differs. Manual
 changes in an action repository are reset by the next publish.
@@ -183,17 +179,34 @@ stateDiagram-v2
 
 Settings applied to every action repository:
 
-| Area                   | Setting                                                                                                                                             |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| General                | Issues, wiki, and projects off; description from `package.json`; homepage is the monorepo                                                           |
-| Merge                  | Squash only, auto-merge allowed, update branch suggested, branches deleted after merge                                                              |
-| Security               | Secret scanning with push protection, Dependabot alerts, private vulnerability reporting on                                                         |
-|                        | Dependabot security updates and code scanning off: the content is generated and overwritten by every publish; the source is scanned in the monorepo |
-| Actions                | SHA pinning required, `GITHUB_TOKEN` read-only, no pull request approvals                                                                           |
-| Ruleset "Main Branch"  | No deletion, no force push, linear history, signed commits, pull requests with squash only                                                          |
-| Ruleset "Release Tags" | `v*.*.*`: creating, updating, and deleting only via bypass                                                                                          |
-| Bypass                 | The app `simbo-actions` and organization admins                                                                                                     |
-| Releases               | Immutable releases (switched on once the process is established)                                                                                    |
+| Area                   | Setting                                                                                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| General                | Issues, pull requests, discussions, wiki, and projects off; description from `package.json`; homepage is the monorepo; topics `github-actions`, `simbo-actions` |
+| Merge                  | Squash only, auto-merge allowed, update branch suggested, branches deleted after merge                                                                          |
+| Security               | Secret scanning with push protection, Dependabot alerts, private vulnerability reporting on                                                                     |
+|                        | Dependabot security updates and code scanning off: the content is generated and overwritten by every publish; the source is scanned in the monorepo             |
+| Actions                | SHA pinning required, `GITHUB_TOKEN` read-only, no pull request approvals                                                                                       |
+| Ruleset "Main Branch"  | No deletion, no force push, linear history, signed commits, pull requests with squash only                                                                      |
+| Ruleset "Release Tags" | `v*.*.*`: creating, updating, and deleting only via bypass                                                                                                      |
+| Bypass                 | The app `simbo-actions` and organization admins                                                                                                                 |
+| Releases               | Immutable releases (switched on once the process is established)                                                                                                |
+
+## Organization Repository
+
+The repository
+[`simbo-actions/.github`](https://github.com/simbo-actions/.github) holds the
+organization profile (`profile/README.md`, shown on
+[github.com/simbo-actions](https://github.com/simbo-actions)) and the default
+community files, which GitHub shows in every repository of the organization
+without its own: `CONTRIBUTING.md`, `SECURITY.md`, `SUPPORT.md`,
+`CODE_OF_CONDUCT.md`. They all point to this monorepo.
+
+The content lives in [`organization/`](organization/README.md). The workflow
+`publish-organization` publishes it on every change on `main`, the same way as
+an action: it creates the repository if missing, applies the settings of
+`.github/managed-repository-settings.json`, and commits the content with
+`signed-commit`. The list of actions in the profile is generated with
+`pnpm run actions-list`.
 
 ## GitHub App
 
@@ -224,17 +237,18 @@ lives in the environment `release`, which only `main` and release tags can use.
 Every step requests its own token, restricted to one repository and the
 permissions it needs.
 
-| Step                             | Token          | Repository        | Permissions                              |
-| -------------------------------- | -------------- | ----------------- | ---------------------------------------- |
-| Checks (all jobs except below)   | `GITHUB_TOKEN` | monorepo          | `contents: read`                         |
-| Dispatch release                 | `GITHUB_TOKEN` | monorepo          | `actions: write`                         |
-| Release commit and tags          | app token      | monorepo          | `contents: write`                        |
-| Changeset for dependency updates | app token      | monorepo          | `contents: write`                        |
-| Create action repository         | app token      | monorepo (scope)  | `administration: write`, only if missing |
-| Configure action repository      | app token      | action repository | `administration: write`                  |
-| Commit, tag, release             | app token      | action repository | `contents: write`                        |
-| Vulnerability scan (security)    | `GITHUB_TOKEN` | monorepo          | `security-events: write`                 |
-| Build provenance                 | `GITHUB_TOKEN` | monorepo          | `id-token: write`, `attestations: write` |
+| Step                             | Token          | Repository        | Permissions                                                         |
+| -------------------------------- | -------------- | ----------------- | ------------------------------------------------------------------- |
+| Checks (all jobs except below)   | `GITHUB_TOKEN` | monorepo          | `contents: read`                                                    |
+| Dispatch release                 | `GITHUB_TOKEN` | monorepo          | `actions: write`                                                    |
+| Release commit and tags          | app token      | monorepo          | `contents: write`                                                   |
+| Changeset for dependency updates | app token      | monorepo          | `contents: write`                                                   |
+| Create action repository         | app token      | monorepo (scope)  | `administration: write`, only if missing                            |
+| Configure action repository      | app token      | action repository | `administration: write`                                             |
+| Commit, tag, release             | app token      | action repository | `contents: write`                                                   |
+| Publish organization repository  | app token      | `.github`         | `administration: write` (create, configure), then `contents: write` |
+| Vulnerability scan (security)    | `GITHUB_TOKEN` | monorepo          | `security-events: write`                                            |
+| Build provenance                 | `GITHUB_TOKEN` | monorepo          | `id-token: write`, `attestations: write`                            |
 
 ```mermaid
 flowchart LR
@@ -297,12 +311,12 @@ npm updates is created after the merge, in a job with the environment `release`.
 
 ## Vulnerability and License Checks
 
-| Check                                  | Tool                                                                                      | Scope                                   | Runs                                                         |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
-| Vulnerabilities and malicious packages | [osv-scanner](https://github.com/google/osv-scanner), pinned with checksum                | all dependencies in `pnpm-lock.yaml`    | `checks` (pull requests, `main`), weekly `security`, locally |
-| Licenses allowed anywhere              | osv-scanner (`--licenses`)                                                                | all dependencies                        | `checks`, locally                                            |
-| Licenses allowed in bundled code       | [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn) | production dependencies of every action | `checks`, locally                                            |
-| License file per action                | `tooling/bin/check-action-licenses.ts`                                                    | every action                            | `checks`, locally                                            |
+| Check                                        | Tool                                                                                      | Scope                                   | Runs                                                         |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| Vulnerabilities and malicious packages       | [osv-scanner](https://github.com/google/osv-scanner), pinned with checksum                | all dependencies in `pnpm-lock.yaml`    | `checks` (pull requests, `main`), weekly `security`, locally |
+| Licenses allowed anywhere                    | osv-scanner (`--licenses`)                                                                | all dependencies                        | `checks`, locally                                            |
+| Licenses allowed in bundled code             | [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn) | production dependencies of every action | `checks`, locally                                            |
+| License file, README sections, monorepo note | `tooling/bin/check-actions.ts`                                                            | every action                            | `checks`, locally                                            |
 
 The workflow `security` uploads the results of osv-scanner to code scanning.
 Accepted findings are listed in [`osv-scanner.toml`](osv-scanner.toml), each

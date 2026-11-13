@@ -8,6 +8,8 @@ export const REPOSITORY_SETTING_TYPES: Readonly<Record<string, 'string' | 'boole
   has_projects: 'boolean',
   has_wiki: 'boolean',
   has_discussions: 'boolean',
+  has_pull_requests: 'boolean',
+  pull_request_creation_policy: 'string',
   allow_squash_merge: 'boolean',
   allow_merge_commit: 'boolean',
   allow_rebase_merge: 'boolean',
@@ -33,6 +35,16 @@ export const SECURITY_SETTINGS = [
 ] as const;
 
 /**
+ * Valid repository topics: lowercase letters, digits, and hyphens, up to 50 characters.
+ */
+export const TOPIC_PATTERN = /^[\da-z][\da-z-]{0,49}$/;
+
+/**
+ * Maximum number of topics of a repository.
+ */
+export const MAX_TOPICS = 20;
+
+/**
  * Allowed values of the Actions setting `allowed_actions`.
  */
 export const ALLOWED_ACTIONS_OPTIONS = ['all', 'local_only', 'selected'] as const;
@@ -48,6 +60,7 @@ export const WORKFLOW_PERMISSIONS_OPTIONS = ['read', 'write'] as const;
 export const CONFIG_SECTIONS = [
   '$schema',
   'repository',
+  'topics',
   'security',
   'actions',
   'rulesets',

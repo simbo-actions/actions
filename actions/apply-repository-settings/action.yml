@@ -29,6 +29,10 @@ inputs:
     description: Overrides "repository.homepage" of the configuration.
     required: false
     default: ''
+  topics:
+    description: Overrides "topics" of the configuration; separated by whitespace or commas.
+    required: false
+    default: ''
   dry-run:
     description: Whether to only report the changes without applying them.
     required: false

@@ -3,6 +3,12 @@
 A GitHub Action to create a complete GitHub release: draft, assets, then
 publish. Works with immutable releases.
 
+> [!NOTE]  
+> Developed and maintained in the monorepo
+> [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
+> published here automatically. Issues, questions, and contributions go to the
+> monorepo.
+
 Most release actions publish a release first and upload the assets afterwards.
 With
 [immutable releases](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/immutable-releases),
