@@ -50,7 +50,7 @@ own. Consumers only use the action repositories, pinned by commit SHA.
 ```mermaid
 flowchart LR
   subgraph monorepo["simbo-actions/actions (monorepo)"]
-    actions["actions/NAME/<br/>signed-commit, staged-release,<br/>floating-version-tags,<br/>apply-repository-settings,<br/>github-app-bot-user, gitleaks-scan"]
+    actions["actions/NAME/<br/>one package per action"]
     shared["shared/octokit<br/>API client with rate limits"]
     tooling["tooling/<br/>monorepo checks and helpers"]
     workflows[".github/workflows/<br/>checks, release, publish,<br/>publish-organization, security"]

@@ -30,4 +30,4 @@ guaranteed response times; reports are handled on a best-effort basis.
 Every action has its own changelog and GitHub releases in its repository, for
 example
 [`simbo-actions/signed-commit/releases`](https://github.com/simbo-actions/signed-commit/releases).
-See [ACTIONS.md](ACTIONS.md) for all actions.
+The [organization profile](https://github.com/simbo-actions) lists all actions.

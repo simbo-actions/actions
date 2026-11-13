@@ -2,20 +2,14 @@ name: 💡 Feature request
 description: Suggest an improvement or a new action.
 labels: [enhancement]
 body:
-  - type: dropdown
+  - type: input
     id: action
     attributes:
       label: Action
-      options:
-        - apply-repository-settings
-        - floating-version-tags
-        - github-app-bot-user
-        - gitleaks-scan
-        - signed-commit
-        - staged-release
-        - New action
-        - Release or publish process of this repository
-        - Other
+      description: >
+        The name of the action, "new action", or "release process" for the
+        release and publish process of this repository.
+      placeholder: signed-commit
     validations:
       required: true
   - type: textarea

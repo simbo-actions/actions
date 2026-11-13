@@ -9,33 +9,8 @@ documentation, and reproducible releases with build provenance.
 
 ## Actions
 
-<!-- PACKAGES -->
-
-There are currently _**6**_ GitHub Actions managed in this repository.
-
-- [**apply-repository-settings**](https://github.com/simbo-actions/apply-repository-settings):
-  A GitHub Action to apply repository settings, security features, Actions
-  permissions, and rulesets from a configuration file, writing only what
-  differs.
-- [**floating-version-tags**](https://github.com/simbo-actions/floating-version-tags):
-  A GitHub Action to move floating version tags like v1 forward to a release,
-  safely: forward only, never to prereleases.
-- [**github-app-bot-user**](https://github.com/simbo-actions/github-app-bot-user):
-  A GitHub Action to get the bot user of a GitHub App: user ID, login, name, and
-  email for Git.
-- [**gitleaks-scan**](https://github.com/simbo-actions/gitleaks-scan): A GitHub
-  Action to scan the Git history for secrets with Gitleaks, from a pinned and
-  checksum-verified binary, in one step.
-- [**signed-commit**](https://github.com/simbo-actions/signed-commit): A GitHub
-  Action to create signed commits and tags via the GitHub API, shown as
-  verified.
-- [**staged-release**](https://github.com/simbo-actions/staged-release): A
-  GitHub Action to create a complete GitHub release: draft, assets, then
-  publish. Works with immutable releases.
-
-<!-- /PACKAGES -->
-
-[ACTIONS.md](ACTIONS.md) lists all actions with versions and links.
+The [organization profile](https://github.com/simbo-actions) lists all actions,
+each with a link to its repository and README.
 
 ## Usage
 
@@ -64,7 +39,6 @@ release is described in [SECURITY.md](SECURITY.md#verifying-a-release).
 
 | Document                           | For                                                   |
 | ---------------------------------- | ----------------------------------------------------- |
-| [ACTIONS.md](ACTIONS.md)           | All actions, with versions and links                  |
 | [STANDARDS.md](STANDARDS.md)       | The quality and security requirements of every action |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How actions are released, published, and managed      |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report issues and contribute                   |

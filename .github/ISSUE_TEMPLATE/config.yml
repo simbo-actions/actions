@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/simbo-actions/actions/security/advisories/new
     about: Report security issues privately, not in public issues.
   - name: 📖 Documentation
-    url: https://github.com/simbo-actions/actions/blob/main/ACTIONS.md
+    url: https://github.com/simbo-actions
     about: Check the README of the action first.

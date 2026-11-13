@@ -82,7 +82,7 @@ Root scripts (run with `pnpm run <script>`):
 | `check:secrets`          | Scan the Git history with Gitleaks (needs a local installation)            |
 | `check:actions`          | Check `LICENSE.md`, README sections, and the monorepo note of every action |
 | `fix:format`             | Format all files with Prettier                                             |
-| `actions-list`           | Update the generated lists in `README.md` and `ACTIONS.md`                 |
+| `actions-list`           | Update the generated list of actions in the organization profile           |
 | `ncu:patch`, `ncu:minor` | Update dependencies interactively                                          |
 
 Workspace scripts (run inside a workspace, or with
