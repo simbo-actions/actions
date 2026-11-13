@@ -15,7 +15,9 @@ export default defineConfig([
     before: (workspaces: WorkspaceMetadata[]): string => formatCount(workspaces.length),
 
     templateFn: (workspace: WorkspaceMetadata): string => {
-      const { name, title, version, description } = workspace;
+      const { name, version, description } = workspace;
+      // The title is the first heading of the README; the suffix belongs there only.
+      const title = workspace.title.replace(/\s*_\(GitHub Action\)_$/, '');
 
       const repoName = `simbo-actions/${name}`;
       const repoUrl = `https://github.com/${repoName}`;
@@ -32,8 +34,9 @@ export default defineConfig([
         `  > ${description}`,
         `  ⚙️ **\`${repoName}@<SHA> # v${version}\`**`,
         `  Latest Version: \`${version}\``,
-        // One link per line; the no-break space keeps the bullet next to its link.
-        `  ${links.join('\u00A0•  \n  ')}`,
+        // No-break spaces around the bullet: Prettier wraps only after it, and
+        // GitHub renders the links on one line.
+        `  ${links.join('\u00A0\u00A0•\u00A0 ')}`,
       ].join('\n\n');
     },
   },
