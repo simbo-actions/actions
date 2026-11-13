@@ -60,7 +60,8 @@ Required:
 - Inputs, secrets, and other untrusted values reach scripts only via environment
   variables, never via `${{ }}` inside a script.
 - No secrets in pull request workflows. Jobs that need secrets use the
-  environment `release` and run only on `main` or release tags.
+  environment `release`, or `smoke-test` for the integration tests, and run only
+  on `main` or release tags.
 - No own cryptography: tokens, signatures, and hashes come from established
   libraries or GitHub.
 - Automation acts through a dedicated GitHub App with the least installation
@@ -111,8 +112,11 @@ Required:
   repository, including [`tooling/`](tooling/README.md).
 - Every behavior and every error case has its own test with a meaningful
   assertion. Coverage is a lower bound, not the goal.
-- Smoke tests against the real GitHub API where they work without secrets, one
-  job per action in the workflow `smoke-tests`; the release waits for them.
+- Smoke tests against the real GitHub API, one job per action in the workflow
+  `smoke-tests`; the release waits for them.  
+  Read-only tests run without secrets on every pull request. Actions that need
+  write access are tested on `main` against the repository
+  `simbo-actions/sandbox`, with a GitHub App token restricted to it.
 
 ### Behavior
 
@@ -274,8 +278,8 @@ Required:
   Git.
 - Third-party code (install, build) never runs in a job with credentials.  
   A build job without environment and secrets hands its result over as artifact;
-  the privileged job with the environment `release` only runs prebuilt actions.
-  Checked in CI (`pnpm run check:actions`).
+  the privileged job with an environment only runs prebuilt actions. Checked in
+  CI (`pnpm run check:actions`).
 - All workflows and `action.yml` files pass
   [actionlint](https://github.com/rhysd/actionlint) with ShellCheck.
 - Jobs must not fail on Dependabot branches; jobs with secrets run only on
@@ -303,8 +307,6 @@ Planned, not yet required:
   score.
 - [OpenSSF Best Practices badge](https://www.bestpractices.dev/), level
   "passing".
-- Integration tests with a GitHub App token on `main`, for actions that need
-  write access.
 - A stated response time for security reports.
 
 ## How the Standard Is Enforced

@@ -139,7 +139,9 @@ Workspace scripts (run inside a workspace, or with
   `actions/signed-commit/tests/git-fixture.ts`).
 - Code that calls the GitHub API is tested with a fake Octokit client.  
   No test calls the real API, except the smoke tests in the workflow
-  `smoke-tests`.
+  `smoke-tests`: read-only tests on every pull request, and write tests on
+  `main` against `simbo-actions/sandbox`, see
+  [ARCHITECTURE.md](ARCHITECTURE.md#integration-tests).
 
 ## Adding an Action
 
@@ -163,10 +165,13 @@ Workspace scripts (run inside a workspace, or with
 7. Write the code and tests.  
    Report the result in the job summary in the style of the other actions, and
    name Linux runners in **Limitations**.  
-   If the action can run without secrets, add a job for it to
-   [`smoke-tests.yml`](.github/workflows/smoke-tests.yml): it downloads the
-   built actions, runs the action with `uses: ./smoke/actions/<name>`, and
-   checks its outputs, with only the permissions the test needs.
+   Add a job for it to [`smoke-tests.yml`](.github/workflows/smoke-tests.yml):
+   it downloads the built actions, runs the action with
+   `uses: ./smoke/actions/<name>`, and checks its outputs, with only the
+   permissions the test needs.  
+   An action that writes is tested in a job `<name>-sandbox` on `main`, with the
+   environment `smoke-test`, an app token restricted to the sandbox, no npm
+   code, and a cleanup step that runs also on failure.
 8. Add a changeset with a major bump for the first release (1.0.0), and run
    `pnpm run actions-list`.
 

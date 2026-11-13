@@ -12,6 +12,7 @@ manages the action repositories in the organization
 - [Why](#why)
 - [Overview](#overview)
 - [Repositories](#repositories)
+- [Integration Tests](#integration-tests)
 - [From Changeset to Release](#from-changeset-to-release)
 - [Publishing an Action](#publishing-an-action)
 - [Managing Action Repositories](#managing-action-repositories)
@@ -93,6 +94,7 @@ flowchart LR
 | ------------------------ | -------------------------------------------------------------------------------- | ------------------------------------ |
 | `simbo-actions/actions`  | Source, tests, and docs of all actions; tooling; workflows                       | Maintainers and contributors via PRs |
 | `simbo-actions/<action>` | Build artifacts of one action: `action.yml`, `dist/`, README, changelog, license | Only the publish workflow            |
+| `simbo-actions/sandbox`  | Nothing permanent: the target of the integration tests of the write actions      | Only the workflow `smoke-tests`      |
 
 The action repositories have issues, pull requests, discussions, wiki, and
 projects disabled.  
@@ -116,6 +118,30 @@ the same run: they publish themselves with
 [`floating-version-tags`](actions/floating-version-tags/README.md).
 
 Every action in `actions/<name>/` is published to `simbo-actions/<name>`.
+
+## Integration Tests
+
+The workflow `smoke-tests` tests the built actions against the real API, one job
+per action, before every release:
+
+- **Read-only tests** run on every pull request and push, without secrets, for
+  example dry runs against public repositories.
+- **Write tests** run only on `main`, in the environment `smoke-test`, against
+  the repository
+  [`simbo-actions/sandbox`](https://github.com/simbo-actions/sandbox):
+  - `apply-repository-settings` creates and configures the sandbox like an
+    action repository, checks that a second run changes nothing, and creates and
+    renames a label;
+  - `signed-commit` commits to a new branch with a file pattern, commits on top,
+    and tags the head without changes;
+  - `staged-release` publishes a release with an asset and generated notes and
+    skips it in a re-run;
+  - `floating-version-tags` creates and moves an annotated `v1`.
+
+Like the privileged jobs of the release, the write tests run only prebuilt
+actions and no npm code, and every token is restricted to the sandbox.  
+Every job removes what it created, also when it fails; branches and tags carry
+the run ID, so leftovers of an earlier run do not interfere.
 
 ## From Changeset to Release
 
@@ -267,13 +293,13 @@ All automation that writes in the organization acts as one GitHub App,
 `simbo-actions[bot]`.  
 No personal tokens are used.
 
-| Aspect                 | Setting                                                                                                                                  |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Installation           | Organization `simbo-actions`, all repositories: the publish process creates new repositories, which must be covered without manual steps |
-| Repository permissions | `administration: write` to create and configure action repositories; `contents: write` for commits, tags, and releases; `metadata: read` |
-| Not granted            | `workflows` (no step writes workflow files), all organization permissions, webhooks and events                                           |
-| Credentials            | Private key in the environment `release` (`SIMBO_ACTIONS_APP_PRIVATE_KEY`), client ID as variable (`SIMBO_ACTIONS_APP_CLIENT_ID`)        |
-| Rulesets               | Bypass actor in the rulesets of the monorepo and of every action repository, together with organization admins                           |
+| Aspect                 | Setting                                                                                                                                                                                      |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Installation           | Organization `simbo-actions`, all repositories: the publish process creates new repositories, which must be covered without manual steps                                                     |
+| Repository permissions | `administration: write` to create and configure action repositories; `contents: write` for commits, tags, and releases; `issues: write` for the label tests in the sandbox; `metadata: read` |
+| Not granted            | `workflows` (no step writes workflow files), all organization permissions, webhooks and events                                                                                               |
+| Credentials            | Private key in the environments `release` and `smoke-test` (`SIMBO_ACTIONS_APP_PRIVATE_KEY`), client ID as variable (`SIMBO_ACTIONS_APP_CLIENT_ID`)                                          |
+| Rulesets               | Bypass actor in the rulesets of the monorepo and of every action repository, together with organization admins                                                                               |
 
 Two levels limit what a token can do:
 
@@ -290,7 +316,8 @@ Two levels limit what a token can do:
 
 Release and publish run as the GitHub App `simbo-actions[bot]`.  
 Its private key lives in the environment `release`, which only `main` and
-release tags can use.  
+release tags can use, and in the environment `smoke-test` for the integration
+tests, which only `main` can use.  
 Every step requests its own token, restricted to one repository and the
 permissions it needs.
 
@@ -307,6 +334,9 @@ permissions it needs.
 | Vulnerability scan (security)    | `GITHUB_TOKEN` | monorepo          | `security-events: write`                                            |
 | Build jobs                       | `GITHUB_TOKEN` | monorepo          | `contents: read`, no environment                                    |
 | Build provenance (publish job)   | `GITHUB_TOKEN` | monorepo          | `id-token: write`, `attestations: write`                            |
+| Create sandbox (smoke tests)     | app token      | monorepo (scope)  | `administration: write`, only if missing                            |
+| Configure sandbox, label tests   | app token      | sandbox           | `administration: write`, `issues: write`                            |
+| Write tests (smoke tests)        | app token      | sandbox           | `contents: write`                                                   |
 
 ```mermaid
 flowchart LR
@@ -328,11 +358,12 @@ the API.
 | Push to `main` (checks)                                   | none    | dispatches the release only                |
 | Build jobs of release and publish                         | none    | nothing; they hand over an artifact        |
 | Jobs with environment `release` on `main` or release tags | app key | monorepo and action repositories, per step |
+| Jobs with environment `smoke-test` on `main`              | app key | the sandbox only                           |
 | Organization admins                                       | –       | everything, via ruleset bypass             |
 
-Jobs with the environment `release` run no npm code: a process started by a
-dependency during install or build could otherwise read the private key from a
-later step on the same runner.  
+Jobs with an environment run no npm code: a process started by a dependency
+during install or build could otherwise read the private key from a later step
+on the same runner.  
 Remaining risk: a compromised build tool could change the prebuilt actions that
 the privileged job runs with a short-lived, narrowly scoped token. Using the
 published actions, pinned by SHA, instead of the ones built in the same run
