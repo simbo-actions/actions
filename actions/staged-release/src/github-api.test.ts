@@ -93,6 +93,8 @@ describe('release requests', () => {
       name: 'v1.0.0',
       body: 'Notes',
       prerelease: false,
+      generateReleaseNotes: false,
+      discussionCategory: '',
     });
     expect(result).toBe(release);
     expect(createRelease).toHaveBeenCalledWith({
@@ -104,6 +106,41 @@ describe('release requests', () => {
       prerelease: false,
       draft: true,
     });
+  });
+
+  it('creates a draft release with generated notes and a discussion', async () => {
+    const createRelease = vi.fn().mockResolvedValue({ data: release });
+    await createDraftRelease(fakeOctokit({ createRelease }), {
+      repository,
+      tag: 'v1.0.0',
+      name: 'v1.0.0',
+      body: '',
+      prerelease: false,
+      generateReleaseNotes: true,
+      discussionCategory: 'Announcements',
+    });
+    expect(createRelease).toHaveBeenCalledWith(
+      expect.objectContaining({ generate_release_notes: true, discussion_category_name: 'Announcements' }),
+    );
+  });
+
+  it('explains a rejected discussion category', async () => {
+    const createRelease = vi.fn().mockRejectedValue(Object.assign(new Error('HTTP 422'), { status: 422 }));
+    const params = {
+      repository,
+      tag: 'v1.0.0',
+      name: 'v1.0.0',
+      body: '',
+      prerelease: false,
+      generateReleaseNotes: false,
+      discussionCategory: 'Missing',
+    };
+    await expect(createDraftRelease(fakeOctokit({ createRelease }), params)).rejects.toThrow(
+      'with the discussion category "Missing": check that discussions are enabled and the category exists.',
+    );
+    await expect(
+      createDraftRelease(fakeOctokit({ createRelease }), { ...params, discussionCategory: '' }),
+    ).rejects.toThrow('HTTP 422');
   });
 
   it('uploads an asset as binary data', async () => {

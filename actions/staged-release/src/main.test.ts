@@ -15,11 +15,13 @@ import {
 } from './github-api.js';
 import { main } from './main.js';
 import type { ParsedActionInputs } from './staged-release.types.js';
+import { writeSummary } from './summary.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), setOutput: vi.fn() }));
 vi.mock('./create-octokit.js', () => ({ createOctokit: vi.fn(() => ({})) }));
 vi.mock('./action-inputs.js', () => ({ parseActionInputs: vi.fn() }));
 vi.mock('./find-assets.js', () => ({ findAssets: vi.fn() }));
+vi.mock('./summary.js', () => ({ writeSummary: vi.fn() }));
 vi.mock('./github-api.js', () => ({
   assertTagExists: vi.fn(),
   createDraftRelease: vi.fn(),
@@ -42,6 +44,8 @@ const inputs: ParsedActionInputs = {
   prerelease: false,
   publish: true,
   ifReleased: 'error',
+  generateReleaseNotes: false,
+  discussionCategory: '',
 };
 const draft: Release = { id: 9, tag_name: 'v1.0.0', draft: true, html_url: 'https://draft', upload_url: 'x' };
 const published: Release = { ...draft, draft: false, html_url: 'https://release' };
@@ -69,6 +73,38 @@ describe('main', () => {
       ['release-id', '9'],
       ['url', 'https://release'],
       ['assets', JSON.stringify([{ name: 'a.tar.gz', size: 3, url: 'https://download' }])],
+    ]);
+    expect(writeSummary).toHaveBeenCalledWith({
+      state: 'published',
+      name: 'v1.0.0',
+      tag: 'v1.0.0',
+      url: 'https://release',
+      labels: ['latest'],
+      assets: [{ name: 'a.tar.gz', size: 3, url: 'https://download' }],
+    });
+  });
+
+  it('passes generated notes and the discussion category to the draft', async () => {
+    vi.mocked(parseActionInputs).mockResolvedValue({
+      ...inputs,
+      prerelease: true,
+      generateReleaseNotes: true,
+      discussionCategory: 'Announcements',
+    });
+    await main();
+    expect(createDraftRelease).toHaveBeenCalledWith(expect.anything(), {
+      repository: { owner: 'owner', repo: 'repo' },
+      tag: 'v1.0.0',
+      name: 'v1.0.0',
+      body: 'Notes',
+      prerelease: true,
+      generateReleaseNotes: true,
+      discussionCategory: 'Announcements',
+    });
+    expect(vi.mocked(writeSummary).mock.calls[0][0].labels).toEqual([
+      'prerelease',
+      'generated notes',
+      'discussion in Announcements',
     ]);
   });
 
@@ -104,6 +140,14 @@ describe('main', () => {
       ['url', 'https://release'],
       ['assets', '[]'],
     ]);
+    expect(writeSummary).toHaveBeenCalledWith(expect.objectContaining({ state: 'skipped', name: 'v1.0.0' }));
+  });
+
+  it('names a skipped release by its title', async () => {
+    vi.mocked(parseActionInputs).mockResolvedValue({ ...inputs, ifReleased: 'skip' });
+    vi.mocked(listReleasesOfTag).mockResolvedValue([{ ...published, name: 'Version 1' }]);
+    await main();
+    expect(writeSummary).toHaveBeenCalledWith(expect.objectContaining({ name: 'Version 1' }));
   });
 
   it('leaves the release as draft with publish: false', async () => {
@@ -111,5 +155,6 @@ describe('main', () => {
     await main();
     expect(publishRelease).not.toHaveBeenCalled();
     expect(setOutput).toHaveBeenCalledWith('url', 'https://draft');
+    expect(writeSummary).toHaveBeenCalledWith(expect.objectContaining({ state: 'draft', labels: [] }));
   });
 });

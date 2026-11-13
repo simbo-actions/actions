@@ -60,6 +60,18 @@ inputs:
       "skip" ends it successfully without changes, for example in a re-run.
     required: false
     default: error
+  generate-release-notes:
+    description: >
+      Whether GitHub generates release notes from the merged pull requests and
+      appends them to "body".
+    required: false
+    default: 'false'
+  discussion-category:
+    description: >
+      The category of a discussion that GitHub creates and links to the
+      release. The category must exist, and discussions must be enabled.
+    required: false
+    default: ''
 
 outputs:
   release-id:

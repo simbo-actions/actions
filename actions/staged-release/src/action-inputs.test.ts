@@ -45,6 +45,8 @@ describe('parseActionInputs', () => {
       prerelease: false,
       publish: true,
       ifReleased: 'error',
+      generateReleaseNotes: false,
+      discussionCategory: '',
     });
   });
 
@@ -58,6 +60,8 @@ describe('parseActionInputs', () => {
     setInput('prerelease', 'true');
     setInput('publish', 'false');
     setInput('if-released', 'Skip');
+    setInput('generate-release-notes', 'true');
+    setInput('discussion-category', ' Announcements ');
 
     expect(await parseActionInputs()).toEqual({
       token: 'token',
@@ -72,6 +76,8 @@ describe('parseActionInputs', () => {
       prerelease: true,
       publish: false,
       ifReleased: 'skip',
+      generateReleaseNotes: true,
+      discussionCategory: 'Announcements',
     });
   });
 

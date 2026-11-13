@@ -1,7 +1,11 @@
 import { readFile } from 'node:fs/promises';
 
 import type { Octokit } from './create-octokit.js';
-import { HTTP_STATUS_NOT_FOUND, RELEASES_PER_PAGE } from './staged-release-constants.js';
+import {
+  HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_UNPROCESSABLE_ENTITY,
+  RELEASES_PER_PAGE,
+} from './staged-release-constants.js';
 import type { AssetFile, MakeLatestOption, UploadedAsset } from './staged-release.types.js';
 
 export type { Octokit } from './create-octokit.js';
@@ -20,7 +24,9 @@ export interface RepositoryRef {
 export interface Release {
   id: number;
   tag_name: string;
+  name?: string | null;
   draft: boolean;
+  prerelease?: boolean;
   html_url: string;
   upload_url: string;
 }
@@ -92,21 +98,44 @@ export async function deleteRelease(octokit: Octokit, repository: RepositoryRef,
  * @param params.name - The release title.
  * @param params.body - The release notes.
  * @param params.prerelease - Whether the release is a prerelease.
+ * @param params.generateReleaseNotes - Whether GitHub appends generated release notes to the body.
+ * @param params.discussionCategory - The category of a discussion for the release, or an empty string for none.
  * @returns The draft release.
+ * @throws {Error} if the discussion category does not exist, or the request fails.
  */
 export async function createDraftRelease(
   octokit: Octokit,
-  params: { repository: RepositoryRef; tag: string; name: string; body: string; prerelease: boolean },
+  params: {
+    repository: RepositoryRef;
+    tag: string;
+    name: string;
+    body: string;
+    prerelease: boolean;
+    generateReleaseNotes: boolean;
+    discussionCategory: string;
+  },
 ): Promise<Release> {
-  const { data } = await octokit.rest.repos.createRelease({
-    ...params.repository,
-    tag_name: params.tag,
-    name: params.name,
-    body: params.body,
-    prerelease: params.prerelease,
-    draft: true,
-  });
-  return data;
+  try {
+    const { data } = await octokit.rest.repos.createRelease({
+      ...params.repository,
+      tag_name: params.tag,
+      name: params.name,
+      body: params.body,
+      prerelease: params.prerelease,
+      draft: true,
+      ...(params.generateReleaseNotes && { generate_release_notes: true }),
+      ...(params.discussionCategory && { discussion_category_name: params.discussionCategory }),
+    });
+    return data;
+  } catch (error) {
+    if (params.discussionCategory && hasStatus(error, HTTP_STATUS_UNPROCESSABLE_ENTITY)) {
+      throw new Error(
+        `Cannot create the release of "${params.tag}" with the discussion category "${params.discussionCategory}": check that discussions are enabled and the category exists.`,
+        { cause: error },
+      );
+    }
+    throw error;
+  }
 }
 
 /**

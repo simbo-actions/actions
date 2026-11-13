@@ -14,6 +14,12 @@ export const IF_RELEASED_OPTIONS = ['error', 'skip'] as const;
 export const HTTP_STATUS_NOT_FOUND = 404;
 
 /**
+ * HTTP status of the GitHub API for validation errors, such as an unknown
+ * discussion category.
+ */
+export const HTTP_STATUS_UNPROCESSABLE_ENTITY = 422;
+
+/**
  * Number of releases per page when listing releases.
  */
 export const RELEASES_PER_PAGE = 100;

@@ -39,9 +39,11 @@ This action publishes a release only when it is complete.
    another commit.
 3. Removes leftover **draft** releases of the tag from a previous failed run.  
    If the tag is already **released**, the action fails.
-4. Creates the release as draft, with title and release notes.
+4. Creates the release as draft, with title and release notes; optionally with
+   generated release notes and a linked discussion.
 5. Uploads all assets to the draft.
 6. Publishes the release (or leaves it as draft with `publish: false`).
+7. Writes the release and its assets to the job summary.
 
 ## Usage
 
@@ -103,6 +105,23 @@ jobs:
     assets: dist/*
 ```
 
+### Generated Release Notes and a Discussion
+
+```yaml
+- name: 📦 Create Release
+  uses: simbo-actions/staged-release@<SHA> # vX.Y.Z
+  with:
+    token: ${{ github.token }}
+    tag: v1.2.0
+    body: '**Upgrade:** no breaking changes.'
+    generate-release-notes: true
+    discussion-category: Announcements
+```
+
+GitHub appends the generated notes (merged pull requests, new contributors, a
+changelog link) to `body`.  
+The discussion category must exist, and discussions must be enabled.
+
 ### Release in Another Repository
 
 ```yaml
@@ -130,20 +149,22 @@ jobs:
 
 ## Inputs
 
-| Input               | Description                                                                            | Required | Default                    |
-| ------------------- | -------------------------------------------------------------------------------------- | -------- | -------------------------- |
-| `token`             | The token to authenticate with, see [Token and Permissions](#token-and-permissions)    | true     |                            |
-| `repository`        | The repository to create the release in (`owner/repo`)                                 | false    | `${{ github.repository }}` |
-| `tag`               | The existing tag to release                                                            | true     |                            |
-| `name`              | The release title                                                                      | false    | the tag                    |
-| `body`              | The release notes                                                                      | false    |                            |
-| `body-file`         | A file with the release notes, relative to `working-directory`                         | false    |                            |
-| `assets`            | Files to upload, one path or glob pattern per line, relative to `working-directory`    | false    |                            |
-| `working-directory` | The directory `assets` and `body-file` are resolved against                            | false    | `.`                        |
-| `make-latest`       | `true`, `false`, or `legacy` (latest by date and version)                              | false    | `true`                     |
-| `prerelease`        | Whether the release is a prerelease                                                    | false    | `false`                    |
-| `publish`           | Whether to publish the release; with `false`, it stays a draft                         | false    | `true`                     |
-| `if-released`       | `error` or `skip` if the tag is already released, see [Re-Runs](#re-runs-and-failures) | false    | `error`                    |
+| Input                    | Description                                                                            | Required | Default                    |
+| ------------------------ | -------------------------------------------------------------------------------------- | -------- | -------------------------- |
+| `token`                  | The token to authenticate with, see [Token and Permissions](#token-and-permissions)    | true     |                            |
+| `repository`             | The repository to create the release in (`owner/repo`)                                 | false    | `${{ github.repository }}` |
+| `tag`                    | The existing tag to release                                                            | true     |                            |
+| `name`                   | The release title                                                                      | false    | the tag                    |
+| `body`                   | The release notes                                                                      | false    |                            |
+| `body-file`              | A file with the release notes, relative to `working-directory`                         | false    |                            |
+| `assets`                 | Files to upload, one path or glob pattern per line, relative to `working-directory`    | false    |                            |
+| `working-directory`      | The directory `assets` and `body-file` are resolved against                            | false    | `.`                        |
+| `make-latest`            | `true`, `false`, or `legacy` (latest by date and version)                              | false    | `true`                     |
+| `prerelease`             | Whether the release is a prerelease                                                    | false    | `false`                    |
+| `publish`                | Whether to publish the release; with `false`, it stays a draft                         | false    | `true`                     |
+| `if-released`            | `error` or `skip` if the tag is already released, see [Re-Runs](#re-runs-and-failures) | false    | `error`                    |
+| `generate-release-notes` | Whether GitHub appends generated release notes to `body`                               | false    | `false`                    |
+| `discussion-category`    | The category of a discussion GitHub creates for the release                            | false    |                            |
 
 - Use either `body` or `body-file`.
 - Asset names are the file names; two assets with the same name fail the action.
@@ -207,6 +228,7 @@ The tag must exist before the action runs, for example created by a push or by
 - The action does not create or move tags.
 - Assets are uploaded with the content type `application/octet-stream`.
 - Existing published releases are never changed.
+- Runs on Linux runners only (x64 and arm64).
 
 ## License
 

@@ -96,6 +96,8 @@ export async function parseActionInputs(): Promise<ParsedActionInputs> {
     );
   }
 
+  const generateReleaseNotes = parseBoolean('generate-release-notes', false);
+  const discussionCategory = getInput('discussion-category').trim();
   return {
     token,
     owner,
@@ -109,5 +111,7 @@ export async function parseActionInputs(): Promise<ParsedActionInputs> {
     prerelease,
     publish,
     ifReleased: ifReleased as IfReleasedOption,
+    generateReleaseNotes,
+    discussionCategory,
   };
 }

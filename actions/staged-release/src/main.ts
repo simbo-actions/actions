@@ -11,7 +11,23 @@ import {
   publishRelease,
   uploadAsset,
 } from './github-api.js';
-import type { UploadedAsset } from './staged-release.types.js';
+import type { ParsedActionInputs, UploadedAsset } from './staged-release.types.js';
+import { writeSummary } from './summary.js';
+
+/**
+ * Gets the labels of a release for the job summary.
+ *
+ * @param inputs - The action inputs.
+ * @returns For example `prerelease` or `latest`.
+ */
+function getLabels(inputs: ParsedActionInputs): string[] {
+  return [
+    ...(inputs.prerelease ? ['prerelease'] : []),
+    ...(inputs.publish && !inputs.prerelease && inputs.makeLatest === 'true' ? ['latest'] : []),
+    ...(inputs.generateReleaseNotes ? ['generated notes'] : []),
+    ...(inputs.discussionCategory ? [`discussion in ${inputs.discussionCategory}`] : []),
+  ];
+}
 
 /**
  * Main entry point for the staged-release action.
@@ -43,6 +59,14 @@ export async function main(): Promise<void> {
     setOutput('release-id', String(released.id));
     setOutput('url', released.html_url);
     setOutput('assets', '[]');
+    await writeSummary({
+      state: 'skipped',
+      name: released.name ?? tag,
+      tag,
+      url: released.html_url,
+      labels: [],
+      assets: [],
+    });
     return;
   }
   for (const { id } of existing) {
@@ -56,6 +80,8 @@ export async function main(): Promise<void> {
     name: inputs.name,
     body: inputs.body,
     prerelease: inputs.prerelease,
+    generateReleaseNotes: inputs.generateReleaseNotes,
+    discussionCategory: inputs.discussionCategory,
   });
   info(`Created draft release ${release.id} for ${tag}.`);
 
@@ -75,4 +101,13 @@ export async function main(): Promise<void> {
   setOutput('release-id', String(release.id));
   setOutput('url', release.html_url);
   setOutput('assets', JSON.stringify(uploaded));
+
+  await writeSummary({
+    state: inputs.publish ? 'published' : 'draft',
+    name: inputs.name,
+    tag,
+    url: release.html_url,
+    labels: getLabels(inputs),
+    assets: uploaded,
+  });
 }

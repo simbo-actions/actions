@@ -24,6 +24,8 @@ export interface ParsedActionInputs {
   prerelease: boolean;
   publish: boolean;
   ifReleased: IfReleasedOption;
+  generateReleaseNotes: boolean;
+  discussionCategory: string;
 }
 
 /**
