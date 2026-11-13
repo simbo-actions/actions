@@ -94,8 +94,9 @@ Required:
   may download its tool itself.
 - Floating tags: only `vX`, only created and moved by the release process, only
   forward to the highest stable version of the major version, never to a
-  prerelease. No `vX.Y` or `latest`. Documentation recommends pinning by SHA and
-  offers `@vX` as convenience.
+  prerelease. They are annotated tags whose message names the release. No `vX.Y`
+  or `latest`. Documentation recommends pinning by SHA and offers `@vX` as
+  convenience.
 - Immutable releases: a published version is final; corrections are new patch
   releases.
 

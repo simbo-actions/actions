@@ -360,11 +360,16 @@ bypass them.
   [`floating-version-tags`](actions/floating-version-tags/README.md), and only
   forward: to the highest stable version of its line, never to a prerelease.  
   A re-run of an older release does not move it back.
+- The floating tag is an annotated tag whose message names the release, for
+  example `v1 → v1.4.2 (latest stable release of major version 1)`;
+  `git show v1` shows it.  
+  GitHub does not sign tag objects created via the API; the commit it points to
+  is verified.
 - There are no `vX.Y` or `latest` tags.
 - Release and floating tags are protected by the ruleset "Release Tags"
   (`v*`).  
-  With immutable releases, a published version is final; the floating tag is a
-  plain tag and keeps moving.
+  With immutable releases, a published version is final; the floating tag is not
+  part of a release and keeps moving.
 
 ```mermaid
 flowchart LR

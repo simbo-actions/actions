@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { getTagCommit, listVersionTagNames, writeTag, type Octokit } from './github-api.js';
+import { getTagState, listTagNames, writeTag, type Octokit } from './github-api.js';
 
 const repository = { owner: 'owner', repo: 'repo' };
 
@@ -20,6 +20,7 @@ function fakeOctokit(git: Record<string, unknown> = {}, pages: unknown[] = []): 
         getTag: git.getTag ?? vi.fn(),
         listMatchingRefs: vi.fn(),
         createRef: git.createRef ?? vi.fn(),
+        createTag: git.createTag ?? vi.fn(),
         updateRef: git.updateRef ?? vi.fn(),
       },
     },
@@ -47,10 +48,10 @@ function objectResponse(type: string, sha: string): { data: { object: { type: st
   return { data: { object: { type, sha } } };
 }
 
-describe('getTagCommit', () => {
+describe('getTagState', () => {
   it('returns the commit of a lightweight tag', async () => {
     const getRef = vi.fn().mockResolvedValue(objectResponse('commit', 'abc'));
-    expect(await getTagCommit(fakeOctokit({ getRef }), repository, 'v1')).toBe('abc');
+    expect(await getTagState(fakeOctokit({ getRef }), repository, 'v1')).toEqual({ commit: 'abc', annotated: false });
     expect(getRef).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo', ref: 'tags/v1' });
   });
 
@@ -60,24 +61,27 @@ describe('getTagCommit', () => {
       .fn()
       .mockResolvedValueOnce(objectResponse('tag', 't2'))
       .mockResolvedValueOnce(objectResponse('commit', 'abc'));
-    expect(await getTagCommit(fakeOctokit({ getRef, getTag }), repository, 'v1.0.0')).toBe('abc');
+    expect(await getTagState(fakeOctokit({ getRef, getTag }), repository, 'v1.0.0')).toEqual({
+      commit: 'abc',
+      annotated: true,
+    });
     expect(getTag).toHaveBeenNthCalledWith(1, { owner: 'owner', repo: 'repo', tag_sha: 't1' });
     expect(getTag).toHaveBeenNthCalledWith(2, { owner: 'owner', repo: 'repo', tag_sha: 't2' });
   });
 
   it('returns undefined for a missing tag', async () => {
     const getRef = vi.fn().mockRejectedValue(httpError(404));
-    expect(await getTagCommit(fakeOctokit({ getRef }), repository, 'v1')).toBeUndefined();
+    expect(await getTagState(fakeOctokit({ getRef }), repository, 'v1')).toBeUndefined();
   });
 
   it('rethrows other errors', async () => {
     const getRef = vi.fn().mockRejectedValue(httpError(500));
-    await expect(getTagCommit(fakeOctokit({ getRef }), repository, 'v1')).rejects.toThrow('HTTP 500');
+    await expect(getTagState(fakeOctokit({ getRef }), repository, 'v1')).rejects.toThrow('HTTP 500');
   });
 
   it('fails for a tag that does not point to a commit', async () => {
     const getRef = vi.fn().mockResolvedValue(objectResponse('tree', 'abc'));
-    await expect(getTagCommit(fakeOctokit({ getRef }), repository, 'v1')).rejects.toThrow(
+    await expect(getTagState(fakeOctokit({ getRef }), repository, 'v1')).rejects.toThrow(
       'The tag "v1" does not point to a commit (found: tree).',
     );
   });
@@ -85,22 +89,28 @@ describe('getTagCommit', () => {
   it('stops following a chain of annotated tags that is too long', async () => {
     const getRef = vi.fn().mockResolvedValue(objectResponse('tag', 't'));
     const getTag = vi.fn().mockResolvedValue(objectResponse('tag', 't'));
-    await expect(getTagCommit(fakeOctokit({ getRef, getTag }), repository, 'v1')).rejects.toThrow(
+    await expect(getTagState(fakeOctokit({ getRef, getTag }), repository, 'v1')).rejects.toThrow(
       'does not point to a commit (found: tag)',
     );
     expect(getTag).toHaveBeenCalledTimes(5);
   });
 });
 
-describe('listVersionTagNames', () => {
-  it('lists the names of all tags starting with v', async () => {
+describe('listTagNames', () => {
+  it('lists the names of all tags starting with a prefix', async () => {
     const octokit = fakeOctokit({}, [{ ref: 'refs/tags/v1' }, { ref: 'refs/tags/v1.0.0' }]);
-    expect(await listVersionTagNames(octokit, repository)).toEqual(['v1', 'v1.0.0']);
+    expect(await listTagNames(octokit, repository, 'v')).toEqual(['v1', 'v1.0.0']);
     expect(octokit.paginate).toHaveBeenCalledWith(octokit.rest.git.listMatchingRefs, {
       owner: 'owner',
       repo: 'repo',
       ref: 'tags/v',
     });
+  });
+
+  it('lists all tags without a prefix', async () => {
+    const octokit = fakeOctokit({}, [{ ref: 'refs/tags/1.0.0' }]);
+    expect(await listTagNames(octokit, repository, '')).toEqual(['1.0.0']);
+    expect(vi.mocked(octokit.paginate).mock.calls[0][1]).toEqual({ owner: 'owner', repo: 'repo', ref: 'tags' });
   });
 });
 
@@ -119,5 +129,31 @@ describe('writeTag', () => {
     await writeTag(fakeOctokit({ createRef, updateRef }), repository, { tag: 'v1', sha: 'abc', exists: true });
     expect(updateRef).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo', ref: 'tags/v1', sha: 'abc', force: true });
     expect(createRef).not.toHaveBeenCalled();
+  });
+
+  it('creates an annotated tag object and points the tag to it', async () => {
+    const createTag = vi.fn().mockResolvedValue({ data: { sha: 'tag-object' } });
+    const updateRef = vi.fn();
+    await writeTag(fakeOctokit({ createTag, updateRef }), repository, {
+      tag: 'v1',
+      sha: 'abc',
+      exists: true,
+      message: 'v1 → v1.2.0',
+    });
+    expect(createTag).toHaveBeenCalledWith({
+      owner: 'owner',
+      repo: 'repo',
+      tag: 'v1',
+      message: 'v1 → v1.2.0',
+      object: 'abc',
+      type: 'commit',
+    });
+    expect(updateRef).toHaveBeenCalledWith({
+      owner: 'owner',
+      repo: 'repo',
+      ref: 'tags/v1',
+      sha: 'tag-object',
+      force: true,
+    });
   });
 });

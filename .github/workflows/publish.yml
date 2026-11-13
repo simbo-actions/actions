@@ -392,3 +392,5 @@ jobs:
           repository: ${{ needs.build.outputs.repository }}
           tag: ${{ needs.build.outputs.tag }}
           major: true
+          # The message says which release vX points to.
+          annotated: true

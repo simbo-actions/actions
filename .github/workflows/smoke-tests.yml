@@ -251,9 +251,39 @@ jobs:
           latest: true
           dry-run: true
 
-      - name: 🔍 Verify Result
+      # Tags with a prefix and without "v": of @actions/core@1.0.0 and 1.1.0 in
+      # actions/toolkit, 1.0.0 is the highest of 1.0 only, so only the minor
+      # tag would be created.
+      - name: 🏷️ Check Floating Tags with a Prefix
+        id: prefix
+        uses: ./smoke/actions/floating-version-tags
+        with:
+          token: ${{ github.token }}
+          repository: actions/toolkit
+          tag: '@actions/core@1.0.0'
+          prefix: '@actions/core@'
+          v-prefix: false
+          major: true
+          minor: true
+          latest: true
+          annotated: true
+          dry-run: true
+
+      # Without "tag", the action needs a workflow that runs for a tag.
+      - name: 🏷️ Check the Missing Tag Default
+        id: no-tag
+        continue-on-error: true
+        uses: ./smoke/actions/floating-version-tags
+        with:
+          token: ${{ github.token }}
+          repository: actions/checkout
+          dry-run: true
+
+      - name: 🔍 Verify Results
         env:
           MOVED: ${{ steps.floating.outputs.moved }}
+          PREFIX_MOVED: ${{ steps.prefix.outputs.moved }}
+          NO_TAG: ${{ steps.no-tag.outcome }}
         run: |
           set -euo pipefail
 
@@ -261,4 +291,16 @@ jobs:
             echo "::error title=Unexpected Result::moved=${MOVED}"
             exit 1
           fi
-          echo "Kept v4 and latest; would move: ${MOVED}"
+          echo "✅ Kept v4 and latest; would move: ${MOVED}"
+
+          if [[ "$PREFIX_MOVED" != '["@actions/core@1.0"]' ]]; then
+            echo "::error title=Unexpected Result::prefix: moved=${PREFIX_MOVED}"
+            exit 1
+          fi
+          echo "✅ With a prefix, only @actions/core@1.0 would be created."
+
+          if [[ "$NO_TAG" != 'failure' ]]; then
+            echo "::error title=Unexpected Result::without tag: ${NO_TAG}"
+            exit 1
+          fi
+          echo '✅ Without a tag outside of a tag workflow, the action failed.'

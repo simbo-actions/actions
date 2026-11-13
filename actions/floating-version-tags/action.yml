@@ -18,8 +18,24 @@ inputs:
     required: false
     default: ${{ github.repository }}
   tag:
-    description: The existing release tag in the format "vX.Y.Z". Prereleases are rejected.
-    required: true
+    description: >
+      The existing release tag, for example "v1.2.3" or, with a prefix,
+      "my-package/v1.2.3". Defaults to the tag the workflow runs for (a tag push
+      or a release). Prereleases are rejected.
+    required: false
+    default: ''
+  prefix:
+    description: >
+      A prefix of the version tags, for example "my-package/" for tags like
+      "my-package/v1.2.3"; the floating tags get the same prefix.
+    required: false
+    default: ''
+  v-prefix:
+    description: >
+      Whether versions start with "v". With "false", the tag "1.2.3" moves the
+      floating tag "1".
+    required: false
+    default: 'true'
   major:
     description: Whether to move the major tag "vX".
     required: false
@@ -30,6 +46,13 @@ inputs:
     default: 'false'
   latest:
     description: Whether to move the tag "latest".
+    required: false
+    default: 'false'
+  annotated:
+    description: >
+      Whether to create the floating tags as annotated tags with a message, for
+      example "v1 → v1.4.2 (latest stable release of major version 1)", instead
+      of lightweight tags.
     required: false
     default: 'false'
   dry-run:

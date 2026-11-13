@@ -1,5 +1,6 @@
 import type { Octokit } from './create-octokit.js';
 import { HTTP_STATUS_NOT_FOUND, MAX_TAG_DEPTH } from './floating-version-tags-constants.js';
+import type { TagState } from './floating-version-tags.types.js';
 
 export type { Octokit } from './create-octokit.js';
 
@@ -28,14 +29,14 @@ function hasStatus(error: unknown, status: number): boolean {
  * @param octokit - The Octokit client.
  * @param repository - The repository.
  * @param tag - The tag name.
- * @returns The commit SHA, or `undefined` if the tag does not exist.
+ * @returns The commit SHA and the kind of the tag, or `undefined` if the tag does not exist.
  * @throws {Error} if the tag does not point to a commit.
  */
-export async function getTagCommit(
+export async function getTagState(
   octokit: Octokit,
   repository: RepositoryRef,
   tag: string,
-): Promise<string | undefined> {
+): Promise<TagState | undefined> {
   let object: { type: string; sha: string };
   try {
     ({ object } = (await octokit.rest.git.getRef({ ...repository, ref: `tags/${tag}` })).data);
@@ -45,29 +46,36 @@ export async function getTagCommit(
     }
     throw error;
   }
+  const annotated = object.type === 'tag';
   for (let depth = 0; object.type === 'tag' && depth < MAX_TAG_DEPTH; depth++) {
     ({ object } = (await octokit.rest.git.getTag({ ...repository, tag_sha: object.sha })).data);
   }
   if (object.type !== 'commit') {
     throw new Error(`The tag "${tag}" does not point to a commit (found: ${object.type}).`);
   }
-  return object.sha;
+  return { commit: object.sha, annotated };
 }
 
 /**
- * Lists the names of all tags that start with `v`.
+ * Lists the names of all tags that start with a prefix.
  *
  * @param octokit - The Octokit client.
  * @param repository - The repository.
+ * @param prefix - The prefix, for example `v`; empty for all tags.
  * @returns The tag names.
  */
-export async function listVersionTagNames(octokit: Octokit, repository: RepositoryRef): Promise<string[]> {
-  const refs = await octokit.paginate(octokit.rest.git.listMatchingRefs, { ...repository, ref: 'tags/v' });
+export async function listTagNames(octokit: Octokit, repository: RepositoryRef, prefix: string): Promise<string[]> {
+  const refs = await octokit.paginate(octokit.rest.git.listMatchingRefs, {
+    ...repository,
+    ref: prefix ? `tags/${prefix}` : 'tags',
+  });
   return refs.map(({ ref }) => ref.replace(/^refs\/tags\//, ''));
 }
 
 /**
  * Creates a tag or moves an existing one to a commit.
+ *
+ * With a message, the tag is an annotated tag object; GitHub does not sign it.
  *
  * @param octokit - The Octokit client.
  * @param repository - The repository.
@@ -75,16 +83,29 @@ export async function listVersionTagNames(octokit: Octokit, repository: Reposito
  * @param params.tag - The tag name.
  * @param params.sha - The commit SHA.
  * @param params.exists - Whether the tag exists.
+ * @param params.message - The message of an annotated tag, or `undefined` for a lightweight tag.
  */
 export async function writeTag(
   octokit: Octokit,
   repository: RepositoryRef,
-  params: { tag: string; sha: string; exists: boolean },
+  params: { tag: string; sha: string; exists: boolean; message?: string },
 ): Promise<void> {
+  const target =
+    params.message === undefined
+      ? params.sha
+      : (
+          await octokit.rest.git.createTag({
+            ...repository,
+            tag: params.tag,
+            message: params.message,
+            object: params.sha,
+            type: 'commit',
+          })
+        ).data.sha;
   if (params.exists) {
     // Tags are not branches: moving one is always a forced update.
-    await octokit.rest.git.updateRef({ ...repository, ref: `tags/${params.tag}`, sha: params.sha, force: true });
+    await octokit.rest.git.updateRef({ ...repository, ref: `tags/${params.tag}`, sha: target, force: true });
   } else {
-    await octokit.rest.git.createRef({ ...repository, ref: `refs/tags/${params.tag}`, sha: params.sha });
+    await octokit.rest.git.createRef({ ...repository, ref: `refs/tags/${params.tag}`, sha: target });
   }
 }

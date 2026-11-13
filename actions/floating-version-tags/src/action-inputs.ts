@@ -39,6 +39,42 @@ function parseRepository(): { owner: string; repo: string } {
 }
 
 /**
+ * Parses the prefix input.
+ *
+ * @returns The prefix, possibly empty.
+ * @throws {Error} if the prefix contains characters that are not allowed in tag names.
+ */
+function parsePrefix(): string {
+  const prefix = getInput('prefix');
+  if (prefix && (!/^[\w./@-]+$/.test(prefix) || /^[/-]|\.\.|\/\/|\.lock\/|^\.|\/\./.test(prefix))) {
+    throw new Error(`Invalid input "prefix": "${prefix}" is not a valid start of a tag name.`);
+  }
+  return prefix;
+}
+
+/**
+ * Parses the tag input; defaults to the tag the workflow runs for.
+ *
+ * @returns The tag name.
+ * @throws {Error} if the input is empty and the workflow does not run for a tag.
+ */
+function parseTag(): string {
+  const tag = getInput('tag')
+    .trim()
+    .replace(/^refs\/tags\//, '');
+  if (tag) {
+    return tag;
+  }
+  const ref = env.GITHUB_REF ?? '';
+  if (ref.startsWith('refs/tags/')) {
+    return ref.slice('refs/tags/'.length);
+  }
+  throw new Error(
+    `Input required: "tag". It defaults to the tag the workflow runs for (a tag push or a release), but the ref is "${ref}".`,
+  );
+}
+
+/**
  * Parses the action inputs from GitHub Actions.
  *
  * @returns The parsed action inputs.
@@ -47,13 +83,15 @@ function parseRepository(): { owner: string; repo: string } {
 export function parseActionInputs(): ParsedActionInputs {
   const token = getInput('token', { required: true });
   const { owner, repo } = parseRepository();
-  const tag = getInput('tag', { required: true }).trim();
+  const tag = parseTag();
+  const naming = { prefix: parsePrefix(), vPrefix: parseBoolean('v-prefix', true) };
   const major = parseBoolean('major', true);
   const minor = parseBoolean('minor', false);
   const latest = parseBoolean('latest', false);
   if (!major && !minor && !latest) {
     throw new Error('No floating tag enabled: set at least one of "major", "minor", or "latest" to "true".');
   }
+  const annotated = parseBoolean('annotated', false);
   const dryRun = parseBoolean('dry-run', false);
-  return { token, owner, repo, tag, major, minor, latest, dryRun };
+  return { token, owner, repo, tag, naming, major, minor, latest, annotated, dryRun };
 }
