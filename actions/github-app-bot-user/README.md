@@ -37,7 +37,7 @@ it gives a workflow both the token and the identity of the app.
 2. Requests the public user `<app-slug>[bot]` from the GitHub API and checks
    that it is a bot user with that login.
 3. Provides user ID, login, name, email, and the author string `Name <email>` as
-   outputs.
+   outputs, and shows the bot user in the job summary.
 
 GitHub links commits to a bot user by the noreply email
 `<user ID>+<login>@users.noreply.github.com`.  
@@ -198,6 +198,7 @@ None of the outputs is secret.
   that.
 - It fails if no bot user exists for the slug, or if the user found is not a
   bot.
+- Runs on Linux runners only (x64 and arm64).
 
 ## License
 

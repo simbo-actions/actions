@@ -124,6 +124,8 @@ Required:
 - API requests that hit a rate limit are retried after the wait time GitHub asks
   for.
 - Operations are idempotent where possible, so a failed run can be repeated.
+- Every action reports its result in the job summary: a heading with its name,
+  one status line, and the details as a compact table or list, without secrets.
 - Nothing is overwritten unintentionally, for example a branch that moved.
 
 ### Compatibility and Versioning
@@ -136,6 +138,8 @@ Required:
 - The GitHub Actions runner sets the Node.js version: actions use the newest
   runtime it offers (`node24`), and development, CI, and `@types/node` use the
   same major version. A runtime change is a major version of every action.
+- Actions support Linux runners (x64 and arm64) only; every README says so under
+  **Limitations**.
 - Limitations are documented.
 
 ### Documentation

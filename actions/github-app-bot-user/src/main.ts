@@ -1,8 +1,11 @@
+import { env } from 'node:process';
+
 import { info, setOutput } from '@actions/core';
 
 import { parseActionInputs } from './action-inputs.js';
 import { createOctokit } from './create-octokit.js';
 import { getBotUser } from './get-bot-user.js';
+import { writeSummary } from './summary.js';
 
 /**
  * Main entry point for the github-app-bot-user action.
@@ -20,4 +23,5 @@ export async function main(): Promise<void> {
   setOutput('author', botUser.author);
 
   info(`Bot user of "${appSlug}": ${botUser.author} (ID ${botUser.id}).`);
+  await writeSummary(botUser, env.GITHUB_SERVER_URL ?? 'https://github.com');
 }

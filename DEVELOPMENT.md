@@ -161,6 +161,8 @@ Workspace scripts (run inside a workspace, or with
    action).
 6. Write the README with all sections required by [STANDARDS.md](STANDARDS.md).
 7. Write the code and tests.  
+   Report the result in the job summary in the style of the other actions, and
+   name Linux runners in **Limitations**.  
    If the action can run without secrets, add a job for it to
    [`smoke-tests.yml`](.github/workflows/smoke-tests.yml): it downloads the
    built actions, runs the action with `uses: ./smoke/actions/<name>`, and
