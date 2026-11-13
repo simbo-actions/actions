@@ -74,7 +74,10 @@ Required:
 - Third-party actions are pinned by full commit SHA, with the version as a
   comment. Own actions in this repository are used via `./actions/<name>`.
 - Tools downloaded in workflows are pinned by version and verified by checksum.
-- No moving tags (`vX`, `vX.Y`, `latest`). Consumers pin by SHA.
+- Floating tags: only `vX`, only created and moved by the release process, only
+  forward to the highest stable version of the major version, never to a
+  prerelease. No `vX.Y` or `latest`. Documentation recommends pinning by SHA and
+  offers `@vX` as convenience.
 - Immutable releases: a published version is final; corrections are new patch
   releases.
 
@@ -271,5 +274,5 @@ Planned, not yet required:
 | Changeset per change                         | `checks` on pull requests                                                        |
 | Pinned actions                               | Actions setting "require SHA pinning"                                            |
 | Verified commits                             | Ruleset "Main Branch" (signed commits)                                           |
-| Protected release tags                       | Ruleset "Release Tags"                                                           |
+| Protected release and floating tags          | Ruleset "Release Tags" (`v*`)                                                    |
 | Review                                       | Pull requests with required checks; [CONTRIBUTING.md](CONTRIBUTING.md) checklist |

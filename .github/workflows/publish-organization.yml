@@ -33,7 +33,7 @@ run-name: ${{ github.workflow }}
 
 env:
   REPOSITORY: ${{ github.repository_owner }}/.github
-  DESCRIPTION: Profile and default community files of the simbo-actions organization.
+  DESCRIPTION: A family of GitHub Actions, each in its own repository, built and released automatically, signed and secure.
 
 jobs:
   publish:

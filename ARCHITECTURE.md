@@ -9,6 +9,7 @@ local development, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Contents
 
+- [Why](#why)
 - [Overview](#overview)
 - [Repositories](#repositories)
 - [From Changeset to Release](#from-changeset-to-release)
@@ -26,6 +27,21 @@ local development, see [DEVELOPMENT.md](DEVELOPMENT.md).
 - [Node.js Runtime](#nodejs-runtime)
 - [Design Decisions](#design-decisions)
 
+## Why
+
+A JavaScript action must ship its build in its repository, and consumers expect
+moving version tags like `v1`. Done by hand, every release means building,
+committing the build, tagging, creating the release, and moving the tags, for
+every action. That is tedious and error-prone, and it happens exactly where an
+attacker would like to slip in a change: a workflow that runs an action executes
+whatever its tag points to.
+
+This monorepo automates all of it from one source. Actions are developed and
+tested here; a release builds them in CI, commits the build to the action
+repository as a verified commit, creates the version tag and the release with
+build provenance, and moves the floating tag forward. Only the release process
+writes to an action repository, with short-lived tokens of a GitHub App.
+
 ## Overview
 
 All actions are developed in one place and published to repositories of their
@@ -34,7 +50,7 @@ own. Consumers only use the action repositories, pinned by commit SHA.
 ```mermaid
 flowchart LR
   subgraph monorepo["simbo-actions/actions (monorepo)"]
-    actions["actions/NAME/<br/>signed-commit, staged-release,<br/>apply-repository-settings,<br/>github-app-bot-user"]
+    actions["actions/NAME/<br/>signed-commit, staged-release,<br/>floating-version-tags,<br/>apply-repository-settings,<br/>github-app-bot-user"]
     shared["shared/octokit<br/>API client with rate limits"]
     tooling["tooling/<br/>monorepo checks and helpers"]
     workflows[".github/workflows/<br/>checks, release, publish,<br/>publish-organization, security"]
@@ -84,8 +100,9 @@ Workspaces in the monorepo:
 The release and publish workflows use the actions of this repository via
 `./actions/<name>`: they publish themselves with
 [`signed-commit`](actions/signed-commit/README.md),
-[`apply-repository-settings`](actions/apply-repository-settings/README.md), and
-[`staged-release`](actions/staged-release/README.md).
+[`apply-repository-settings`](actions/apply-repository-settings/README.md),
+[`staged-release`](actions/staged-release/README.md), and
+[`floating-version-tags`](actions/floating-version-tags/README.md).
 
 Every action in `actions/<name>/` is published to `simbo-actions/<name>`.
 
@@ -135,8 +152,9 @@ flowchart TD
     configure["apply-repository-settings<br/>(only what differs)"]
     commit["signed-commit<br/>content + tag vX.Y.Z"]
     release["staged-release<br/>draft, assets, publish"]
+    floating["floating-version-tags<br/>move vX forward"]
 
-    build --> assemble --> attest --> create --> configure --> commit --> release
+    build --> assemble --> attest --> create --> configure --> commit --> release --> floating
   end
 ```
 
@@ -187,7 +205,7 @@ Settings applied to every action repository:
 |                        | Dependabot security updates and code scanning off: the content is generated and overwritten by every publish; the source is scanned in the monorepo             |
 | Actions                | SHA pinning required, `GITHUB_TOKEN` read-only, no pull request approvals                                                                                       |
 | Ruleset "Main Branch"  | No deletion, no force push, linear history, signed commits, pull requests with squash only                                                                      |
-| Ruleset "Release Tags" | `v*.*.*`: creating, updating, and deleting only via bypass                                                                                                      |
+| Ruleset "Release Tags" | `v*` (release and floating tags): creating, updating, and deleting only via bypass                                                                              |
 | Bypass                 | The app `simbo-actions` and organization admins                                                                                                                 |
 | Releases               | Immutable releases (switched on once the process is established)                                                                                                |
 
@@ -255,7 +273,7 @@ flowchart LR
   key[("private key<br/>environment release")] --> token["actions/create-github-app-token<br/>one token per step"]
   token -- "contents: write<br/>monorepo" --> release["release commit, tags"]
   token -- "administration: write<br/>action repository" --> configure["apply-repository-settings"]
-  token -- "contents: write<br/>action repository" --> publish["signed-commit, staged-release"]
+  token -- "contents: write<br/>action repository" --> publish["signed-commit, staged-release,<br/>floating-version-tags"]
 ```
 
 Tokens are revoked at the end of each job. No Git credentials are stored in a
@@ -280,13 +298,29 @@ to all automation; only the app and organization admins bypass them.
 | Monorepo          | `<action>/vX.Y.Z`  | Release workflow |
 | Monorepo          | `changelog/vX.Y.Z` | Release workflow |
 | Action repository | `vX.Y.Z`           | Publish workflow |
+| Action repository | `vX` (floating)    | Publish workflow |
 
 - Every action is versioned independently with semantic versioning.
-- There are no moving tags such as `vX`, `vX.Y`, or `latest`. Consumers pin the
-  commit SHA of a release tag, with the version as a comment; Dependabot updates
-  such pins.
-- Release tags are protected by the ruleset "Release Tags". With immutable
-  releases, a published version is final.
+- **Recommended:** consumers pin the commit SHA of a release tag, with the
+  version as a comment; Dependabot updates such pins. A SHA cannot change.
+- **Convenience:** the floating tag `vX` points to the latest stable release of
+  major version `X`. It is moved only by the publish workflow, with
+  [`floating-version-tags`](actions/floating-version-tags/README.md), and only
+  forward: to the highest stable version of its line, never to a prerelease. A
+  re-run of an older release does not move it back.
+- There are no `vX.Y` or `latest` tags.
+- Release and floating tags are protected by the ruleset "Release Tags" (`v*`).
+  With immutable releases, a published version is final; the floating tag is a
+  plain tag and keeps moving.
+
+```mermaid
+flowchart LR
+  release(["release vX.Y.Z published"]) --> stable{"prerelease?"}
+  stable -- "yes" --> keep(["vX unchanged"])
+  stable -- "no" --> highest{"highest stable<br/>version of vX?"}
+  highest -- "no" --> keep
+  highest -- "yes" --> move(["vX moved to the<br/>commit of vX.Y.Z"])
+```
 
 ## Dependency Updates
 

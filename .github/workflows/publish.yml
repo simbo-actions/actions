@@ -5,8 +5,9 @@ name: Publish 🚚
 #
 # Publishes a released action to its own repository "simbo-actions/<action>":
 # builds the action, creates and configures the repository if necessary,
-# commits the build artifacts as signed commit with the tag "v<version>", and
-# creates a GitHub release (draft, assets with build provenance, publish).
+# commits the build artifacts as signed commit with the tag "v<version>",
+# creates a GitHub release (draft, assets with build provenance, publish), and
+# moves the major tag "v<major>" forward (not for prereleases).
 # Every action in actions/<name> is published to <organization>/<name>.
 #
 # Order matters: all third-party code (install, build) runs before the app
@@ -151,6 +152,7 @@ jobs:
           --filter=signed-commit
           --filter=apply-repository-settings
           --filter=staged-release
+          --filter=floating-version-tags
 
       - name: 🎁 Bundle
         working-directory: monorepo
@@ -326,3 +328,12 @@ jobs:
           name: ${{ steps.options.outputs.package }} ${{ steps.options.outputs.tag }}
           body-file: ${{ steps.content.outputs.notes }}
           assets: ${{ steps.content.outputs.assets }}/*
+
+      - name: 🏷️ Move Floating Version Tags
+        if: ${{ !contains(steps.options.outputs.version, '-') }}
+        uses: ./monorepo/actions/floating-version-tags
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ steps.options.outputs.repository }}
+          tag: ${{ steps.options.outputs.tag }}
+          major: true

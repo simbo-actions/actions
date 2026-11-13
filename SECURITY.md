@@ -32,6 +32,7 @@ action.
 | [`github-app-bot-user`](https://github.com/simbo-actions/github-app-bot-user)             | latest 1.x |
 | [`apply-repository-settings`](https://github.com/simbo-actions/apply-repository-settings) | latest 1.x |
 | [`staged-release`](https://github.com/simbo-actions/staged-release)                       | latest 1.x |
+| [`floating-version-tags`](https://github.com/simbo-actions/floating-version-tags)         | latest 1.x |
 
 ## Security Practices
 

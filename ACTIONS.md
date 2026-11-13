@@ -8,7 +8,7 @@ more information about the monorepo itself.
 
 <!-- PACKAGES -->
 
-There are currently _**4**_ GitHub Actions managed in this repository.
+There are currently _**5**_ GitHub Actions managed in this repository.
 
 - ### **Apply Repository Settings _(GitHub Action)_**
 
@@ -26,6 +26,21 @@ There are currently _**4**_ GitHub Actions managed in this repository.
   [CHANGELOG.md](https://github.com/simbo-actions/apply-repository-settings/blob/main/CHANGELOG.md)
   •
   [Releases](https://github.com/simbo-actions/apply-repository-settings/releases)
+
+- ### **Floating Version Tags _(GitHub Action)_**
+
+  > A GitHub Action to move floating version tags like v1 forward to a release,
+  > safely: forward only, never to prereleases.
+
+  ⚙️ **`simbo-actions/floating-version-tags@<SHA> # v0.0.0`**
+
+  Latest Version: `0.0.0`
+
+  [Repository](https://github.com/simbo-actions/floating-version-tags) •
+  [README.md](https://github.com/simbo-actions/floating-version-tags/blob/main/README.md)
+  •
+  [CHANGELOG.md](https://github.com/simbo-actions/floating-version-tags/blob/main/CHANGELOG.md)
+  • [Releases](https://github.com/simbo-actions/floating-version-tags/releases)
 
 - ### **GitHub App Bot User _(GitHub Action)_**
 

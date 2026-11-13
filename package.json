@@ -1,6 +1,6 @@
 {
   "name": "actions",
-  "description": "Simbo's collection of GitHub Actions.",
+  "description": "The source of all actions: develops, tests, and publishes them to their own repositories with signed commits, tags, and releases.",
   "version": "0.0.0",
   "private": true,
   "author": "Simon Lepel <simbo@simbo.de> (https://simbo.de)",

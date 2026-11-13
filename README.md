@@ -1,6 +1,7 @@
 # 🔄 Simbo's Actions
 
-> GitHub Actions built for production use in security-conscious organizations.
+> The source of all actions: develops, tests, and publishes them to their own
+> repositories with signed commits, tags, and releases.
 
 Every action in this repository follows the same [standards](STANDARDS.md):
 least privilege, a pinned and verified supply chain, tested behavior, complete
@@ -10,12 +11,15 @@ documentation, and reproducible releases with build provenance.
 
 <!-- PACKAGES -->
 
-There are currently _**4**_ GitHub Actions managed in this repository.
+There are currently _**5**_ GitHub Actions managed in this repository.
 
 - [**apply-repository-settings**](https://github.com/simbo-actions/apply-repository-settings):
   A GitHub Action to apply repository settings, security features, Actions
   permissions, and rulesets from a configuration file, writing only what
   differs.
+- [**floating-version-tags**](https://github.com/simbo-actions/floating-version-tags):
+  A GitHub Action to move floating version tags like v1 forward to a release,
+  safely: forward only, never to prereleases.
 - [**github-app-bot-user**](https://github.com/simbo-actions/github-app-bot-user):
   A GitHub Action to get the bot user of a GitHub App: user ID, login, name, and
   email for Git.
@@ -48,9 +52,10 @@ jobs:
           message: 'chore: update generated files'
 ```
 
-There are no moving tags such as `v1` or `latest`. Dependabot keeps SHA pins up
-to date. How to verify a release is described in
-[SECURITY.md](SECURITY.md#verifying-a-release).
+Dependabot keeps SHA pins up to date. For convenience, every action also has a
+floating tag for its major version, like `@v1`. It moves only forward, only by
+the release process, but it can change; a SHA pin cannot. How to verify a
+release is described in [SECURITY.md](SECURITY.md#verifying-a-release).
 
 ## Documentation
 

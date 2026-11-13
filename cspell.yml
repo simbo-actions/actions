@@ -4,3 +4,5 @@ words:
   - rhysd
   - rseidelsohn
   - SLSA
+ignorePaths:
+  - docs/handoffs/

@@ -42,7 +42,10 @@ when it is complete.
 
 ## Usage
 
-Pin the action by commit SHA, with the version as a comment:
+Pin the action by commit SHA, with the version as a comment. This is
+recommended: a SHA cannot change. For convenience, the floating tag `@vX`
+follows the latest stable release of major version `X`; it moves only forward
+and only by the release process, but it can change.
 
 ```yaml
 jobs:

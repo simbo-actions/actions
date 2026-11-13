@@ -7,8 +7,11 @@ body:
     attributes:
       label: Action
       options:
-        - signed-commit
+        - apply-repository-settings
+        - floating-version-tags
         - github-app-bot-user
+        - signed-commit
+        - staged-release
         - New action
         - Release or publish process of this repository
         - Other

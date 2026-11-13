@@ -1,0 +1,46 @@
+name: Floating Version Tags
+
+description: A GitHub Action to move floating version tags like v1 forward to a release, safely - forward only, never to prereleases.
+
+author: Simon Lepel <simbo@simbo.de> (https://simbo.de/)
+
+branding:
+  icon: tag
+  color: green
+
+inputs:
+  token:
+    description: >
+      The token to authenticate with. Needs "contents: write" on the repository.
+    required: true
+  repository:
+    description: The repository of the tags, in the format "owner/repo".
+    required: false
+    default: ${{ github.repository }}
+  tag:
+    description: The existing release tag in the format "vX.Y.Z". Prereleases are rejected.
+    required: true
+  major:
+    description: Whether to move the major tag "vX".
+    required: false
+    default: 'true'
+  minor:
+    description: Whether to move the minor tag "vX.Y".
+    required: false
+    default: 'false'
+  latest:
+    description: Whether to move the tag "latest".
+    required: false
+    default: 'false'
+  dry-run:
+    description: Whether to only report the changes without writing them.
+    required: false
+    default: 'false'
+
+outputs:
+  moved:
+    description: 'The floating tags that were created or moved, as JSON array, for example ["v1"].'
+
+runs:
+  using: node24
+  main: dist/index.js
