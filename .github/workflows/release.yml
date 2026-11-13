@@ -3,8 +3,9 @@ name: Release 📬
 #-------------------------------------------------------------------------------
 # "Release" Workflow
 #
-# Integrates changesets, creates a signed release commit on main, and tags
-# every released package with "<package>/v<version>".
+# Integrates changesets, updates the list of actions in the organization
+# profile, creates a signed release commit on main, and tags every released
+# package with "<package>/v<version>".
 # Dispatched by the "Checks" workflow on main branch.
 #
 # Order matters: all third-party code (install, build) runs before the app
@@ -69,6 +70,9 @@ jobs:
 
           # Update the lockfile
           pnpm install --lockfile-only
+
+          # Update the versions in the list of actions in the organization profile
+          pnpm run actions-list
 
       - name: 🧾 Collect Bumped Packages
         id: bumped-packages

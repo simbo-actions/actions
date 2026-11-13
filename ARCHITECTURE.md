@@ -221,7 +221,8 @@ The content lives in [`organization/`](organization/README.md). The workflow
 an action: it creates the repository if missing, applies the settings of
 `.github/managed-repository-settings.json`, and commits the content with
 `signed-commit`. The list of actions in the profile is generated with
-`pnpm run actions-list`.
+`pnpm run actions-list`. The release workflow updates it in every release
+commit, so the profile shows the latest versions.
 
 ## GitHub App
 
