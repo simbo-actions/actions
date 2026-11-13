@@ -64,8 +64,8 @@ It ends with "All Checks Passed!".
 ├── tooling/               monorepo checks and helpers, with tests
 ├── .changeset/            pending changesets
 └── .github/
-    ├── workflows/         checks, release, publish, publish-organization,
-    │                      security, automerge
+    ├── workflows/         checks, smoke-tests, release, publish,
+    │                      publish-organization, security, automerge
     └── dependabot.yml     dependency updates
 ```
 
@@ -138,7 +138,8 @@ Workspace scripts (run inside a workspace, or with
 - Code that runs Git is tested against temporary Git repositories (see
   `actions/signed-commit/tests/git-fixture.ts`).
 - Code that calls the GitHub API is tested with a fake Octokit client.  
-  No test calls the real API, except the smoke tests in the workflow `checks`.
+  No test calls the real API, except the smoke tests in the workflow
+  `smoke-tests`.
 
 ## Adding an Action
 
@@ -159,8 +160,11 @@ Workspace scripts (run inside a workspace, or with
 5. Start the README with the note about the monorepo (copy it from another
    action).
 6. Write the README with all sections required by [STANDARDS.md](STANDARDS.md).
-7. Write the code and tests; add a smoke test to the workflow `checks` if the
-   action can run without secrets.
+7. Write the code and tests.  
+   If the action can run without secrets, add a job for it to
+   [`smoke-tests.yml`](.github/workflows/smoke-tests.yml): it downloads the
+   built actions, runs the action with `uses: ./smoke/actions/<name>`, and
+   checks its outputs, with only the permissions the test needs.
 8. Add a changeset with a major bump for the first release (1.0.0), and run
    `pnpm run actions-list`.
 

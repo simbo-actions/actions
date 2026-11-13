@@ -1,0 +1,203 @@
+name: Smoke Tests 💨
+
+#-------------------------------------------------------------------------------
+# "Smoke Tests" Workflow
+#
+# Runs the built actions on the runner against the real GitHub API, without
+# secrets: one job per action, each with only the permissions its test needs.
+# Unit tests cover the logic; these tests cover the bundle, the runtime, the
+# HTTP client, and the API.
+# Called by the "Checks" workflow, which waits for it before the release, so it
+# has no trigger, run-name, or concurrency of its own.
+#-------------------------------------------------------------------------------
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 📦 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 👷‍♂️ Build
+        run: pnpm exec turbo run build --filter='./actions/*'
+
+      - name: 🧰 Assemble Actions
+        run: |
+          set -euo pipefail
+
+          for directory in actions/*/; do
+            name="$(basename "$directory")"
+            mkdir -p "smoke/actions/${name}"
+            cp "${directory}action.yml" "smoke/actions/${name}/"
+            cp -R "${directory}dist" "smoke/actions/${name}/"
+          done
+
+      - name: 📤 Upload Actions
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+          if-no-files-found: error
+          retention-days: 1
+
+  github-app-bot-user:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      - name: 🤖 Get Bot User
+        id: bot-user
+        uses: ./smoke/actions/github-app-bot-user
+        with:
+          app-slug: simbo-actions
+
+      - name: 🔍 Verify Bot User
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SLUG: simbo-actions
+          ID: ${{ steps.bot-user.outputs.id }}
+          LOGIN: ${{ steps.bot-user.outputs.login }}
+          NAME: ${{ steps.bot-user.outputs.name }}
+          EMAIL: ${{ steps.bot-user.outputs.email }}
+          AUTHOR: ${{ steps.bot-user.outputs.author }}
+        run: |
+          set -euo pipefail
+
+          fail() {
+            echo "::error title=Unexpected Bot User::$1 (id=${ID} login=${LOGIN} name=${NAME} email=${EMAIL} author=${AUTHOR})"
+            exit 1
+          }
+
+          # The outputs fit together.
+          [[ "$LOGIN" == "${SLUG}[bot]" ]] || fail 'login is not "<app-slug>[bot]"'
+          [[ "$ID" =~ ^[1-9][0-9]*$ ]] || fail 'id is not a positive number'
+          [[ "$NAME" == "$LOGIN" ]] || fail 'name differs from login'
+          [[ "$EMAIL" == "${ID}+${LOGIN}@users.noreply.github.com" ]] || fail 'email is not the noreply email'
+          [[ "$AUTHOR" == "${NAME} <${EMAIL}>" ]] || fail 'author is not "name <email>"'
+
+          # The outputs match an independent lookup of the user.
+          user="$(gh api "users/${LOGIN}" --jq '"\(.id) \(.login) \(.type)"')"
+          [[ "$user" == "${ID} ${LOGIN} Bot" ]] || fail "the API returns ${user}"
+
+          echo "Bot user: ${AUTHOR} (ID ${ID})"
+
+  gitleaks-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      - name: 🧪 Create Test Repositories
+        run: |
+          set -euo pipefail
+
+          create() {
+            git init --quiet --initial-branch=main "$1"
+            git -C "$1" config user.name 'Smoke Test'
+            git -C "$1" config user.email 'smoke-test@example.com'
+            printf '%s\n' "$2" > "$1/config.txt"
+            git -C "$1" add config.txt
+            git -C "$1" commit --quiet --message 'test: add config'
+          }
+
+          create clean-repo 'token = none'
+          # Generated at runtime, so that no token-like string is in this repository.
+          create leaky-repo "token = ghp_$(openssl rand -hex 18)"
+
+      - name: 🔐 Scan Clean Repository
+        id: clean
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: clean-repo
+
+      - name: 🔐 Scan Repository with a Fake Token
+        id: leaky
+        continue-on-error: true
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: leaky-repo
+
+      - name: 🔍 Verify Results
+        env:
+          CLEAN_FINDINGS: ${{ steps.clean.outputs.findings }}
+          LEAKY_OUTCOME: ${{ steps.leaky.outcome }}
+          LEAKY_FINDINGS: ${{ steps.leaky.outputs.findings }}
+          LEAKY_SARIF: ${{ steps.leaky.outputs.sarif-file }}
+        run: |
+          set -euo pipefail
+
+          [[ "$CLEAN_FINDINGS" == '0' ]] || { echo "::error::The clean repository has ${CLEAN_FINDINGS} findings."; exit 1; }
+          [[ "$LEAKY_OUTCOME" == 'failure' ]] || { echo "::error::The scan of the fake token did not fail (${LEAKY_OUTCOME})."; exit 1; }
+          [[ "$LEAKY_FINDINGS" == '1' ]] || { echo "::error::The fake token gave ${LEAKY_FINDINGS} findings instead of 1."; exit 1; }
+          [[ -s "$LEAKY_SARIF" ]] || { echo '::error::The SARIF report is missing.'; exit 1; }
+          echo 'The clean repository passed, the fake token was found.'
+
+  floating-version-tags:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      # A dry run against a public repository: it only reads tags. v4.0.0 of
+      # actions/checkout is older than later v4 and v5 releases, so neither "v4"
+      # nor "latest" may move to it.
+      - name: 🏷️ Check Floating Version Tags
+        id: floating
+        uses: ./smoke/actions/floating-version-tags
+        with:
+          token: ${{ github.token }}
+          repository: actions/checkout
+          tag: v4.0.0
+          major: true
+          latest: true
+          dry-run: true
+
+      - name: 🔍 Verify Result
+        env:
+          MOVED: ${{ steps.floating.outputs.moved }}
+        run: |
+          set -euo pipefail
+
+          if ! jq --exit-status 'type == "array" and (index("v4") == null) and (index("latest") == null)' <<< "$MOVED" > /dev/null; then
+            echo "::error title=Unexpected Result::moved=${MOVED}"
+            exit 1
+          fi
+          echo "Kept v4 and latest; would move: ${MOVED}"

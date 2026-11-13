@@ -65,7 +65,7 @@ flowchart LR
   subgraph monorepo["simbo-actions/actions (monorepo)"]
     actions["actions/NAME/<br/>one package per action"]
     tooling["tooling/<br/>monorepo checks and helpers"]
-    workflows[".github/workflows/<br/>checks, release, publish,<br/>publish-organization, security"]
+    workflows[".github/workflows/<br/>checks, smoke-tests, release,<br/>publish, publish-organization, security"]
     organization["organization/<br/>profile, community files"]
   end
 
@@ -133,7 +133,7 @@ sequenceDiagram
 
   dev->>main: merge pull request with changeset
   main->>checks: push event
-  checks->>checks: build, test, lint, smoke tests
+  checks->>checks: build, test, lint, scan, smoke tests
   checks->>release: dispatch (GITHUB_TOKEN, actions: write)
   release->>release: job build: changeset version, patch (no credentials)
   release->>release: job release: apply and check the patch
@@ -506,9 +506,12 @@ major version; see [MAINTAINING.md](MAINTAINING.md).
   runner, so a process started by a dependency in an earlier step could read
   secrets of a later step. A job without secrets builds; a job without npm code
   uses the credentials.
-- **No reusable workflows of our own.** Why: actions are versioned, tested, and
-  pinned like any dependency; workflows stay in each repository and readable on
-  their own.  
+- **No reusable workflows across repositories.** Why: actions are versioned,
+  tested, and pinned like any dependency; workflows stay in each repository and
+  readable on their own.  
+  Within this repository, a workflow may call another one to keep it readable:
+  `checks` calls `smoke-tests`, at the same commit, so nothing needs a pin and
+  the release waits for the smoke tests.  
   Reusable workflows of trusted publishers are used in read-only jobs, such as
   Google's osv-scanner workflows.
 - **Octokit client copied into every action.** Why: an unpublished shared

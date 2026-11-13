@@ -109,7 +109,8 @@ Required:
   repository, including [`tooling/`](tooling/README.md).
 - Every behavior and every error case has its own test with a meaningful
   assertion. Coverage is a lower bound, not the goal.
-- Smoke tests against the real GitHub API where they work without secrets.
+- Smoke tests against the real GitHub API where they work without secrets, one
+  job per action in the workflow `smoke-tests`; the release waits for them.
 
 ### Behavior
 

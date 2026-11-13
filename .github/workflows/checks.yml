@@ -6,8 +6,8 @@ name: Checks 🧐
 # Runs tests, builds, and performs checks on pull requests and pushes to main,
 # including a secret scan of the Git history (gitleaks-scan), license and
 # vulnerability checks (Google's osv-scanner workflows; on pull requests, only
-# new findings fail), and a smoke test of github-app-bot-user against the
-# GitHub API.
+# new findings fail), and the smoke tests of the actions against the GitHub API
+# (workflow "Smoke Tests").
 # Requires a changeset in pull requests, except for Dependabot pull requests
 # that only change workflows.
 # Dispatches the release workflow if changesets are present on main branch.
@@ -109,33 +109,6 @@ jobs:
       - name: 🧐 Root Checks
         run: pnpm run check
 
-      - name: 🤖 Smoke Test GitHub App Bot User
-        id: bot-user
-        uses: ./actions/github-app-bot-user
-        with:
-          app-slug: simbo-actions
-
-      - name: 🔍 Verify GitHub App Bot User
-        env:
-          ID: ${{ steps.bot-user.outputs.id }}
-          LOGIN: ${{ steps.bot-user.outputs.login }}
-          NAME: ${{ steps.bot-user.outputs.name }}
-          EMAIL: ${{ steps.bot-user.outputs.email }}
-          AUTHOR: ${{ steps.bot-user.outputs.author }}
-        run: |
-          set -euo pipefail
-
-          expected_email='355043706+simbo-actions[bot]@users.noreply.github.com'
-          if [[ "$ID" != '355043706' \
-            || "$LOGIN" != 'simbo-actions[bot]' \
-            || "$NAME" != 'simbo-actions[bot]' \
-            || "$EMAIL" != "$expected_email" \
-            || "$AUTHOR" != "simbo-actions[bot] <${expected_email}>" ]]; then
-            echo "::error title=Unexpected Bot User::id=${ID} login=${LOGIN} name=${NAME} email=${EMAIL} author=${AUTHOR}"
-            exit 1
-          fi
-          echo "Bot user: ${AUTHOR} (ID ${ID})"
-
       - name: 📝 Require Changeset (Pull Requests)
         if: github.event_name == 'pull_request'
         env:
@@ -201,9 +174,15 @@ jobs:
         --config=osv-scanner.toml
         --licenses=0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC-BY-3.0,CC-BY-4.0,CC-BY-SA-4.0,CC0-1.0,ISC,MIT,MPL-2.0,Python-2.0,WTFPL
 
+  smoke-tests:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/smoke-tests.yml
+
   dispatch-release:
     needs:
       - checks
+      - smoke-tests
       - vulnerabilities
     if: >
       github.event_name == 'push' &&
