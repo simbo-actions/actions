@@ -1,6 +1,6 @@
 import type { Stats } from 'node:fs';
 import { lstat, readFile, realpath } from 'node:fs/promises';
-import { isAbsolute, join, posix } from 'node:path';
+import { isAbsolute, join, posix, sep } from 'node:path';
 
 import { warning } from '@actions/core';
 import { getGitChanges, GitChangeStatus } from '@simbo/git-changes';
@@ -92,6 +92,11 @@ async function addWorkingTreeFile(collection: Collection, path: string, explicit
   }
   if (!stats.isFile()) {
     throw new Error(explicit ? `Not a file: ${path}` : `Directories and submodules are not supported: ${path}`);
+  }
+  // A symbolic link in a parent directory must not lead outside of the working directory.
+  const root = await realpath(collection.workingDirectory);
+  if (!(await realpath(absPath)).startsWith(root + sep)) {
+    throw new Error(`Invalid path "${path}": it leads outside of the working directory.`);
   }
   if (stats.mode & EXECUTABLE_PERMISSION_BITS) {
     warning(`The executable bit is not preserved: ${path}`);

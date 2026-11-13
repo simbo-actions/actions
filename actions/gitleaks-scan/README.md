@@ -150,6 +150,9 @@ Uploading the SARIF report to code scanning additionally needs
   `gitleaks git -v`.
 - **Configuration:** without `config`, Gitleaks uses `.gitleaks.toml` in the
   repository root if it exists, otherwise its default rules.  
+  Both `.gitleaks.toml` and `.gitleaksignore` come from the scanned checkout: in
+  a pull request, they are part of its changes. Review changes to them like
+  code, because they can hide findings.  
   A configuration can extend the default rules and add allowlists, see the
   [Gitleaks documentation](https://github.com/gitleaks/gitleaks#configuration).
 

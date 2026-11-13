@@ -2,7 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import { parseConfig } from './parse-config.js';
 
-const ruleset = { name: 'Main Branch', target: 'branch', enforcement: 'active', rules: [{ type: 'deletion' }] };
+const ruleset = {
+  name: 'Main Branch',
+  target: 'branch',
+  enforcement: 'active',
+  conditions: { ref_name: { include: ['refs/heads/main'], exclude: [] } },
+  rules: [{ type: 'deletion' }, { type: 'pull_request', parameters: { required_approving_review_count: 0 } }],
+  bypass_actors: [
+    { actor_id: 1, actor_type: 'Integration', bypass_mode: 'always' },
+    { actor_id: null, actor_type: 'OrganizationAdmin' },
+  ],
+};
 
 describe('parseConfig', () => {
   it('accepts an empty configuration', () => {
@@ -48,6 +58,71 @@ describe('parseConfig', () => {
       'invalid enforcement',
       '{"rulesets": [{"name": "A", "enforcement": "on"}]}',
       '"rulesets[0].enforcement" must be one of',
+    ],
+    [
+      'unknown ruleset keys',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "baseUrl": "x"}]}',
+      'unknown key(s) in "rulesets[0]": baseUrl',
+    ],
+    [
+      'invalid ruleset targets',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "target": "repo"}]}',
+      '"rulesets[0].target" must be one of',
+    ],
+    [
+      'unknown condition keys',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "conditions": {"repository_name": {}}}]}',
+      'unknown key(s) in "rulesets[0].conditions": repository_name',
+    ],
+    [
+      'unknown ref_name keys',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "conditions": {"ref_name": {"only": []}}}]}',
+      'unknown key(s) in "rulesets[0].conditions.ref_name": only',
+    ],
+    [
+      'non-string ref patterns',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "conditions": {"ref_name": {"include": [1]}}}]}',
+      '"rulesets[0].conditions.ref_name.include" must be an array of strings',
+    ],
+    [
+      'non-array rules',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "rules": {}}]}',
+      '"rulesets[0].rules" must be an array',
+    ],
+    [
+      'unknown rule keys',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "rules": [{"type": "deletion", "params": {}}]}]}',
+      'unknown key(s) in "rulesets[0].rules[0]": params',
+    ],
+    [
+      'rules without type',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "rules": [{}]}]}',
+      '"rulesets[0].rules[0].type" must be a string',
+    ],
+    [
+      'non-object rule parameters',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "rules": [{"type": "x", "parameters": 1}]}]}',
+      '"rulesets[0].rules[0].parameters" must be an object',
+    ],
+    [
+      'unknown bypass actor keys',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "bypass_actors": [{"actor_id": 1, "actor_type": "Integration", "mode": "always"}]}]}',
+      'unknown key(s) in "rulesets[0].bypass_actors[0]": mode',
+    ],
+    [
+      'invalid actor ids',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "bypass_actors": [{"actor_id": "1", "actor_type": "Integration"}]}]}',
+      '"rulesets[0].bypass_actors[0].actor_id" must be a number or null',
+    ],
+    [
+      'invalid actor types',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "bypass_actors": [{"actor_id": 1, "actor_type": "User"}]}]}',
+      '"rulesets[0].bypass_actors[0].actor_type" must be one of',
+    ],
+    [
+      'invalid bypass modes',
+      '{"rulesets": [{"name": "A", "enforcement": "active", "bypass_actors": [{"actor_id": null, "actor_type": "OrganizationAdmin", "bypass_mode": "never"}]}]}',
+      '"rulesets[0].bypass_actors[0].bypass_mode" must be one of',
     ],
     ['wrong immutable_releases', '{"immutable_releases": "yes"}', '"immutable_releases" must be a boolean'],
   ])('rejects %s', (_, json, error) => {

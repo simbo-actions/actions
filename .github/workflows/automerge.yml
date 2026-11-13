@@ -4,9 +4,10 @@ name: Auto-merge 🤖
 # "Auto-merge" Workflow
 #
 # Merges low-risk Dependabot pull requests once the required checks pass:
-# updates of simbo-actions/* actions, and minor or patch updates of actions by
-# trusted publishers (actions/*, github/*, google/*), if only files under
-# .github/ change.
+# minor or patch updates of actions by trusted publishers (actions/*, github/*,
+# google/*), if only files under .github/ change.
+# Updates of simbo-actions/* are reviewed: the privileged jobs of this
+# repository run these actions with the app's credentials.
 # Assigns all other Dependabot pull requests to the owner for review.
 #-------------------------------------------------------------------------------
 
@@ -37,7 +38,11 @@ run-name: >
 
 jobs:
   automerge:
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    # Both the pull request and the event must come from Dependabot, so that a
+    # push by someone else to a Dependabot branch is never merged automatically.
+    if: >
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -65,17 +70,13 @@ jobs:
             result=false
           fi
 
-          # Only simbo-actions/* (any update) or trusted publishers actions/*, github/*,
-          # and google/* (minor or patch)
+          # Only trusted publishers actions/*, github/*, and google/* (minor or patch)
           IFS=',' read -ra names <<< "$DEPENDENCIES"
           if [[ ${#names[@]} -eq 0 ]]; then
             result=false
           fi
           for name in "${names[@]}"; do
             name="$(echo "$name" | xargs)"
-            if [[ "$name" == simbo-actions/* ]]; then
-              continue
-            fi
             if [[ "$name" == actions/* || "$name" == github/* || "$name" == google/* ]] \
               && [[ "$UPDATE_TYPE" == 'version-update:semver-minor' || "$UPDATE_TYPE" == 'version-update:semver-patch' ]]; then
               continue
@@ -83,8 +84,10 @@ jobs:
             result=false
           done
 
-          # Only files under .github/
-          if gh pr diff "$PR" --name-only | grep -qv '^\.github/'; then
+          # Only files under .github/; if the diff cannot be read, no automerge
+          if ! files="$(gh pr diff "$PR" --name-only)"; then
+            result=false
+          elif grep -qv '^\.github/' <<< "$files"; then
             result=false
           fi
 

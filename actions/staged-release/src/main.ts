@@ -33,10 +33,19 @@ export async function main(): Promise<void> {
   await assertTagExists(octokit, repository, tag);
 
   const existing = await listReleasesOfTag(octokit, repository, tag);
-  for (const { id, draft, html_url: url } of existing) {
-    if (!draft) {
-      throw new Error(`The tag "${tag}" is already released: ${url}`);
+  const released = existing.find(({ draft }) => !draft);
+  if (released) {
+    if (inputs.ifReleased === 'error') {
+      throw new Error(`The tag "${tag}" is already released: ${released.html_url}`);
     }
+    // A re-run after the release was published: nothing to do, the release is final.
+    info(`Skipped: the tag "${tag}" is already released: ${released.html_url}`);
+    setOutput('release-id', String(released.id));
+    setOutput('url', released.html_url);
+    setOutput('assets', '[]');
+    return;
+  }
+  for (const { id } of existing) {
     await deleteRelease(octokit, repository, id);
     info(`Removed leftover draft release ${id} of ${tag}.`);
   }

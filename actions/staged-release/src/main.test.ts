@@ -41,6 +41,7 @@ const inputs: ParsedActionInputs = {
   makeLatest: 'true',
   prerelease: false,
   publish: true,
+  ifReleased: 'error',
 };
 const draft: Release = { id: 9, tag_name: 'v1.0.0', draft: true, html_url: 'https://draft', upload_url: 'x' };
 const published: Release = { ...draft, draft: false, html_url: 'https://release' };
@@ -89,6 +90,20 @@ describe('main', () => {
     vi.mocked(listReleasesOfTag).mockResolvedValue([published]);
     await expect(main()).rejects.toThrow('The tag "v1.0.0" is already released: https://release');
     expect(createDraftRelease).not.toHaveBeenCalled();
+  });
+
+  it('skips an already released tag with if-released: skip', async () => {
+    vi.mocked(parseActionInputs).mockResolvedValue({ ...inputs, ifReleased: 'skip' });
+    vi.mocked(listReleasesOfTag).mockResolvedValue([{ ...draft, id: 3 }, published]);
+    await main();
+    expect(createDraftRelease).not.toHaveBeenCalled();
+    expect(deleteRelease).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledWith('Skipped: the tag "v1.0.0" is already released: https://release');
+    expect(vi.mocked(setOutput).mock.calls).toEqual([
+      ['release-id', '9'],
+      ['url', 'https://release'],
+      ['assets', '[]'],
+    ]);
   });
 
   it('leaves the release as draft with publish: false', async () => {

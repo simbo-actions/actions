@@ -64,6 +64,22 @@ export function annotateFindings(findings: Finding[], workingDirectory: string, 
 }
 
 /**
+ * Escapes text for the HTML table of the job summary; rule IDs and file names
+ * come from the scanned repository.
+ *
+ * @param text - The text.
+ * @returns The escaped text.
+ */
+export function escapeHtml(text: string): string {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+/**
  * Writes the findings to the job summary.
  *
  * @param findings - The findings.
@@ -81,7 +97,12 @@ export async function writeSummary(findings: Finding[], version: string): Promis
         { data: 'Line', header: true },
         { data: 'Commit', header: true },
       ],
-      ...findings.map(({ rule, file, line, commit }) => [rule, file, String(line), commit.slice(0, SHORT_SHA_LENGTH)]),
+      ...findings.map(({ rule, file, line, commit }) => [
+        escapeHtml(rule),
+        escapeHtml(file),
+        String(line),
+        escapeHtml(commit.slice(0, SHORT_SHA_LENGTH)),
+      ]),
     ]);
   }
   await summary.write();

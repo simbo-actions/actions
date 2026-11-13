@@ -194,12 +194,19 @@ describe('main', () => {
       expect(createCommitOnBranch).not.toHaveBeenCalled();
     });
 
-    it('warns with "warn" and skips tags', async () => {
+    it('warns with "warn" and creates the tags on the current head', async () => {
       setup({ ifNoChanges: 'warn', tags: ['v1.0.0'] }, { changes: noChanges });
       await main();
       expect(warning).toHaveBeenCalledWith('There are no changes to commit.');
-      expect(warning).toHaveBeenCalledWith('Skipping tags without a commit: v1.0.0');
       expect(setOutput).toHaveBeenCalledWith('commit-sha', '');
+      expect(createCommitOnBranch).not.toHaveBeenCalled();
+      expect(createTag).toHaveBeenCalledWith({}, { owner: 'owner', repo: 'repo' }, 'v1.0.0', remoteHead);
+      expect(info).toHaveBeenCalledWith(`Tagging the current head ${remoteHead} of main.`);
+    });
+
+    it('does not tag the current head with "error"', async () => {
+      setup({ tags: ['v1.0.0'] }, { changes: noChanges });
+      await expect(main()).rejects.toThrow('There are no changes to commit.');
       expect(createTag).not.toHaveBeenCalled();
     });
 

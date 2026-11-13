@@ -71,3 +71,41 @@ export const CONFIG_SECTIONS = [
  * HTTP status of the GitHub API for a missing resource.
  */
 export const HTTP_STATUS_NOT_FOUND = 404;
+
+/**
+ * The keys of a ruleset in the configuration. Other keys fail, so that no key
+ * can change the API request itself (for example its URL or headers).
+ */
+export const RULESET_KEYS = ['name', 'target', 'enforcement', 'conditions', 'rules', 'bypass_actors'] as const;
+
+/**
+ * The enforcement options of a ruleset.
+ */
+export const RULESET_ENFORCEMENT_OPTIONS = ['active', 'evaluate', 'disabled'] as const;
+
+/**
+ * The targets of a repository ruleset.
+ */
+export const RULESET_TARGET_OPTIONS = ['branch', 'tag', 'push'] as const;
+
+/**
+ * The keys of a bypass actor.
+ */
+export const BYPASS_ACTOR_KEYS = ['actor_id', 'actor_type', 'bypass_mode'] as const;
+
+/**
+ * The types of bypass actors.
+ */
+export const BYPASS_ACTOR_TYPES = [
+  'Integration',
+  'OrganizationAdmin',
+  'RepositoryRole',
+  'Team',
+  'DeployKey',
+  'EnterpriseOwner',
+] as const;
+
+/**
+ * The bypass modes of a bypass actor.
+ */
+export const BYPASS_MODES = ['always', 'pull_request', 'exempt'] as const;

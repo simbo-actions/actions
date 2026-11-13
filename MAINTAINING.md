@@ -44,7 +44,12 @@ Low-risk updates are merged automatically (see
    reason.
 4. Merge with squash.
 5. For npm updates, the job `dependency-changeset` adds the changeset after the
-   merge; check that the release starts.
+   merge, for the actions whose bundled dependencies changed; check that the
+   release starts.  
+   Updates of development dependencies only need no release.
+6. For `simbo-actions/*` updates, check that the new version was released by the
+   release process of this repository: a verified tag and a release with build
+   provenance (see [SECURITY.md](SECURITY.md#verifying-a-release)).
 
 ## Scanner Findings
 

@@ -4,6 +4,11 @@
 export type MakeLatestOption = 'true' | 'false' | 'legacy';
 
 /**
+ * What to do if the tag is already released.
+ */
+export type IfReleasedOption = 'error' | 'skip';
+
+/**
  * Parsed inputs for the staged-release action.
  */
 export interface ParsedActionInputs {
@@ -18,6 +23,7 @@ export interface ParsedActionInputs {
   makeLatest: MakeLatestOption;
   prerelease: boolean;
   publish: boolean;
+  ifReleased: IfReleasedOption;
 }
 
 /**

@@ -130,31 +130,33 @@ jobs:
 
 ## Inputs
 
-| Input               | Description                                                                         | Required | Default                    |
-| ------------------- | ----------------------------------------------------------------------------------- | -------- | -------------------------- |
-| `token`             | The token to authenticate with, see [Token and Permissions](#token-and-permissions) | true     |                            |
-| `repository`        | The repository to create the release in (`owner/repo`)                              | false    | `${{ github.repository }}` |
-| `tag`               | The existing tag to release                                                         | true     |                            |
-| `name`              | The release title                                                                   | false    | the tag                    |
-| `body`              | The release notes                                                                   | false    |                            |
-| `body-file`         | A file with the release notes, relative to `working-directory`                      | false    |                            |
-| `assets`            | Files to upload, one path or glob pattern per line, relative to `working-directory` | false    |                            |
-| `working-directory` | The directory `assets` and `body-file` are resolved against                         | false    | `.`                        |
-| `make-latest`       | `true`, `false`, or `legacy` (latest by date and version)                           | false    | `true`                     |
-| `prerelease`        | Whether the release is a prerelease                                                 | false    | `false`                    |
-| `publish`           | Whether to publish the release; with `false`, it stays a draft                      | false    | `true`                     |
+| Input               | Description                                                                            | Required | Default                    |
+| ------------------- | -------------------------------------------------------------------------------------- | -------- | -------------------------- |
+| `token`             | The token to authenticate with, see [Token and Permissions](#token-and-permissions)    | true     |                            |
+| `repository`        | The repository to create the release in (`owner/repo`)                                 | false    | `${{ github.repository }}` |
+| `tag`               | The existing tag to release                                                            | true     |                            |
+| `name`              | The release title                                                                      | false    | the tag                    |
+| `body`              | The release notes                                                                      | false    |                            |
+| `body-file`         | A file with the release notes, relative to `working-directory`                         | false    |                            |
+| `assets`            | Files to upload, one path or glob pattern per line, relative to `working-directory`    | false    |                            |
+| `working-directory` | The directory `assets` and `body-file` are resolved against                            | false    | `.`                        |
+| `make-latest`       | `true`, `false`, or `legacy` (latest by date and version)                              | false    | `true`                     |
+| `prerelease`        | Whether the release is a prerelease                                                    | false    | `false`                    |
+| `publish`           | Whether to publish the release; with `false`, it stays a draft                         | false    | `true`                     |
+| `if-released`       | `error` or `skip` if the tag is already released, see [Re-Runs](#re-runs-and-failures) | false    | `error`                    |
 
 - Use either `body` or `body-file`.
 - Asset names are the file names; two assets with the same name fail the action.
 - Glob patterns support `*`, `**`, and `?`.
+- Symbolic links fail the action instead of being uploaded.
 
 ## Outputs
 
-| Output       | Description                                                             |
-| ------------ | ----------------------------------------------------------------------- |
-| `release-id` | The ID of the release                                                   |
-| `url`        | The URL of the release page                                             |
-| `assets`     | The uploaded assets as JSON: `[{"name": ..., "size": ..., "url": ...}]` |
+| Output       | Description                                                                               |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `release-id` | The ID of the release                                                                     |
+| `url`        | The URL of the release page                                                               |
+| `assets`     | The uploaded assets as JSON: `[{"name": ..., "size": ..., "url": ...}]`; empty if skipped |
 
 ## Token and Permissions
 
@@ -173,6 +175,9 @@ The tag must exist before the action runs, for example created by a push or by
   A re-run removes it and starts again.
 - If the tag is already released, the action fails instead of changing the
   release.  
+  With `if-released: skip`, it ends successfully without changes instead, so a
+  workflow that failed after publishing can be re-run; the outputs then describe
+  the published release, with `assets` empty.  
   With immutable releases, a published release cannot be changed anyway; a
   correction is a new version.
 - API requests that hit a rate limit wait as long as GitHub asks for and are

@@ -357,13 +357,13 @@ Dependabot proposes updates; what is merged automatically depends on the risk.
 ```mermaid
 flowchart TD
   pr(["Dependabot pull request"]) --> kind{"what changes?"}
-  kind -- "simbo-actions/*" --> auto["auto-merge after checks"]
-  kind -- "trusted publishers<br/>actions/*, github/*, google/*<br/>minor or patch" --> auto
+  kind -- "trusted publishers<br/>actions/*, github/*, google/*<br/>minor or patch" --> auto["auto-merge after checks"]
+  kind -- "simbo-actions/*" --> owner
   kind -- "other actions,<br/>majors of actions" --> owner["assigned to the owner"]
   kind -- "npm minor or patch,<br/>weekly" --> owner
   auto --> autoMerged(["merged automatically"])
   owner --> ownerMerged(["reviewed and merged by the owner"])
-  ownerMerged -- "npm dependencies changed" --> changeset["job dependency-changeset:<br/>patch changeset for affected actions"]
+  ownerMerged -- "bundled npm dependencies changed" --> changeset["job dependency-changeset:<br/>patch changeset for affected actions"]
   changeset --> releaseFlow(["release and publish"])
 ```
 
@@ -371,6 +371,20 @@ Updates of third-party actions and npm packages wait 7 days after their release
 (cooldown).  
 Dependabot pull requests never receive secrets; the changeset for npm updates is
 created after the merge, in a job with the environment `release`.
+
+- **Only bundled dependencies release an action.** The job compares the
+  production dependencies of every action in `pnpm-lock.yaml` before and after
+  the merge (`pnpm list --prod`); development dependencies cause no release.
+- **`simbo-actions/*` updates are reviewed,** not merged automatically: the
+  privileged jobs of this repository run these actions with the credentials of
+  the app.
+- **Auto-merge uses `GITHUB_TOKEN`,** so the merge starts no `checks` run on
+  `main`. The checks ran on the pull request, the merge changes only workflow
+  pins, and the weekly `security` run scans `main`. A token with more rights
+  would need secrets in Dependabot workflows.
+- Auto-merge requires that both the pull request and the event come from
+  Dependabot (`github.actor`), and fails closed if the changed files cannot be
+  read.
 
 ## Vulnerability, Secret, and License Checks
 

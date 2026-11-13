@@ -1,4 +1,4 @@
-import { glob, stat } from 'node:fs/promises';
+import { glob, lstat } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
 
 import type { AssetFile } from './staged-release.types.js';
@@ -20,7 +20,10 @@ export async function findAssets(patterns: readonly string[], workingDirectory: 
     const matches = glob(pattern, { cwd: workingDirectory });
     for await (const match of matches) {
       const path = resolve(workingDirectory, match);
-      const stats = await stat(path);
+      const stats = await lstat(path);
+      if (stats.isSymbolicLink()) {
+        throw new Error(`Symbolic links are not uploaded as assets: ${path}`);
+      }
       if (!stats.isFile()) {
         continue;
       }

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -40,6 +40,11 @@ describe('findAssets', () => {
   it('fails if a pattern matches no file', async () => {
     await expect(findAssets(['missing/*'], directory)).rejects.toThrow('No file found for asset pattern "missing/*"');
     await expect(findAssets(['dist'], directory)).rejects.toThrow('No file found for asset pattern "dist"');
+  });
+
+  it('fails for a symbolic link', async () => {
+    await symlink(join(directory, 'SHA256SUMS'), join(directory, 'dist', 'link'));
+    await expect(findAssets(['dist/*'], directory)).rejects.toThrow('Symbolic links are not uploaded as assets');
   });
 
   it('fails for two files with the same name', async () => {

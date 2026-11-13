@@ -1,8 +1,14 @@
 import {
   ALLOWED_ACTIONS_OPTIONS,
+  BYPASS_ACTOR_KEYS,
+  BYPASS_ACTOR_TYPES,
+  BYPASS_MODES,
   CONFIG_SECTIONS,
   MAX_TOPICS,
   REPOSITORY_SETTING_TYPES,
+  RULESET_ENFORCEMENT_OPTIONS,
+  RULESET_KEYS,
+  RULESET_TARGET_OPTIONS,
   SECURITY_SETTINGS,
   TOPIC_PATTERN,
   WORKFLOW_PERMISSIONS_OPTIONS,
@@ -134,24 +140,103 @@ function parseActions(value: unknown): ActionsSettings {
 }
 
 /**
- * Validates the section `rulesets`. The rulesets are passed to the API as they
- * are; only the fields needed to match them are checked.
+ * Validates an array of objects with allowed keys.
+ *
+ * @param value - The array.
+ * @param path - The path for error messages.
+ * @param keys - The allowed keys of every item.
+ * @returns The items.
+ * @throws {Error} if the value is not an array of such objects.
+ */
+function assertObjectArray(value: unknown, path: string, keys: readonly string[]): Record<string, unknown>[] {
+  if (!Array.isArray(value)) {
+    throw new TypeError(`Invalid configuration: "${path}" must be an array.`);
+  }
+  return value.map((item: unknown, index) => assertObject(item, `${path}[${index}]`, keys));
+}
+
+/**
+ * Validates the conditions of a ruleset: only `ref_name` with string lists.
+ *
+ * @param value - The conditions.
+ * @param path - The path for error messages.
+ * @throws {Error} if the conditions are invalid.
+ */
+function assertRulesetConditions(value: unknown, path: string): void {
+  const conditions = assertObject(value, path, ['ref_name']);
+  if (conditions.ref_name === undefined) {
+    return;
+  }
+  const refName = assertObject(conditions.ref_name, `${path}.ref_name`, ['include', 'exclude']);
+  for (const key of ['include', 'exclude'] as const) {
+    const list = refName[key];
+    if (list !== undefined && (!Array.isArray(list) || list.some(item => typeof item !== 'string'))) {
+      throw new Error(`Invalid configuration: "${path}.ref_name.${key}" must be an array of strings.`);
+    }
+  }
+}
+
+/**
+ * Validates the rules of a ruleset; their parameters depend on the rule type.
+ *
+ * @param value - The rules.
+ * @param path - The path for error messages.
+ * @throws {Error} if a rule is invalid.
+ */
+function assertRules(value: unknown, path: string): void {
+  for (const [index, rule] of assertObjectArray(value, path, ['type', 'parameters']).entries()) {
+    assertValue(rule.type, `${path}[${index}].type`, 'string');
+    if (rule.parameters !== undefined && !isObject(rule.parameters)) {
+      throw new Error(`Invalid configuration: "${path}[${index}].parameters" must be an object.`);
+    }
+  }
+}
+
+/**
+ * Validates the bypass actors of a ruleset.
+ *
+ * @param value - The bypass actors.
+ * @param path - The path for error messages.
+ * @throws {Error} if a bypass actor is invalid.
+ */
+function assertBypassActors(value: unknown, path: string): void {
+  for (const [index, actor] of assertObjectArray(value, path, BYPASS_ACTOR_KEYS).entries()) {
+    const actorPath = `${path}[${index}]`;
+    if (actor.actor_id !== null && typeof actor.actor_id !== 'number') {
+      throw new Error(`Invalid configuration: "${actorPath}.actor_id" must be a number or null.`);
+    }
+    assertValue(actor.actor_type, `${actorPath}.actor_type`, BYPASS_ACTOR_TYPES);
+    if (actor.bypass_mode !== undefined) {
+      assertValue(actor.bypass_mode, `${actorPath}.bypass_mode`, BYPASS_MODES);
+    }
+  }
+}
+
+/**
+ * Validates the section `rulesets`. Every key is checked; the parameters of a
+ * rule depend on its type and are passed to the API as they are.
  *
  * @param value - The section.
  * @returns The rulesets.
  */
 function parseRulesets(value: unknown): Ruleset[] {
-  if (!Array.isArray(value)) {
-    throw new TypeError('Invalid configuration: "rulesets" must be an array.');
-  }
   const names = new Set<string>();
-  return value.map((ruleset: unknown, index) => {
+  return assertObjectArray(value, 'rulesets', RULESET_KEYS).map((ruleset, index) => {
     const path = `rulesets[${index}]`;
-    if (!isObject(ruleset)) {
-      throw new Error(`Invalid configuration: "${path}" must be an object.`);
-    }
     assertValue(ruleset.name, `${path}.name`, 'string');
-    assertValue(ruleset.enforcement, `${path}.enforcement`, ['active', 'evaluate', 'disabled']);
+    assertValue(ruleset.enforcement, `${path}.enforcement`, RULESET_ENFORCEMENT_OPTIONS);
+    if (ruleset.target !== undefined) {
+      assertValue(ruleset.target, `${path}.target`, RULESET_TARGET_OPTIONS);
+    }
+    if (ruleset.conditions !== undefined) {
+      assertRulesetConditions(ruleset.conditions, `${path}.conditions`);
+    }
+    if (ruleset.rules !== undefined) {
+      assertRules(ruleset.rules, `${path}.rules`);
+    }
+    if (ruleset.bypass_actors !== undefined) {
+      assertBypassActors(ruleset.bypass_actors, `${path}.bypass_actors`);
+    }
     const name = ruleset.name as string;
     if (names.has(name)) {
       throw new Error(`Invalid configuration: two rulesets are named "${name}".`);

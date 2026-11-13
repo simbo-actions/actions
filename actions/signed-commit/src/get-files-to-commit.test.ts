@@ -325,6 +325,15 @@ describe('getFilesToCommit', () => {
       await expect(collect(fixture, 'none', { additionsList: ['nested'] })).rejects.toThrow('Not a file: nested');
     });
 
+    it('rejects files reached through a symbolic link to another directory', async () => {
+      const outside = await createTempDir();
+      await writeFile(join(outside, 'secret.txt'), 'secret');
+      await symlink(outside, join(fixture.dir, 'linked'));
+      await expect(collect(fixture, 'none', { additionsList: ['linked/secret.txt'] })).rejects.toThrow(
+        'Invalid path "linked/secret.txt": it leads outside of the working directory.',
+      );
+    });
+
     it('rejects paths that are both added and deleted', async () => {
       await expect(
         collect(fixture, 'none', { additionsList: ['keep.txt'], deletionsList: ['keep.txt'] }),

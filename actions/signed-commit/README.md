@@ -306,7 +306,10 @@ newer changes on the branch.
   Pushing more than three tags at once with Git creates no events for them.
 - An existing tag that already points to the new commit is accepted.  
   An existing tag on another commit fails the action.
-- Without a commit (nothing to commit), no tags are created.
+- Without a commit (nothing to commit, with `if-no-changes: warn` or `ignore`),
+  the tags are created on the current head of the branch.  
+  So a re-run completes the tags of a run that created the commit but failed
+  while tagging.
 
 ## Syncing the Local Checkout
 
@@ -360,7 +363,10 @@ share the same limits; spread them, for example with a matrix and
   it to disk or to the Git configuration.  
   Use a token restricted to the target repository and `contents: write`.
 - **Inputs:** all inputs are validated; paths outside the working directory,
-  symbolic links, and submodules are rejected.
+  also through a symbolic link in a parent directory, symbolic links, and
+  submodules are rejected.  
+  Branch and tag names follow the rules of `git check-ref-format` and must not
+  start with `-`.
 - **No overwriting:** the commit is created only if the branch still points to
   the expected commit, see
   [Protection Against Overwriting](#protection-against-overwriting).

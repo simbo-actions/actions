@@ -2,7 +2,7 @@ import { error } from '@actions/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Finding } from './gitleaks-scan.types.js';
-import { annotateFindings, parseSarifReport, writeSummary } from './report.js';
+import { annotateFindings, escapeHtml, parseSarifReport, writeSummary } from './report.js';
 
 const summary = vi.hoisted(() => {
   const fake = { addHeading: vi.fn(), addRaw: vi.fn(), addTable: vi.fn(), write: vi.fn() };
@@ -64,6 +64,12 @@ describe('annotateFindings', () => {
       file: 'repo/src/config.ts',
       startLine: 12,
     });
+  });
+});
+
+describe('escapeHtml', () => {
+  it('escapes HTML special characters', () => {
+    expect(escapeHtml(`<a href="x">it's & more</a>`)).toBe('&lt;a href=&quot;x&quot;&gt;it&#39;s &amp; more&lt;/a&gt;');
   });
 });
 

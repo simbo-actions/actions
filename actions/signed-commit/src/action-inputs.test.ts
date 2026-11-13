@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { parseActionInputs } from './action-inputs.js';
+import { isValidRefName, parseActionInputs } from './action-inputs.js';
 
 /**
  * Sets an action input as environment variable, like the runner does.
@@ -85,9 +85,47 @@ describe('parseActionInputs', () => {
     ['detect-changes', 'some', 'Invalid input "detect-changes"'],
     ['if-no-changes', 'fail', 'Invalid input "if-no-changes"'],
     ['sync', 'yes', 'Invalid input "sync"'],
+    ['branch', 'main:other', 'Invalid input "branch": "main:other" is not a valid branch name.'],
+    ['branch', '-d', 'Invalid input "branch"'],
+    ['tags', 'v1.0.0 -d', 'Invalid input "tags": "-d" is not a valid tag name.'],
+    ['tags', 'v1..0', 'Invalid input "tags"'],
   ])('rejects invalid %s', (name, value, error) => {
     setInput(name, value);
     expect(() => parseActionInputs()).toThrow(error);
+  });
+
+  it.each(['main', 'release/v1.2', 'pkg-a/v1.0.0', 'feature/a_b-c', 'v1.0.0+build'])(
+    'accepts the ref name %s',
+    name => {
+      expect(isValidRefName(name)).toBe(true);
+    },
+  );
+
+  it.each([
+    '',
+    '@',
+    '-x',
+    '/a',
+    'a/',
+    'a.',
+    'a..b',
+    'a//b',
+    'a@{b',
+    'a b',
+    'a~1',
+    'a^',
+    'a:b',
+    'a?',
+    'a*',
+    'a[',
+    String.raw`a\b`,
+    '.a',
+    'a/.b',
+    'a.lock',
+    'a/b.lock/c',
+    'a\u{1}',
+  ])('rejects the ref name %j', name => {
+    expect(isValidRefName(name)).toBe(false);
   });
 
   it('rejects an empty branch', () => {

@@ -4,8 +4,8 @@ import { env } from 'node:process';
 
 import { getInput } from '@actions/core';
 
-import { MAKE_LATEST_OPTIONS } from './staged-release-constants.js';
-import type { MakeLatestOption, ParsedActionInputs } from './staged-release.types.js';
+import { IF_RELEASED_OPTIONS, MAKE_LATEST_OPTIONS } from './staged-release-constants.js';
+import type { IfReleasedOption, MakeLatestOption, ParsedActionInputs } from './staged-release.types.js';
 
 /**
  * Parses a boolean input.
@@ -89,6 +89,12 @@ export async function parseActionInputs(): Promise<ParsedActionInputs> {
   }
   const prerelease = parseBoolean('prerelease', false);
   const publish = parseBoolean('publish', true);
+  const ifReleased = (getInput('if-released') || 'error').toLowerCase();
+  if (!(IF_RELEASED_OPTIONS as readonly string[]).includes(ifReleased)) {
+    throw new Error(
+      `Invalid input "if-released": "${ifReleased}" (expected one of: ${IF_RELEASED_OPTIONS.join(', ')}).`,
+    );
+  }
 
   return {
     token,
@@ -102,5 +108,6 @@ export async function parseActionInputs(): Promise<ParsedActionInputs> {
     makeLatest: makeLatest as MakeLatestOption,
     prerelease,
     publish,
+    ifReleased: ifReleased as IfReleasedOption,
   };
 }

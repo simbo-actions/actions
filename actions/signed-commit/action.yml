@@ -48,7 +48,10 @@ inputs:
     required: false
     default: all
   tags:
-    description: Tags to create on the new commit, separated by whitespace. Each tag is created with its own API call.
+    description: >
+      Tags to create on the new commit, separated by whitespace. Each tag is
+      created with its own API call. Without a commit (nothing to commit), the
+      tags are created on the current head of the branch.
     required: false
     default: ''
   if-no-changes:

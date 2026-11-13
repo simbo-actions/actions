@@ -44,6 +44,7 @@ describe('parseActionInputs', () => {
       makeLatest: 'true',
       prerelease: false,
       publish: true,
+      ifReleased: 'error',
     });
   });
 
@@ -56,6 +57,7 @@ describe('parseActionInputs', () => {
     setInput('make-latest', 'LEGACY');
     setInput('prerelease', 'true');
     setInput('publish', 'false');
+    setInput('if-released', 'Skip');
 
     expect(await parseActionInputs()).toEqual({
       token: 'token',
@@ -69,6 +71,7 @@ describe('parseActionInputs', () => {
       makeLatest: 'legacy',
       prerelease: true,
       publish: false,
+      ifReleased: 'skip',
     });
   });
 
@@ -94,6 +97,7 @@ describe('parseActionInputs', () => {
     ['repository', 'invalid', 'Invalid input "repository"'],
     ['make-latest', 'yes', 'Invalid input "make-latest"'],
     ['prerelease', 'yes', 'Invalid input "prerelease"'],
+    ['if-released', 'ignore', 'Invalid input "if-released"'],
     ['tag', '', 'tag'],
     ['token', '', 'token'],
   ])('rejects invalid %s', async (name, value, error) => {

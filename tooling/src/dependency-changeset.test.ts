@@ -1,23 +1,40 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDependencyChangeset, getAffectedActions } from './dependency-changeset.ts';
+import { flattenDependencies, formatDependencyChangeset, getAffectedActions } from './dependency-changeset.ts';
 
-const actions = ['signed-commit', 'github-app-bot-user'];
+describe('flattenDependencies', () => {
+  it('lists every package of the tree once, sorted', () => {
+    expect(
+      flattenDependencies({
+        b: { version: '2.0.0', dependencies: { a: { version: '1.0.0' } } },
+        a: { version: '1.0.0' },
+        c: { version: '3.0.0', dependencies: { a: { version: '1.1.0' } } },
+      }),
+    ).toEqual(['a@1.0.0', 'a@1.1.0', 'b@2.0.0', 'c@3.0.0']);
+  });
+
+  it('handles missing trees and versions', () => {
+    expect(flattenDependencies(undefined)).toEqual([]);
+    expect(flattenDependencies({ a: {}, b: undefined })).toEqual(['a@', 'b@']);
+  });
+});
 
 describe('getAffectedActions', () => {
-  it('returns the actions whose package.json changed', () => {
-    expect(getAffectedActions(['actions/signed-commit/package.json', 'pnpm-lock.yaml'], actions)).toEqual([
-      'signed-commit',
-    ]);
+  it('returns the actions whose production packages changed', () => {
+    expect(
+      getAffectedActions(
+        { 'signed-commit': ['a@1.0.0'], 'staged-release': ['a@1.0.0'] },
+        { 'signed-commit': ['a@1.0.1'], 'staged-release': ['a@1.0.0'] },
+      ),
+    ).toEqual(['signed-commit']);
   });
 
-  it('returns all actions for an update of the lockfile only', () => {
-    expect(getAffectedActions(['pnpm-lock.yaml'], actions)).toEqual(['github-app-bot-user', 'signed-commit']);
+  it('treats a new action with dependencies as affected', () => {
+    expect(getAffectedActions({}, { 'new-action': ['a@1.0.0'] })).toEqual(['new-action']);
   });
 
-  it('returns no actions for other changes', () => {
-    expect(getAffectedActions(['package.json', 'tooling/package.json'], actions)).toEqual([]);
-    expect(getAffectedActions([], actions)).toEqual([]);
+  it('returns no actions if nothing bundled changed', () => {
+    expect(getAffectedActions({ a: ['x@1'] }, { a: ['x@1'] })).toEqual([]);
   });
 });
 

@@ -54,6 +54,12 @@ inputs:
     description: Whether to publish the release. With "false", it stays a draft.
     required: false
     default: 'true'
+  if-released:
+    description: >
+      What to do if the tag is already released: "error" fails the action,
+      "skip" ends it successfully without changes, for example in a re-run.
+    required: false
+    default: error
 
 outputs:
   release-id:

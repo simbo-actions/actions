@@ -4,7 +4,7 @@ import { parseActionInputs } from './action-inputs.js';
 import { createOctokit } from './create-octokit.js';
 import { getFilesToCommit } from './get-files-to-commit.js';
 import { getHeadOid, getRepositoryRoot } from './git.js';
-import { createCommitOnBranch, createTag, getBranchHeadOid } from './github-api.js';
+import { createCommitOnBranch, createTag, getBranchHeadOid, type Octokit, type RepositoryRef } from './github-api.js';
 import { EXPECTED_HEAD_OID_REMOTE, TAGS_RATE_LIMIT_WARNING_THRESHOLD } from './signed-commit-constants.js';
 import type { FileChanges, ParsedActionInputs } from './signed-commit.types.js';
 import { syncLocal } from './sync-local.js';
@@ -70,6 +70,29 @@ function logFileChanges(fileChanges: FileChanges): void {
 }
 
 /**
+ * Creates the tags on a commit, one API call per tag, so that every tag
+ * triggers its own push event.
+ *
+ * @param octokit - The Octokit client.
+ * @param repository - The repository.
+ * @param tags - The tags to create.
+ * @param sha - The commit object ID.
+ * @throws {Error} if a tag exists on another commit or cannot be created.
+ */
+async function createTags(octokit: Octokit, repository: RepositoryRef, tags: string[], sha: string): Promise<void> {
+  if (tags.length > TAGS_RATE_LIMIT_WARNING_THRESHOLD) {
+    warning(
+      `Creating ${tags.length} tags: GitHub limits content creation to 80 requests per minute, ` +
+        'so the action may wait for the rate limit.',
+    );
+  }
+  for (const tag of tags) {
+    const created = await createTag(octokit, repository, tag, sha);
+    info(created ? `Created tag ${tag}.` : `Tag ${tag} already points to ${sha}.`);
+  }
+}
+
+/**
  * Main entry point for the signed-commit action.
  *
  * @throws {Error} if any input is invalid, the branch does not exist, the branch
@@ -116,8 +139,10 @@ export async function main(): Promise<void> {
         info(notice);
       }
     }
+    // Tags that a previous run could not create are created on the current head.
     if (tags.length > 0) {
-      warning(`Skipping tags without a commit: ${tags.join(', ')}`);
+      info(`Tagging the current head ${expectedHeadOid} of ${branch}.`);
+      await createTags(octokit, repository, tags, expectedHeadOid);
     }
     return;
   }
@@ -135,17 +160,7 @@ export async function main(): Promise<void> {
   setOutput('commit-sha', commitOid);
   info(`Created verified commit ${commitOid} on ${owner}/${repo}@${branch}.`);
 
-  // One API call per tag, so that every tag triggers its own push event.
-  if (tags.length > TAGS_RATE_LIMIT_WARNING_THRESHOLD) {
-    warning(
-      `Creating ${tags.length} tags: GitHub limits content creation to 80 requests per minute, ` +
-        'so the action may wait for the rate limit.',
-    );
-  }
-  for (const tag of tags) {
-    const created = await createTag(octokit, repository, tag, commitOid);
-    info(created ? `Created tag ${tag}.` : `Tag ${tag} already points to ${commitOid}.`);
-  }
+  await createTags(octokit, repository, tags, commitOid);
 
   if (inputs.sync) {
     await syncLocal({

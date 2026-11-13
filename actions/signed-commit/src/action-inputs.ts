@@ -71,15 +71,42 @@ function parseRepository(): { owner: string; repo: string } {
 }
 
 /**
+ * Checks a branch or tag name against the rules of `git check-ref-format`,
+ * and additionally rejects names starting with "-", which Git would read as an option.
+ *
+ * @param name - The name without `refs/heads/` or `refs/tags/`.
+ * @returns `true` if the name is valid.
+ */
+export function isValidRefName(name: string): boolean {
+  return (
+    name !== '' &&
+    name !== '@' &&
+    !name.startsWith('-') &&
+    !name.startsWith('/') &&
+    !name.endsWith('/') &&
+    !name.endsWith('.') &&
+    !name.includes('..') &&
+    !name.includes('//') &&
+    !name.includes('@{') &&
+    // eslint-disable-next-line no-control-regex -- control characters are forbidden in ref names
+    !/[\u{0}-\u{20}\u{7F}~^:?*[\\]/u.test(name) &&
+    name.split('/').every(part => !part.startsWith('.') && !part.endsWith('.lock'))
+  );
+}
+
+/**
  * Parses the branch input.
  *
  * @returns The branch name without `refs/heads/` prefix.
- * @throws {Error} if the branch is empty.
+ * @throws {Error} if the branch is empty or not a valid branch name.
  */
 function parseBranch(): string {
   const branch = (getInput('branch') || (env.GITHUB_REF_NAME ?? '')).replace(/^refs\/heads\//, '');
   if (!branch) {
     throw new Error('Invalid input "branch": the branch must not be empty.');
+  }
+  if (!isValidRefName(branch)) {
+    throw new Error(`Invalid input "branch": "${branch}" is not a valid branch name.`);
   }
   return branch;
 }
@@ -100,6 +127,10 @@ export function parseActionInputs(): ParsedActionInputs {
   const deletionsList = parseLines(getInput('deletions'));
   const detectChanges = parseOption<DetectChangesOption>('detect-changes', DETECT_CHANGES_OPTIONS, 'all');
   const tags = getInput('tags').split(/\s+/).filter(Boolean);
+  const invalidTag = tags.find(tag => !isValidRefName(tag));
+  if (invalidTag !== undefined) {
+    throw new Error(`Invalid input "tags": "${invalidTag}" is not a valid tag name.`);
+  }
   const ifNoChanges = parseOption<IfNoChangesOption>('if-no-changes', IF_NO_CHANGES_OPTIONS, 'error');
   const sync = parseBoolean('sync', true);
   const expectedHeadOid = getInput('expected-head-oid').toLowerCase();

@@ -4,6 +4,11 @@
 export const MAKE_LATEST_OPTIONS = ['true', 'false', 'legacy'] as const;
 
 /**
+ * Options for a tag that is already released.
+ */
+export const IF_RELEASED_OPTIONS = ['error', 'skip'] as const;
+
+/**
  * HTTP status of the GitHub API for a missing resource.
  */
 export const HTTP_STATUS_NOT_FOUND = 404;
