@@ -10,9 +10,11 @@ name: Publish 🚚
 # moves the major tag "v<major>" forward (not for prereleases).
 # Every action in actions/<name> is published to <organization>/<name>.
 #
-# Order matters: all third-party code (install, build) runs before the app
-# credentials are retrieved. Every token is restricted to the repository and
-# the permissions of the steps that use it.
+# Two jobs: "build" installs and builds without any credentials and hands the
+# release content and the prebuilt internal actions over as artifact. "publish"
+# runs no npm code; it only uses the artifact, with the app credentials, and
+# every token is restricted to the repository and the permissions of the steps
+# that use it.
 #-------------------------------------------------------------------------------
 
 on:
@@ -63,16 +65,17 @@ env:
     }}
 
 jobs:
-  publish:
+  build:
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment:
-      name: release
-      deployment: false
     permissions:
       contents: read
-      id-token: write
-      attestations: write
+    outputs:
+      package: ${{ steps.options.outputs.package }}
+      version: ${{ steps.options.outputs.version }}
+      tag: ${{ steps.options.outputs.tag }}
+      repository: ${{ steps.options.outputs.repository }}
+      description: ${{ steps.content.outputs.description }}
     steps:
       - name: 🔍 Parse Options
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -174,9 +177,9 @@ jobs:
             exit 1
           fi
 
-          content="${RUNNER_TEMP}/release/content"
-          assets="${RUNNER_TEMP}/release/assets"
-          notes="${RUNNER_TEMP}/release/notes.md"
+          content=release/content
+          assets=release/assets
+          notes=release/notes.md
           mkdir -p "$content" "$assets"
 
           # Copy distribution artifacts
@@ -207,29 +210,72 @@ jobs:
             exit 1
           fi
 
+          # The description may contain any characters; a random delimiter keeps the
+          # output intact.
+          delimiter="EOF_$(openssl rand -hex 16)"
           {
-            echo "content=${content}"
-            echo "assets=${assets}"
-            echo "notes=${notes}"
-            echo "description=$(jq -r '.description' "${FROM}/package.json")"
+            echo "description<<${delimiter}"
+            jq -r '.description' "${FROM}/package.json"
+            echo "${delimiter}"
           } >> "$GITHUB_OUTPUT"
+
+      - name: 🧰 Add Internal Actions and Settings
+        run: |
+          set -euo pipefail
+
+          # The publish job runs these prebuilt actions; it never builds anything.
+          for name in apply-repository-settings signed-commit staged-release floating-version-tags; do
+            mkdir -p "release/actions/${name}"
+            cp "monorepo/actions/${name}/action.yml" "release/actions/${name}/"
+            cp -R "monorepo/actions/${name}/dist" "release/actions/${name}/"
+          done
+          cp monorepo/.github/managed-repository-settings.json release/
+
+      - name: 📤 Upload Release
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: release
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: 📥 Download Release
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: release
 
       - name: 📜 Attest Build Provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: ${{ steps.content.outputs.assets }}/*.tar.gz
+          subject-path: release/assets/*.tar.gz
 
       - name: 🔍 Check Action Repository
         id: repo-exists
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ steps.options.outputs.repository }}
+          REPO: ${{ needs.build.outputs.repository }}
         run: |
           set -euo pipefail
-          if gh api "repos/${REPO}" --silent 2>/dev/null; then
+          # Only "not found" means missing; any other error fails the step.
+          if output="$(gh api "repos/${REPO}" --silent 2>&1)"; then
             echo "result=true" >> "$GITHUB_OUTPUT"
-          else
+          elif grep -q 'HTTP 404' <<< "$output"; then
             echo "result=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error title=Repository Check Failed::${output}"
+            exit 1
           fi
 
       - name: 🔑 Get App Token (Create Repository)
@@ -246,8 +292,8 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           OWNER: ${{ github.repository_owner }}
-          PACKAGE: ${{ steps.options.outputs.package }}
-          DESCRIPTION: ${{ steps.content.outputs.description }}
+          PACKAGE: ${{ needs.build.outputs.package }}
+          DESCRIPTION: ${{ needs.build.outputs.description }}
         with:
           github-token: ${{ steps.app-token-create.outputs.token }}
           retries: 3
@@ -271,16 +317,16 @@ jobs:
         with:
           client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
           private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
-          repositories: ${{ steps.options.outputs.package }}
+          repositories: ${{ needs.build.outputs.package }}
           permission-administration: write
 
       - name: ⚙️ Apply Repository Settings
-        uses: ./monorepo/actions/apply-repository-settings
+        uses: ./release/actions/apply-repository-settings
         with:
           token: ${{ steps.app-token-configure.outputs.token }}
-          repository: ${{ steps.options.outputs.repository }}
-          config: monorepo/.github/managed-repository-settings.json
-          description: ${{ steps.content.outputs.description }}
+          repository: ${{ needs.build.outputs.repository }}
+          config: release/managed-repository-settings.json
+          description: ${{ needs.build.outputs.description }}
           homepage: https://github.com/${{ github.repository }}
           topics: github-actions simbo-actions
 
@@ -290,20 +336,20 @@ jobs:
         with:
           client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
           private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
-          repositories: ${{ steps.options.outputs.package }}
+          repositories: ${{ needs.build.outputs.package }}
           permission-contents: write
 
       - name: 🛎️ Checkout Action Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ steps.options.outputs.repository }}
+          repository: ${{ needs.build.outputs.repository }}
           path: action-repo
           ref: main
           persist-credentials: false
 
       - name: 🔄 Replace Content
         env:
-          FROM: ${{ steps.content.outputs.content }}
+          FROM: release/content
           TO: action-repo
         run: |
           set -euo pipefail
@@ -311,31 +357,38 @@ jobs:
           cp -R "${FROM}/." "${TO}/"
 
       - name: 💾 Commit and Tag
-        uses: ./monorepo/actions/signed-commit
+        uses: ./release/actions/signed-commit
         with:
           token: ${{ steps.app-token.outputs.token }}
-          repository: ${{ steps.options.outputs.repository }}
+          repository: ${{ needs.build.outputs.repository }}
           branch: main
           working-directory: action-repo
-          message: 'ci(release): ${{ steps.options.outputs.tag }}'
-          tags: ${{ steps.options.outputs.tag }}
+          message: 'ci(release): ${{ needs.build.outputs.tag }}'
+          tags: ${{ needs.build.outputs.tag }}
+          # A re-run after the commit only completes the tag.
+          if-no-changes: ignore
           sync: false
 
       - name: 🎁 Create GitHub Release
-        uses: ./monorepo/actions/staged-release
+        uses: ./release/actions/staged-release
         with:
           token: ${{ steps.app-token.outputs.token }}
-          repository: ${{ steps.options.outputs.repository }}
-          tag: ${{ steps.options.outputs.tag }}
-          name: ${{ steps.options.outputs.package }} ${{ steps.options.outputs.tag }}
-          body-file: ${{ steps.content.outputs.notes }}
-          assets: ${{ steps.content.outputs.assets }}/*
+          repository: ${{ needs.build.outputs.repository }}
+          tag: ${{ needs.build.outputs.tag }}
+          name: ${{ needs.build.outputs.package }} ${{ needs.build.outputs.tag }}
+          body-file: release/notes.md
+          assets: release/assets/*
+          prerelease: ${{ contains(needs.build.outputs.version, '-') }}
+          # GitHub marks the highest stable version as latest, not a fix of an older major.
+          make-latest: legacy
+          # A re-run after publishing continues with the floating tags.
+          if-released: skip
 
       - name: 🏷️ Move Floating Version Tags
-        if: ${{ !contains(steps.options.outputs.version, '-') }}
-        uses: ./monorepo/actions/floating-version-tags
+        if: ${{ !contains(needs.build.outputs.version, '-') }}
+        uses: ./release/actions/floating-version-tags
         with:
           token: ${{ steps.app-token.outputs.token }}
-          repository: ${{ steps.options.outputs.repository }}
-          tag: ${{ steps.options.outputs.tag }}
+          repository: ${{ needs.build.outputs.repository }}
+          tag: ${{ needs.build.outputs.tag }}
           major: true

@@ -265,7 +265,10 @@ Required:
 - No `pull_request_target`; workflows on pull requests never receive secrets.
 - Checkouts use `persist-credentials: false` unless a later step pushes with
   Git.
-- Third-party code (install, build) runs before credentials are requested.
+- Third-party code (install, build) never runs in a job with credentials.  
+  A build job without environment and secrets hands its result over as artifact;
+  the privileged job with the environment `release` only runs prebuilt actions.
+  Checked in CI (`pnpm run check:actions`).
 - All workflows and `action.yml` files pass
   [actionlint](https://github.com/rhysd/actionlint) with ShellCheck.
 - Jobs must not fail on Dependabot branches; jobs with secrets run only on

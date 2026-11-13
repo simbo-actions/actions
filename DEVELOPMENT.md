@@ -75,23 +75,23 @@ How the pieces work together is described in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Root scripts (run with `pnpm run <script>`):
 
-| Script                   | What it does                                                                  |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| `preflight`              | Install, build, bundle, test, check, scan, and lint workflows                 |
-| `each:build`             | Build all workspaces (Turbo)                                                  |
-| `each:bundle`            | Run post-build bundling steps                                                 |
-| `each:test`              | Run all tests with coverage                                                   |
-| `each:check`             | Type check and lint all workspaces                                            |
-| `check`                  | Format, boundaries, spelling, licenses, license files                         |
-| `check:licenses`         | Check the licenses of the production dependencies of every action             |
-| `check:vulnerabilities`  | Scan all dependencies with osv-scanner (needs a local installation)           |
-| `check:secrets`          | Scan the Git history with Gitleaks (needs a local installation)               |
-| `check:workflows`        | Lint all workflows with actionlint and ShellCheck (needs local installations) |
-| `check:actions`          | Check license files, README sections, Octokit copies, and license lists       |
-| `fix:format`             | Format all files with Prettier                                                |
-| `actions-list`           | Update the generated list of actions in the organization profile              |
-| `ncu:patch`, `ncu:minor` | Update dependencies interactively                                             |
-| `ncu:latest`             | Major updates interactively, without `@types/node`                            |
+| Script                   | What it does                                                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `preflight`              | Install, build, bundle, test, check, scan, and lint workflows                                                 |
+| `each:build`             | Build all workspaces (Turbo)                                                                                  |
+| `each:bundle`            | Run post-build bundling steps                                                                                 |
+| `each:test`              | Run all tests with coverage                                                                                   |
+| `each:check`             | Type check and lint all workspaces                                                                            |
+| `check`                  | Format, boundaries, spelling, licenses, license files                                                         |
+| `check:licenses`         | Check the licenses of the production dependencies of every action                                             |
+| `check:vulnerabilities`  | Scan all dependencies with osv-scanner (needs a local installation)                                           |
+| `check:secrets`          | Scan the Git history with Gitleaks (needs a local installation)                                               |
+| `check:workflows`        | Lint all workflows with actionlint and ShellCheck (needs local installations)                                 |
+| `check:actions`          | Check license files, README sections, Octokit copies, license lists, and that privileged jobs run no npm code |
+| `fix:format`             | Format all files with Prettier                                                                                |
+| `actions-list`           | Update the generated list of actions in the organization profile                                              |
+| `ncu:patch`, `ncu:minor` | Update dependencies interactively                                                                             |
+| `ncu:latest`             | Major updates interactively, without `@types/node`                                                            |
 
 Workspace scripts (run inside a workspace, or with
 `pnpm --filter <name> run <script>`):

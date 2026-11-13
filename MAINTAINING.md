@@ -163,15 +163,20 @@ new actions.
 1. Open the failed run of `release` or `publish` and find the failing step.
 2. **Before the release commit:** fix the cause on `main`; the next push with
    the changesets starts the release again.
-3. **After the tags were created, with a cause outside the code:** for example a
+3. **After the release commit, with tags missing:** the changesets are
+   integrated, so a re-run of `release` fails. Create the missing tags with
+   `signed-commit`: with nothing to commit, it creates the tags on the current
+   head; or create them as organization admin on the release commit.
+4. **After the tags were created, with a cause outside the code:** for example a
    timeout or a missing permission. Fix the cause and re-run the failed publish
    run.  
    Publishing is idempotent: settings are applied again, an unchanged content
-   creates no commit, and leftover draft releases are removed.
-4. **After the tags were created, with a cause in the code:** a re-run fails
+   creates no commit and only completes the tag, leftover draft releases are
+   removed, and an already published release is skipped.
+5. **After the tags were created, with a cause in the code:** a re-run fails
    again, because publish uses the actions and workflows at the release tag. Fix
    the cause on `main` and release a new patch version.
-5. **If a version must be withdrawn:** this is possible only while immutable
+6. **If a version must be withdrawn:** this is possible only while immutable
    releases are off.  
    Delete the release and the tags (`<action>/vX.Y.Z` in the monorepo, `vX.Y.Z`
    in the action repository) as organization admin.  

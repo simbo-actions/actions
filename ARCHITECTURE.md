@@ -108,8 +108,8 @@ Workspaces in the monorepo:
 | `changelog/`      | Changelog of the monorepo itself                               |
 | `organization/`   | Content of the organization repository `simbo-actions/.github` |
 
-The release and publish workflows use the actions of this repository via
-`./actions/<name>`: they publish themselves with
+The release and publish workflows use the actions of this repository, built in
+the same run: they publish themselves with
 [`signed-commit`](actions/signed-commit/README.md),
 [`apply-repository-settings`](actions/apply-repository-settings/README.md),
 [`staged-release`](actions/staged-release/README.md), and
@@ -135,7 +135,8 @@ sequenceDiagram
   main->>checks: push event
   checks->>checks: build, test, lint, smoke tests
   checks->>release: dispatch (GITHUB_TOKEN, actions: write)
-  release->>release: changeset version
+  release->>release: job build: changeset version, patch (no credentials)
+  release->>release: job release: apply and check the patch
   release->>main: signed commit "ci(release): …"
   release->>main: tag ACTION/vX.Y.Z (one API call per tag)
   main->>publish: push event per tag
@@ -155,9 +156,15 @@ repository `simbo-actions/<action>`.
 flowchart TD
   tag(["tag ACTION/vX.Y.Z"]) --> build
 
-  subgraph job["job: publish (environment release)"]
-    build["checkout at tag, install, build<br/>(no stored credentials)"]
-    assemble["assemble content and assets,<br/>release notes from changelog"]
+  subgraph buildJob["job: build (no environment, no secrets)"]
+    build["checkout at tag, install, build"]
+    assemble["assemble content and assets,<br/>release notes from changelog,<br/>prebuilt internal actions"]
+    build --> assemble
+  end
+
+  assemble -- "artifact" --> attest
+
+  subgraph job["job: publish (environment release, no npm code)"]
     attest["attest build provenance"]
     create["create repository if missing<br/>(auto_init)"]
     configure["apply-repository-settings<br/>(only what differs)"]
@@ -165,14 +172,22 @@ flowchart TD
     release["staged-release<br/>draft, assets, publish"]
     floating["floating-version-tags<br/>move vX forward"]
 
-    build --> assemble --> attest --> create --> configure --> commit --> release --> floating
+    attest --> create --> configure --> commit --> release --> floating
   end
 ```
 
-All third-party code (install, build) runs before the first app token is
-requested.  
-Each later step requests its own token, see
+Third-party code (install, build) runs only in the job `build`, which has no
+environment and no secrets.  
+The job `publish` downloads its artifact and runs the prebuilt actions; it runs
+no npm code, which `pnpm run check:actions` checks for every job with an
+environment.  
+Each step requests its own token, see
 [Identity, Tokens, and Permissions](#identity-tokens-and-permissions).
+
+The same split applies to `release`, `publish-organization`, and the changeset
+for dependency updates in `checks`.  
+In `release`, the build job hands over a patch; the privileged job applies it
+and fails if it touches anything but the files a release changes.
 
 Release assets and how to verify them:
 
@@ -289,7 +304,8 @@ permissions it needs.
 | Commit, tag, release             | app token      | action repository | `contents: write`                                                   |
 | Publish organization repository  | app token      | `.github`         | `administration: write` (create, configure), then `contents: write` |
 | Vulnerability scan (security)    | `GITHUB_TOKEN` | monorepo          | `security-events: write`                                            |
-| Build provenance                 | `GITHUB_TOKEN` | monorepo          | `id-token: write`, `attestations: write`                            |
+| Build jobs                       | `GITHUB_TOKEN` | monorepo          | `contents: read`, no environment                                    |
+| Build provenance (publish job)   | `GITHUB_TOKEN` | monorepo          | `id-token: write`, `attestations: write`                            |
 
 ```mermaid
 flowchart LR
@@ -309,8 +325,17 @@ the API.
 | --------------------------------------------------------- | ------- | ------------------------------------------ |
 | Pull requests, Dependabot, forks                          | none    | nothing (read-only `GITHUB_TOKEN`)         |
 | Push to `main` (checks)                                   | none    | dispatches the release only                |
+| Build jobs of release and publish                         | none    | nothing; they hand over an artifact        |
 | Jobs with environment `release` on `main` or release tags | app key | monorepo and action repositories, per step |
 | Organization admins                                       | –       | everything, via ruleset bypass             |
+
+Jobs with the environment `release` run no npm code: a process started by a
+dependency during install or build could otherwise read the private key from a
+later step on the same runner.  
+Remaining risk: a compromised build tool could change the prebuilt actions that
+the privileged job runs with a short-lived, narrowly scoped token. Using the
+published actions, pinned by SHA, instead of the ones built in the same run
+removes this risk; it is planned.
 
 Fork pull requests need approval before their workflows run.  
 The rulesets apply to all automation; only the app and organization admins
@@ -477,6 +502,10 @@ major version; see [MAINTAINING.md](MAINTAINING.md).
 - **The release process uses its own actions.** Why: every release exercises the
   actions it publishes; a broken action fails the release before consumers see
   it.
+- **Separate jobs for build and credentials.** Why: steps of one job share the
+  runner, so a process started by a dependency in an earlier step could read
+  secrets of a later step. A job without secrets builds; a job without npm code
+  uses the credentials.
 - **No reusable workflows of our own.** Why: actions are versioned, tested, and
   pinned like any dependency; workflows stay in each repository and readable on
   their own.  
