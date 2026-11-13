@@ -6,8 +6,10 @@ name: Security 🛡️
 # Scans all dependencies weekly with Google's osv-scanner workflow for known
 # vulnerabilities, malicious packages, and licenses, so that newly published
 # vulnerabilities in unchanged dependencies are found. Uploads the results to
-# code scanning. Pull requests and pushes to main are scanned by the "Checks"
-# workflow.
+# code scanning. Scans the whole Git history for secrets with gitleaks-scan,
+# so that new rules also check old commits. Pull requests and pushes to main
+# are scanned by the "Checks" workflow, which scans only their commits for
+# secrets.
 #-------------------------------------------------------------------------------
 
 on:
@@ -43,3 +45,35 @@ jobs:
         --lockfile=pnpm-lock.yaml
         --config=osv-scanner.toml
         --licenses=0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC-BY-3.0,CC-BY-4.0,CC-BY-SA-4.0,CC0-1.0,ISC,MIT,MPL-2.0,Python-2.0,WTFPL
+
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 📦 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 👷‍♂️ Build
+        run: pnpm exec turbo run build --filter=gitleaks-scan
+
+      - name: 🔐 Scan the Whole History for Secrets
+        uses: ./actions/gitleaks-scan
+        with:
+          scope: history

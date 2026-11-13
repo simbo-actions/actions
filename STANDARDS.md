@@ -70,9 +70,10 @@ Required:
 - All dependencies are scanned for known vulnerabilities and malicious packages
   on every pull request (new findings fail), every push to `main`, and weekly.
   Findings are fixed or accepted with a reason and an expiry date.
-- The whole Git history is scanned for secrets with Gitleaks on every pull
-  request and every push to `main`, and staged changes before every commit where
-  Gitleaks is installed. A found secret is revoked first, then removed.
+- Secrets are scanned with Gitleaks: the commits of every pull request and every
+  push to `main`, the whole Git history weekly, and staged changes before every
+  commit where Gitleaks is installed. A found secret is revoked first, then
+  removed.
 - Secret scanning with push protection, code scanning (CodeQL), Dependabot
   alerts, and private vulnerability reporting are on.
 - Vulnerabilities are reported privately, see [SECURITY.md](SECURITY.md).
@@ -310,7 +311,7 @@ Planned, not yet required:
 | Workflows and `action.yml`                   | actionlint with ShellCheck in `checks`                                                               |
 | Licenses of bundled dependencies             | `pnpm run check:licenses` (license-checker-rseidelsohn)                                              |
 | Vulnerabilities, all licenses                | osv-scanner workflows of Google in `checks` and `security`; locally `pnpm run check:vulnerabilities` |
-| Secrets in the Git history                   | `gitleaks-scan` in `checks`; locally `pnpm run check:secrets` and the pre-commit hook                |
+| Secrets in the Git history                   | `gitleaks-scan` in `checks` and `security`; locally `pnpm run check:secrets` and the pre-commit hook |
 | License file, README sections, monorepo note | `pnpm run check:actions`, also checks that all license lists match                                   |
 | Changeset per change                         | `checks` on pull requests                                                                            |
 | Pinned actions                               | Actions setting "require SHA pinning"                                                                |

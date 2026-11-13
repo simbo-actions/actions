@@ -413,13 +413,13 @@ created after the merge, in a job with the environment `release`.
 
 ## Vulnerability, Secret, and License Checks
 
-| Check                                        | Tool                                                                                                    | Scope                                   | Runs                                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------- |
-| Vulnerabilities and malicious packages       | [osv-scanner](https://github.com/google/osv-scanner) via Google's reusable workflows                    | all dependencies in `pnpm-lock.yaml`    | `checks` (pull requests: new findings only; `main`), weekly `security`, locally |
-| Licenses allowed anywhere                    | osv-scanner (`--licenses`)                                                                              | all dependencies                        | `checks`, weekly `security`, locally                                            |
-| Secrets                                      | [Gitleaks](https://github.com/gitleaks/gitleaks) via [`gitleaks-scan`](actions/gitleaks-scan/README.md) | the whole Git history                   | `checks` (pull requests, `main`), locally, pre-commit hook                      |
-| Licenses allowed in bundled code             | [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn)               | production dependencies of every action | `checks`, locally                                                               |
-| License file, README sections, monorepo note | `tooling/bin/check-actions.ts`, which also checks the Octokit copies and the license lists              | every action                            | `checks`, locally                                                               |
+| Check                                        | Tool                                                                                                    | Scope                                   | Runs                                                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Vulnerabilities and malicious packages       | [osv-scanner](https://github.com/google/osv-scanner) via Google's reusable workflows                    | all dependencies in `pnpm-lock.yaml`    | `checks` (pull requests: new findings only; `main`), weekly `security`, locally                        |
+| Licenses allowed anywhere                    | osv-scanner (`--licenses`)                                                                              | all dependencies                        | `checks`, weekly `security`, locally                                                                   |
+| Secrets                                      | [Gitleaks](https://github.com/gitleaks/gitleaks) via [`gitleaks-scan`](actions/gitleaks-scan/README.md) | new commits; the whole Git history      | `checks` (pull requests, `main`: their commits), weekly `security` (history), locally, pre-commit hook |
+| Licenses allowed in bundled code             | [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn)               | production dependencies of every action | `checks`, locally                                                                                      |
+| License file, README sections, monorepo note | `tooling/bin/check-actions.ts`, which also checks the Octokit copies and the license lists              | every action                            | `checks`, locally                                                                                      |
 
 The osv-scanner workflows upload their results to code scanning.  
 On pull requests, only findings that the pull request adds fail.  
@@ -431,8 +431,11 @@ Remaining risk: Google's workflow runs a Docker image referenced by tag, not by
 digest. It is accepted because the job cannot write code or reach secrets (see
 [STANDARDS.md](STANDARDS.md), "strictness follows permissions").
 
-`gitleaks-scan` runs in the job `checks` and reports findings as annotations and
-in the job summary, with secrets redacted.  
+`gitleaks-scan` runs in the job `checks` on the commits of the pull request or
+push, and weekly in `security` on the whole history, so that new rules of a
+newer Gitleaks version also check old commits.  
+It reports findings as annotations and in the job summary, with secrets
+redacted.  
 False positives go into `.gitleaksignore`.
 
 The allowed licenses appear in `package.json` and in the workflows;

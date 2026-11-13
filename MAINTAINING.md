@@ -10,25 +10,25 @@ Commands are run from the repository root unless noted otherwise.
 
 ## Overview
 
-| Task                                                                | When                                                  |
-| ------------------------------------------------------------------- | ----------------------------------------------------- |
-| [Dependabot pull requests](#dependabot-pull-requests)               | weekly, or when assigned                              |
-| [Scanner findings](#scanner-findings)                               | `checks` or `security` fails on osv-scanner           |
-| [Secret found](#secret-found)                                       | `checks` or the pre-commit hook fails on Gitleaks     |
-| [Expiring accepted findings](#expiring-accepted-findings)           | monthly                                               |
-| [Pinned tools](#pinned-tools)                                       | monthly                                               |
-| [Security fixes as overrides](#security-fixes-as-overrides)         | monthly                                               |
-| [Major updates](#major-updates)                                     | monthly                                               |
-| [Marketplace listing](#marketplace-listing)                         | after a release                                       |
-| [Failed release](#failed-release)                                   | when release or publish fails                         |
-| [Settings of action repositories](#settings-of-action-repositories) | when a setting should change                          |
-| [Organization profile](#organization-profile)                       | when the organization should be presented differently |
-| [Security reports](#security-reports)                               | when a report arrives                                 |
-| [Pull requests from forks](#pull-requests-from-forks)               | when a contributor opens one                          |
-| [App private key](#app-private-key)                                 | yearly, and immediately if it may have leaked         |
-| [App permissions](#app-permissions)                                 | when a step needs a new permission                    |
-| [Node.js runtime](#nodejs-runtime)                                  | when GitHub announces a new runtime                   |
-| [New major version](#new-major-version)                             | with every major release                              |
+| Task                                                                | When                                                           |
+| ------------------------------------------------------------------- | -------------------------------------------------------------- |
+| [Dependabot pull requests](#dependabot-pull-requests)               | weekly, or when assigned                                       |
+| [Scanner findings](#scanner-findings)                               | `checks` or `security` fails on osv-scanner                    |
+| [Secret found](#secret-found)                                       | `checks`, `security`, or the pre-commit hook fails on Gitleaks |
+| [Expiring accepted findings](#expiring-accepted-findings)           | monthly                                                        |
+| [Pinned tools](#pinned-tools)                                       | monthly                                                        |
+| [Security fixes as overrides](#security-fixes-as-overrides)         | monthly                                                        |
+| [Major updates](#major-updates)                                     | monthly                                                        |
+| [Marketplace listing](#marketplace-listing)                         | after a release                                                |
+| [Failed release](#failed-release)                                   | when release or publish fails                                  |
+| [Settings of action repositories](#settings-of-action-repositories) | when a setting should change                                   |
+| [Organization profile](#organization-profile)                       | when the organization should be presented differently          |
+| [Security reports](#security-reports)                               | when a report arrives                                          |
+| [Pull requests from forks](#pull-requests-from-forks)               | when a contributor opens one                                   |
+| [App private key](#app-private-key)                                 | yearly, and immediately if it may have leaked                  |
+| [App permissions](#app-permissions)                                 | when a step needs a new permission                             |
+| [Node.js runtime](#nodejs-runtime)                                  | when GitHub announces a new runtime                            |
+| [New major version](#new-major-version)                             | with every major release                                       |
 
 ## Dependabot Pull Requests
 
@@ -77,8 +77,8 @@ not allowed.
 
 ## Secret Found
 
-Gitleaks reports a potential secret, as annotation in `checks` or in the
-pre-commit hook.  
+Gitleaks reports a potential secret, as annotation in `checks` or `security`, or
+in the pre-commit hook.  
 The value is redacted everywhere.
 
 1. Find the location in the annotation or the job summary of `checks`, or run
@@ -105,10 +105,10 @@ Dependabot does not update tools downloaded by workflows or built into actions.
 osv-scanner is not pinned here: Google's workflows bring it, and Dependabot
 updates them.
 
-| Tool       | Pinned in                                                                                                                      | Releases                                                           |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| actionlint | `.github/workflows/checks.yml` (Linux amd64)                                                                                   | [rhysd/actionlint](https://github.com/rhysd/actionlint/releases)   |
-| Gitleaks   | [`actions/gitleaks-scan/src/gitleaks-scan-constants.ts`](actions/gitleaks-scan/src/gitleaks-scan-constants.ts) (all platforms) | [gitleaks/gitleaks](https://github.com/gitleaks/gitleaks/releases) |
+| Tool       | Pinned in                                                                                                                            | Releases                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| actionlint | `.github/workflows/checks.yml` (Linux amd64)                                                                                         | [rhysd/actionlint](https://github.com/rhysd/actionlint/releases)   |
+| Gitleaks   | [`actions/gitleaks-scan/src/gitleaks-scan-constants.ts`](actions/gitleaks-scan/src/gitleaks-scan-constants.ts) (Linux x64 and arm64) | [gitleaks/gitleaks](https://github.com/gitleaks/gitleaks/releases) |
 
 1. Check the latest release.  
    Use it only if it is at least 7 days old.
@@ -116,7 +116,7 @@ updates them.
 3. Take the SHA-256 checksums from the release's checksum file, for example:
 
    ```sh
-   gh release download v8.30.1 -R gitleaks/gitleaks -p 'gitleaks_*_checksums.txt' -O - | grep -E '(linux|darwin)_(x64|arm64)'
+   gh release download v8.30.1 -R gitleaks/gitleaks -p 'gitleaks_*_checksums.txt' -O - | grep -E 'linux_(x64|arm64)'
    ```
 
 4. Update the version and the checksums where the tool is pinned.

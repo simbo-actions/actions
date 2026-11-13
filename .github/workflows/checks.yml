@@ -80,8 +80,12 @@ jobs:
       - name: 🎁 Bundle
         run: pnpm run each:bundle
 
+      # The commits of the pull request or push; "security" scans the whole
+      # history weekly.
       - name: 🔐 Scan for Secrets
         uses: ./actions/gitleaks-scan
+        with:
+          scope: auto
 
       - name: 🔎 Lint Workflows
         env:

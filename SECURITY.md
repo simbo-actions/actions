@@ -43,8 +43,8 @@ In short:
 - Secret scanning with push protection, code scanning, and Dependabot alerts.
 - All dependencies scanned with osv-scanner for vulnerabilities and malicious
   packages, on every pull request, every push to `main`, and weekly.
-- The whole Git history scanned for secrets with Gitleaks on every pull request
-  and push to `main`.
+- Secrets scanned with Gitleaks: the commits of every pull request and push to
+  `main`, and the whole Git history weekly.
 
 ## Verifying a Release
 

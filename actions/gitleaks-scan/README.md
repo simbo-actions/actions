@@ -27,6 +27,7 @@ This action runs it as a single step:
 - [Inputs](#inputs)
 - [Outputs](#outputs)
 - [Token and Permissions](#token-and-permissions)
+- [What Is Scanned](#what-is-scanned)
 - [Findings and False Positives](#findings-and-false-positives)
 - [Security](#security)
 - [Limitations](#limitations)
@@ -40,13 +41,16 @@ This action runs it as a single step:
    action.  
    A mismatch fails the action before anything runs.
 2. Adds the binary to the runner's tool cache.
-3. Scans the whole Git history of the repository with `gitleaks git --redact`.  
-   A shallow clone is scanned too, with a warning that only its commits are
-   covered.
-4. Reports every finding as error annotation at its file and line, so that it
-   shows in the pull request diff, and lists the findings in the job summary.  
+3. Determines what to scan from `scope` and the event, see
+   [What Is Scanned](#what-is-scanned): by default the commits of a pull request
+   or push, otherwise the whole history.
+4. Scans with `gitleaks git --redact`, or `gitleaks dir --redact` for the files
+   of the working tree.
+5. Reports every finding as annotation at its file and line, so that it shows in
+   the pull request diff, and lists the findings in the job summary, together
+   with what was scanned.  
    Secrets are redacted; author names and emails are left out.
-5. Fails if anything was found.  
+6. Fails if anything was found, unless `fail-on-findings` is `false`.  
    The SARIF report stays available as output.
 
 ## Usage
@@ -76,6 +80,88 @@ jobs:
 ```
 
 ## Examples
+
+### Weekly Scan of the Whole History
+
+Pull requests and pushes scan only their commits.  
+A scheduled scan of the whole history also finds secrets that a new rule of a
+newer Gitleaks version detects in old commits:
+
+```yaml
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # … checkout with fetch-depth: 0 …
+
+      - name: 🔐 Scan for Secrets
+        uses: simbo-actions/gitleaks-scan@<SHA> # vX.Y.Z
+        with:
+          scope: history
+```
+
+### Files of the Working Tree
+
+Scans the checked-out files, including generated and untracked ones, without the
+history:
+
+```yaml
+- name: 🔐 Scan Files for Secrets
+  uses: simbo-actions/gitleaks-scan@<SHA> # vX.Y.Z
+  with:
+    scope: files
+```
+
+### Report Without Failing
+
+For example while introducing the scan in a repository with known findings:
+
+```yaml
+- name: 🔐 Scan for Secrets
+  id: gitleaks
+  uses: simbo-actions/gitleaks-scan@<SHA> # vX.Y.Z
+  with:
+    fail-on-findings: false
+
+- name: 📣 Report
+  if: ${{ steps.gitleaks.outputs.findings != '0' }}
+  env:
+    FINDINGS: ${{ steps.gitleaks.outputs.findings }}
+    SCANNED: ${{ steps.gitleaks.outputs.scanned }}
+  run: echo "::notice::${FINDINGS} potential secrets in ${SCANNED}."
+```
+
+### Baseline of Accepted Findings
+
+A baseline is a Gitleaks report whose findings are ignored; new findings still
+fail.  
+Create it locally with `gitleaks git --report-path gitleaks-baseline.json` and
+commit it:
+
+```yaml
+- name: 🔐 Scan for Secrets
+  uses: simbo-actions/gitleaks-scan@<SHA> # vX.Y.Z
+  with:
+    scope: history
+    baseline-path: gitleaks-baseline.json
+```
+
+### Selected Commits
+
+`log-opts` passes options to `git log` and overrides `scope`:
+
+```yaml
+- name: 🔐 Scan Recent Commits
+  uses: simbo-actions/gitleaks-scan@<SHA> # vX.Y.Z
+  with:
+    log-opts: --since=2024-01-01 --all
+```
 
 ### Custom Configuration
 
@@ -118,7 +204,14 @@ jobs:
 | Input               | Description                                                                                                | Required | Default |
 | ------------------- | ---------------------------------------------------------------------------------------------------------- | -------- | ------- |
 | `working-directory` | The Git repository to scan                                                                                 | false    | `.`     |
+| `scope`             | `auto`, `changes`, `history`, or `files`; see [What Is Scanned](#what-is-scanned)                          | false    | `auto`  |
+| `log-opts`          | Options for `git log` that select the commits to scan; override `scope`, not allowed with `files`          | false    |         |
 | `config`            | A Gitleaks configuration file, relative to `working-directory`; see [below](#findings-and-false-positives) | false    |         |
+| `baseline-path`     | A Gitleaks report, relative to `working-directory`, whose findings are ignored                             | false    |         |
+| `fail-on-findings`  | Whether findings fail the action; with `false`, they are reported as warnings                              | false    | `true`  |
+
+A `config` or `baseline-path` that does not exist fails the action before the
+scan.
 
 The Gitleaks version is intentionally not an input: only the pinned and verified
 version runs.  
@@ -126,10 +219,11 @@ A new Gitleaks version comes with a new release of this action.
 
 ## Outputs
 
-| Output       | Description                                                             |
-| ------------ | ----------------------------------------------------------------------- |
-| `findings`   | The number of findings                                                  |
-| `sarif-file` | The path of the SARIF report, for example to upload it to code scanning |
+| Output       | Description                                                                                 |
+| ------------ | ------------------------------------------------------------------------------------------- |
+| `findings`   | The number of findings                                                                      |
+| `scanned`    | What was scanned, for example `changes abc1234..def5678 (3 commits)`, `history`, or `files` |
+| `sarif-file` | The path of the SARIF report, for example to upload it to code scanning                     |
 
 ## Token and Permissions
 
@@ -137,6 +231,32 @@ The action needs no token.
 The job needs `contents: read` for the checkout.  
 Uploading the SARIF report to code scanning additionally needs
 `security-events: write`.
+
+## What Is Scanned
+
+| `scope`   | Pull request, merge group, push           | Other events, for example `schedule` |
+| --------- | ----------------------------------------- | ------------------------------------ |
+| `auto`    | the commits of the event                  | the whole history                    |
+| `changes` | the commits of the event                  | fails                                |
+| `history` | the whole history                         | the whole history                    |
+| `files`   | the files of the working tree, no history | the files of the working tree        |
+
+The commits of an event are:
+
+- **pull request:** from the base to the head of the pull request
+  (`<base>..<head>`), not the merge commit GitHub checks out;
+- **merge group:** from the base to the head of the merge group;
+- **push:** the pushed commits (`<before>..<after>`);
+- **new branch or tag, force push:** there is no previous commit to compare
+  with, so the commits that no other remote branch contains are scanned.  
+  If there is no other branch, for example on the first push, the whole history
+  is scanned, with a warning.
+
+All these commits must be in the checkout: check it out with `fetch-depth: 0`.  
+A missing commit fails the action with a clear message; the action does not
+fetch, because it has no token.  
+`history` also scans a shallow clone, with a warning that only its commits are
+covered.
 
 ## Findings and False Positives
 
@@ -178,9 +298,11 @@ Uploading the SARIF report to code scanning additionally needs
 
 ## Limitations
 
-- Runs on Linux and macOS runners (x64 and arm64), not on Windows.
-- Scans the Git history, not uncommitted files.
-- The whole history is scanned on every run; for very large repositories this
+- Runs on Linux runners only (x64 and arm64), not on macOS or Windows.
+- A scan of the changes only finds secrets in new commits.  
+  Schedule a scan of the whole history as well, for example weekly, so that new
+  rules also check old commits.
+- `history` scans every commit on every run; for very large repositories this
   takes longer.
 - This action is not affiliated with the Gitleaks project.
 

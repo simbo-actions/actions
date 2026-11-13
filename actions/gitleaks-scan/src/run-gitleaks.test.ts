@@ -1,34 +1,22 @@
-import { exec, getExecOutput } from '@actions/exec';
+import { exec } from '@actions/exec';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { isShallowRepository, runGitleaks } from './run-gitleaks.js';
+import type { ScanTarget } from './gitleaks-scan.types.js';
+import { runGitleaks } from './run-gitleaks.js';
 
-vi.mock('@actions/exec', () => ({ exec: vi.fn(), getExecOutput: vi.fn() }));
+vi.mock('@actions/exec', () => ({ exec: vi.fn() }));
 
-const params = { workingDirectory: 'repo', config: '', reportPath: '/tmp/gitleaks.sarif' };
-
-describe('isShallowRepository', () => {
-  it.each([
-    ['true\n', true],
-    ['false\n', false],
-  ])('reads "%s" as %s', async (stdout, expected) => {
-    vi.mocked(getExecOutput).mockResolvedValue({ exitCode: 0, stdout, stderr: '' });
-    expect(await isShallowRepository('repo')).toBe(expected);
-    expect(getExecOutput).toHaveBeenCalledWith('git', ['rev-parse', '--is-shallow-repository'], {
-      cwd: 'repo',
-      silent: true,
-    });
-  });
-});
+const history: ScanTarget = { mode: 'git', logOpts: '', description: 'history' };
+const params = { workingDirectory: 'repo', config: '', baselinePath: '', reportPath: '/tmp/gitleaks.sarif' };
 
 describe('runGitleaks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(exec).mockResolvedValue(0);
   });
 
   it('scans the history with redacted secrets and a SARIF report', async () => {
-    vi.mocked(exec).mockResolvedValue(0);
-    expect(await runGitleaks('/bin/gitleaks', params)).toBe(false);
+    expect(await runGitleaks('/bin/gitleaks', history, params)).toBe(false);
     expect(exec).toHaveBeenCalledWith(
       '/bin/gitleaks',
       [
@@ -47,19 +35,30 @@ describe('runGitleaks', () => {
     );
   });
 
-  it('passes a configuration file', async () => {
-    vi.mocked(exec).mockResolvedValue(0);
-    await runGitleaks('/bin/gitleaks', { ...params, config: 'gitleaks.toml' });
-    expect(vi.mocked(exec).mock.calls[0][1]).toEqual(expect.arrayContaining(['--config', 'gitleaks.toml']));
+  it('scans the selected commits', async () => {
+    await runGitleaks('/bin/gitleaks', { mode: 'git', logOpts: 'a..b', description: '' }, params);
+    expect(vi.mocked(exec).mock.calls[0][1]).toEqual(expect.arrayContaining(['--log-opts=a..b']));
+  });
+
+  it('scans the files of the working tree', async () => {
+    await runGitleaks('/bin/gitleaks', { mode: 'dir', logOpts: '', description: 'files' }, params);
+    expect(vi.mocked(exec).mock.calls[0][1]?.[0]).toBe('dir');
+  });
+
+  it('passes a configuration file and a baseline', async () => {
+    await runGitleaks('/bin/gitleaks', history, { ...params, config: 'gitleaks.toml', baselinePath: 'baseline.json' });
+    expect(vi.mocked(exec).mock.calls[0][1]).toEqual(
+      expect.arrayContaining(['--config', 'gitleaks.toml', '--baseline-path', 'baseline.json']),
+    );
   });
 
   it('reports leaks', async () => {
     vi.mocked(exec).mockResolvedValue(2);
-    expect(await runGitleaks('/bin/gitleaks', params)).toBe(true);
+    expect(await runGitleaks('/bin/gitleaks', history, params)).toBe(true);
   });
 
   it('fails for other exit codes', async () => {
     vi.mocked(exec).mockResolvedValue(1);
-    await expect(runGitleaks('/bin/gitleaks', params)).rejects.toThrow('Gitleaks failed with exit code 1');
+    await expect(runGitleaks('/bin/gitleaks', history, params)).rejects.toThrow('Gitleaks failed with exit code 1');
   });
 });

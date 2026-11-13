@@ -20,17 +20,17 @@ const checksum = createHash('sha256').update(content).digest('hex');
 
 describe('getPlatformKey', () => {
   beforeEach(() => {
-    Object.assign(GITLEAKS_CHECKSUMS, { linux_x64: 'a', darwin_arm64: 'b' });
+    Object.assign(GITLEAKS_CHECKSUMS, { linux_x64: 'a', linux_arm64: 'b' });
   });
 
   it('returns the key of a supported platform', () => {
     expect(getPlatformKey('linux', 'x64')).toBe('linux_x64');
-    expect(getPlatformKey('darwin', 'arm64')).toBe('darwin_arm64');
+    expect(getPlatformKey('linux', 'arm64')).toBe('linux_arm64');
   });
 
   it('rejects an unsupported platform', () => {
-    expect(() => getPlatformKey('win32', 'x64')).toThrow(
-      'Unsupported runner: win32 x64 (supported: linux_x64, darwin_arm64).',
+    expect(() => getPlatformKey('darwin', 'arm64')).toThrow(
+      'Unsupported runner: darwin arm64 (supported: linux_x64, linux_arm64).',
     );
   });
 });

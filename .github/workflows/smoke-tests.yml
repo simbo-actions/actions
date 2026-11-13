@@ -120,28 +120,42 @@ jobs:
           name: smoke-actions
           path: smoke
 
+      # The test repositories are scanned with "history", "files", or
+      # "log-opts": the commits of this run's event are not in them.
       - name: 🧪 Create Test Repositories
         run: |
           set -euo pipefail
 
-          create() {
-            git init --quiet --initial-branch=main "$1"
-            git -C "$1" config user.name 'Smoke Test'
-            git -C "$1" config user.email 'smoke-test@example.com'
+          # Generated at runtime, so that no token-like string is in this repository.
+          token="ghp_$(openssl rand -hex 18)"
+
+          commit() {
             printf '%s\n' "$2" > "$1/config.txt"
             git -C "$1" add config.txt
-            git -C "$1" commit --quiet --message 'test: add config'
+            git -C "$1" commit --quiet --message "$3"
           }
 
-          create clean-repo 'token = none'
-          # Generated at runtime, so that no token-like string is in this repository.
-          create leaky-repo "token = ghp_$(openssl rand -hex 18)"
+          for repo in clean-repo leaky-repo fixed-repo; do
+            git init --quiet --initial-branch=main "$repo"
+            git -C "$repo" config user.name 'Smoke Test'
+            git -C "$repo" config user.email 'smoke-test@example.com'
+          done
+
+          commit clean-repo 'token = none' 'test: add config'
+          commit leaky-repo "token = ${token}" 'test: add config'
+          # The token is only in the older commit, not in the last one or the files.
+          commit fixed-repo "token = ${token}" 'test: add config'
+          commit fixed-repo 'token = none' 'test: remove token'
+
+          mkdir leaky-files
+          printf '%s\n' "token = ${token}" > leaky-files/config.txt
 
       - name: 🔐 Scan Clean Repository
         id: clean
         uses: ./smoke/actions/gitleaks-scan
         with:
           working-directory: clean-repo
+          scope: history
 
       - name: 🔐 Scan Repository with a Fake Token
         id: leaky
@@ -149,21 +163,68 @@ jobs:
         uses: ./smoke/actions/gitleaks-scan
         with:
           working-directory: leaky-repo
+          scope: history
+
+      - name: 🔐 Scan Only the Last Commit
+        id: last-commit
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: fixed-repo
+          log-opts: HEAD~1..HEAD
+
+      - name: 🔐 Scan the Whole History Without Failing
+        id: history
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: fixed-repo
+          scope: history
+          fail-on-findings: false
+
+      - name: 🔐 Scan the Files of a Repository
+        id: files
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: fixed-repo
+          scope: files
+
+      - name: 🔐 Scan Files with a Fake Token
+        id: leaky-files
+        continue-on-error: true
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: leaky-files
+          scope: files
 
       - name: 🔍 Verify Results
         env:
-          CLEAN_FINDINGS: ${{ steps.clean.outputs.findings }}
-          LEAKY_OUTCOME: ${{ steps.leaky.outcome }}
-          LEAKY_FINDINGS: ${{ steps.leaky.outputs.findings }}
+          CLEAN: ${{ steps.clean.outputs.findings }}
+          LEAKY: ${{ steps.leaky.outcome }} ${{ steps.leaky.outputs.findings }}
           LEAKY_SARIF: ${{ steps.leaky.outputs.sarif-file }}
+          LAST_COMMIT: ${{ steps.last-commit.outputs.findings }} ${{ steps.last-commit.outputs.scanned }}
+          HISTORY: ${{ steps.history.outcome }} ${{ steps.history.outputs.findings }} ${{ steps.history.outputs.scanned }}
+          FILES: ${{ steps.files.outputs.findings }} ${{ steps.files.outputs.scanned }}
+          LEAKY_FILES: ${{ steps.leaky-files.outcome }} ${{ steps.leaky-files.outputs.findings }}
         run: |
           set -euo pipefail
 
-          [[ "$CLEAN_FINDINGS" == '0' ]] || { echo "::error::The clean repository has ${CLEAN_FINDINGS} findings."; exit 1; }
-          [[ "$LEAKY_OUTCOME" == 'failure' ]] || { echo "::error::The scan of the fake token did not fail (${LEAKY_OUTCOME})."; exit 1; }
-          [[ "$LEAKY_FINDINGS" == '1' ]] || { echo "::error::The fake token gave ${LEAKY_FINDINGS} findings instead of 1."; exit 1; }
-          [[ -s "$LEAKY_SARIF" ]] || { echo '::error::The SARIF report is missing.'; exit 1; }
-          echo 'The clean repository passed, the fake token was found.'
+          failed=0
+          expect() {
+            if [[ "$2" == "$3" ]]; then
+              echo "✅ $1: $2"
+            else
+              echo "::error title=Unexpected Result::$1: expected \"$3\", got \"$2\""
+              failed=1
+            fi
+          }
+
+          expect 'clean repository' "$CLEAN" '0'
+          expect 'fake token' "$LEAKY" 'failure 1'
+          expect 'token only in an older commit, last commit' "$LAST_COMMIT" '0 commits of "HEAD~1..HEAD"'
+          expect 'token only in an older commit, history' "$HISTORY" 'success 1 history'
+          expect 'token only in an older commit, files' "$FILES" '0 files'
+          expect 'fake token in files' "$LEAKY_FILES" 'failure 1'
+          [[ -s "$LEAKY_SARIF" ]] || { echo '::error::The SARIF report is missing.'; failed=1; }
+          exit "$failed"
 
   floating-version-tags:
     needs: build
