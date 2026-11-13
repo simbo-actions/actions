@@ -131,7 +131,8 @@ export async function uploadAsset(
     name: asset.name,
     // The API accepts binary data; the types only describe strings.
     data: (await readFile(asset.path)) as unknown as string,
-    headers: { 'content-type': 'application/octet-stream', 'content-length': asset.size },
+    // The client sets content-length from the data; setting it as well fails the request.
+    headers: { 'content-type': 'application/octet-stream' },
   });
   return { name: data.name, size: data.size, url: data.browser_download_url };
 }

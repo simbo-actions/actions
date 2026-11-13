@@ -128,7 +128,7 @@ describe('release requests', () => {
         release_id: 9,
         name: 'a.tar.gz',
         data: Buffer.from([0, 1, 2]),
-        headers: { 'content-type': 'application/octet-stream', 'content-length': 3 },
+        headers: { 'content-type': 'application/octet-stream' },
       });
     } finally {
       await rm(directory, { recursive: true, force: true });
