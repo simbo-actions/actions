@@ -1,13 +1,13 @@
 import { info, setOutput } from '@actions/core';
-import { createOctokit } from '@simbo-actions/octokit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseActionInputs } from './action-inputs.js';
+import { createOctokit } from './create-octokit.js';
 import { getBotUser, toBotUser } from './get-bot-user.js';
 import { main } from './main.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), setOutput: vi.fn() }));
-vi.mock('@simbo-actions/octokit', () => ({ createOctokit: vi.fn(() => ({})) }));
+vi.mock('./create-octokit.js', () => ({ createOctokit: vi.fn(() => ({})) }));
 vi.mock('./action-inputs.js', () => ({ parseActionInputs: vi.fn() }));
 vi.mock('./get-bot-user.js', async importOriginal => ({
   ...(await importOriginal<typeof import('./get-bot-user.js')>()),

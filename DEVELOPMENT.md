@@ -32,6 +32,10 @@ change meets, see [STANDARDS.md](STANDARDS.md).
 - [Gitleaks](https://github.com/gitleaks/gitleaks), for `pnpm run check:secrets`
   and the pre-commit hook: `brew install gitleaks`. Without it, the hook skips
   the scan with a warning; CI scans anyway.
+- [actionlint](https://github.com/rhysd/actionlint) and
+  [ShellCheck](https://www.shellcheck.net/), for `pnpm run check:workflows`:
+  `brew install actionlint shellcheck`. actionlint checks the scripts in
+  workflows with ShellCheck only if it is installed.
 
 ## Setup
 
@@ -53,8 +57,6 @@ workflow `checks` does. It ends with "All Checks Passed!".
 ├── actions/
 │   └── <name>/            one action: action.yml, src/, tests, README.md, LICENSE.md
 ├── changelog/             changelog of the monorepo itself
-├── shared/
-│   └── <name>/            code shared by actions, bundled into them
 ├── organization/          content of simbo-actions/.github: profile, community files
 ├── tooling/               monorepo checks and helpers, with tests
 ├── .changeset/            pending changesets
@@ -69,21 +71,22 @@ How the pieces work together is described in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Root scripts (run with `pnpm run <script>`):
 
-| Script                   | What it does                                                               |
-| ------------------------ | -------------------------------------------------------------------------- |
-| `preflight`              | Install, build, bundle, test, check, and scan everything                   |
-| `each:build`             | Build all workspaces (Turbo)                                               |
-| `each:bundle`            | Run post-build bundling steps                                              |
-| `each:test`              | Run all tests with coverage                                                |
-| `each:check`             | Type check and lint all workspaces                                         |
-| `check`                  | Format, boundaries, spelling, licenses, license files                      |
-| `check:licenses`         | Check the licenses of the production dependencies of every action          |
-| `check:vulnerabilities`  | Scan all dependencies with osv-scanner (needs a local installation)        |
-| `check:secrets`          | Scan the Git history with Gitleaks (needs a local installation)            |
-| `check:actions`          | Check `LICENSE.md`, README sections, and the monorepo note of every action |
-| `fix:format`             | Format all files with Prettier                                             |
-| `actions-list`           | Update the generated list of actions in the organization profile           |
-| `ncu:patch`, `ncu:minor` | Update dependencies interactively                                          |
+| Script                   | What it does                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `preflight`              | Install, build, bundle, test, check, and scan everything                      |
+| `each:build`             | Build all workspaces (Turbo)                                                  |
+| `each:bundle`            | Run post-build bundling steps                                                 |
+| `each:test`              | Run all tests with coverage                                                   |
+| `each:check`             | Type check and lint all workspaces                                            |
+| `check`                  | Format, boundaries, spelling, licenses, license files                         |
+| `check:licenses`         | Check the licenses of the production dependencies of every action             |
+| `check:vulnerabilities`  | Scan all dependencies with osv-scanner (needs a local installation)           |
+| `check:secrets`          | Scan the Git history with Gitleaks (needs a local installation)               |
+| `check:workflows`        | Lint all workflows with actionlint and ShellCheck (needs local installations) |
+| `check:actions`          | Check `LICENSE.md`, README sections, and the monorepo note of every action    |
+| `fix:format`             | Format all files with Prettier                                                |
+| `actions-list`           | Update the generated list of actions in the organization profile              |
+| `ncu:patch`, `ncu:minor` | Update dependencies interactively                                             |
 
 Workspace scripts (run inside a workspace, or with
 `pnpm --filter <name> run <script>`):
@@ -137,8 +140,9 @@ Workspace scripts (run inside a workspace, or with
 2. Create `actions/<name>/`, for example by copying the structure of
    [`actions/github-app-bot-user`](actions/github-app-bot-user/README.md):
    `action.yml`, `package.json`, `src/`, `eslint.config.js`, `rollup.config.js`,
-   `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`. Create the API
-   client with `createOctokit` from `@simbo-actions/octokit`.
+   `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`. If the action
+   uses the GitHub API, copy `src/create-octokit.ts` and its test unchanged, and
+   create the API client with `createOctokit`.
 3. In `package.json`, set `name` to the folder name, a `description`, and
    `"version": "0.0.0"`. The action is published to `simbo-actions/<name>`.
 4. Add `LICENSE.md` with the current year, and link it in the README as

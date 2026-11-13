@@ -1,8 +1,8 @@
 import { info, setOutput, warning } from '@actions/core';
-import { createOctokit } from '@simbo-actions/octokit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseActionInputs } from './action-inputs.js';
+import { createOctokit } from './create-octokit.js';
 import { getFilesToCommit } from './get-files-to-commit.js';
 import { getHeadOid, getRepositoryRoot } from './git.js';
 import { createCommitOnBranch, createTag, getBranchHeadOid } from './github-api.js';
@@ -17,7 +17,7 @@ vi.mock('@actions/core', () => ({
   startGroup: vi.fn(),
   warning: vi.fn(),
 }));
-vi.mock('@simbo-actions/octokit', () => ({ createOctokit: vi.fn(() => ({})) }));
+vi.mock('./create-octokit.js', () => ({ createOctokit: vi.fn(() => ({})) }));
 vi.mock('./action-inputs.js', () => ({ parseActionInputs: vi.fn() }));
 vi.mock('./get-files-to-commit.js', () => ({ getFilesToCommit: vi.fn() }));
 vi.mock('./git.js', () => ({ getHeadOid: vi.fn(), getRepositoryRoot: vi.fn() }));

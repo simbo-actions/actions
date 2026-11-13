@@ -1,9 +1,8 @@
-import type { Octokit } from '@simbo-actions/octokit';
-
+import type { Octokit } from './create-octokit.js';
 import { HTTP_STATUS_UNPROCESSABLE_ENTITY } from './signed-commit-constants.js';
 import type { CommitMessage, FileChanges } from './signed-commit.types.js';
 
-export type { Octokit } from '@simbo-actions/octokit';
+export type { Octokit } from './create-octokit.js';
 
 /**
  * Identifies a repository on GitHub.

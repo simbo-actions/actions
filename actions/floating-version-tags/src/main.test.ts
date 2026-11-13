@@ -1,14 +1,14 @@
 import { info, setOutput } from '@actions/core';
-import { createOctokit } from '@simbo-actions/octokit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseActionInputs } from './action-inputs.js';
+import { createOctokit } from './create-octokit.js';
 import type { ParsedActionInputs } from './floating-version-tags.types.js';
 import { getTagCommit, listVersionTagNames, writeTag } from './github-api.js';
 import { main } from './main.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), setOutput: vi.fn() }));
-vi.mock('@simbo-actions/octokit', () => ({ createOctokit: vi.fn(() => ({})) }));
+vi.mock('./create-octokit.js', () => ({ createOctokit: vi.fn(() => ({})) }));
 vi.mock('./action-inputs.js', () => ({ parseActionInputs: vi.fn() }));
 vi.mock('./github-api.js', () => ({ getTagCommit: vi.fn(), listVersionTagNames: vi.fn(), writeTag: vi.fn() }));
 

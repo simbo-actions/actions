@@ -15,10 +15,6 @@
 /changelog/dist
 /changelog/coverage
 
-/shared/*/node_modules
-/shared/*/.turbo
-/shared/*/dist
-/shared/*/coverage
 
 /tooling/node_modules
 /tooling/.turbo

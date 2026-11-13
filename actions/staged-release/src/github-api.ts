@@ -1,11 +1,10 @@
 import { readFile } from 'node:fs/promises';
 
-import type { Octokit } from '@simbo-actions/octokit';
-
+import type { Octokit } from './create-octokit.js';
 import { HTTP_STATUS_NOT_FOUND, RELEASES_PER_PAGE } from './staged-release-constants.js';
 import type { AssetFile, MakeLatestOption, UploadedAsset } from './staged-release.types.js';
 
-export type { Octokit } from '@simbo-actions/octokit';
+export type { Octokit } from './create-octokit.js';
 
 /**
  * Identifies a repository on GitHub.

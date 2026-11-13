@@ -1,9 +1,8 @@
-import type { Octokit } from '@simbo-actions/octokit';
-
+import type { Octokit } from './create-octokit.js';
 import { HTTP_STATUS_NOT_FOUND } from './github-app-bot-user-constants.js';
 import type { BotUser } from './github-app-bot-user.types.js';
 
-export type { Octokit } from '@simbo-actions/octokit';
+export type { Octokit } from './create-octokit.js';
 
 /**
  * Checks whether an error is an HTTP error with the given status.

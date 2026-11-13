@@ -26,7 +26,7 @@
   "dependencies": {
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
-    "@simbo-actions/octokit": "workspace:*",
+    "@octokit/plugin-throttling": "^11.0.5",
     "@simbo/stringify-error": "^2.0.0"
   },
   "devDependencies": {

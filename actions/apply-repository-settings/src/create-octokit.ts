@@ -1,3 +1,5 @@
+// Identical in every action that uses the GitHub API, until it moves to a
+// published package; `pnpm run check:actions` fails if the copies differ.
 import { warning } from '@actions/core';
 import { getOctokit } from '@actions/github';
 import { throttling } from '@octokit/plugin-throttling';

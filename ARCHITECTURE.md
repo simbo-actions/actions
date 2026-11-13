@@ -51,7 +51,6 @@ own. Consumers only use the action repositories, pinned by commit SHA.
 flowchart LR
   subgraph monorepo["simbo-actions/actions (monorepo)"]
     actions["actions/NAME/<br/>one package per action"]
-    shared["shared/octokit<br/>API client with rate limits"]
     tooling["tooling/<br/>monorepo checks and helpers"]
     workflows[".github/workflows/<br/>checks, release, publish,<br/>publish-organization, security"]
     organization["organization/<br/>profile, community files"]
@@ -66,7 +65,6 @@ flowchart LR
 
   consumer["consumer workflows<br/>uses: simbo-actions/NAME@SHA"]
 
-  shared --> actions
   actions -- "used via ./actions/NAME" --> workflows
   tooling --> workflows
   organization --> workflows
@@ -80,7 +78,7 @@ flowchart LR
 
 | Repository               | Contains                                                                         | Changed by                           |
 | ------------------------ | -------------------------------------------------------------------------------- | ------------------------------------ |
-| `simbo-actions/actions`  | Source, tests, and docs of all actions; shared code; tooling; workflows          | Maintainers and contributors via PRs |
+| `simbo-actions/actions`  | Source, tests, and docs of all actions; tooling; workflows                       | Maintainers and contributors via PRs |
 | `simbo-actions/<action>` | Build artifacts of one action: `action.yml`, `dist/`, README, changelog, license | Only the publish workflow            |
 
 The action repositories have issues, pull requests, discussions, wiki, and
@@ -92,7 +90,6 @@ Workspaces in the monorepo:
 | Workspace         | Purpose                                                        |
 | ----------------- | -------------------------------------------------------------- |
 | `actions/<name>/` | One action: `action.yml`, `src/`, tests, README, `LICENSE.md`  |
-| `shared/<name>/`  | Code shared by actions and bundled into them, not published    |
 | `tooling/`        | Monorepo-specific checks and helpers, with tests               |
 | `changelog/`      | Changelog of the monorepo itself                               |
 | `organization/`   | Content of the organization repository `simbo-actions/.github` |
@@ -374,10 +371,14 @@ set as `overrides` in [`pnpm-workspace.yaml`](pnpm-workspace.yaml).
 
 All API requests of release and publish run as `simbo-actions[bot]` and share
 its rate limits, also across parallel runs. All actions create their API client
-with [`shared/octokit`](shared/octokit/README.md), which uses the official
+with `createOctokit` from `src/create-octokit.ts`, which uses the official
 plugin `@octokit/plugin-throttling`: requests that hit a rate limit wait as long
-as GitHub asks for and are retried up to 4 times. Settings of action
-repositories are written only where they differ, to save write requests.
+as GitHub asks for and are retried up to 4 times.
+
+Every action that uses the GitHub API has its own identical copy of
+`create-octokit.ts`; `pnpm run check:actions` fails if the copies differ. The
+copies are temporary, until the client moves to a published package. Settings of
+action repositories are written only where they differ, to save write requests.
 
 ## Marketplace
 

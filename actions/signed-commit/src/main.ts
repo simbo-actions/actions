@@ -1,7 +1,7 @@
 import { endGroup, info, setOutput, startGroup, warning } from '@actions/core';
-import { createOctokit } from '@simbo-actions/octokit';
 
 import { parseActionInputs } from './action-inputs.js';
+import { createOctokit } from './create-octokit.js';
 import { getFilesToCommit } from './get-files-to-commit.js';
 import { getHeadOid, getRepositoryRoot } from './git.js';
 import { createCommitOnBranch, createTag, getBranchHeadOid } from './github-api.js';

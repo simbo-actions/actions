@@ -1,7 +1,7 @@
 import { info, setOutput } from '@actions/core';
-import { createOctokit } from '@simbo-actions/octokit';
 
 import { parseActionInputs } from './action-inputs.js';
+import { createOctokit } from './create-octokit.js';
 import type { Version } from './floating-version-tags.types.js';
 import { getTagCommit, listVersionTagNames, writeTag } from './github-api.js';
 import { getFloatingTags, highestVersion, parseReleaseTag, parseVersionTag } from './version.js';

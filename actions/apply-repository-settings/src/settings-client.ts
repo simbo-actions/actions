@@ -1,10 +1,10 @@
 import { info } from '@actions/core';
-import type { Octokit } from '@simbo-actions/octokit';
 
 import { HTTP_STATUS_NOT_FOUND } from './apply-repository-settings-constants.js';
 import type { SettingChange } from './apply-repository-settings.types.js';
+import type { Octokit } from './create-octokit.js';
 
-export type { Octokit } from '@simbo-actions/octokit';
+export type { Octokit } from './create-octokit.js';
 
 /**
  * Reads and writes the settings of one repository. Every change is recorded;

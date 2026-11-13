@@ -1,14 +1,14 @@
 import { info, setOutput } from '@actions/core';
-import { createOctokit } from '@simbo-actions/octokit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseActionInputs } from './action-inputs.js';
 import { applySettings } from './apply-settings.js';
+import { createOctokit } from './create-octokit.js';
 import { main } from './main.js';
 import type { SettingsClient } from './settings-client.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), setOutput: vi.fn() }));
-vi.mock('@simbo-actions/octokit', () => ({ createOctokit: vi.fn(() => ({})) }));
+vi.mock('./create-octokit.js', () => ({ createOctokit: vi.fn(() => ({})) }));
 vi.mock('./action-inputs.js', () => ({ parseActionInputs: vi.fn() }));
 vi.mock('./apply-settings.js', () => ({ applySettings: vi.fn() }));
 

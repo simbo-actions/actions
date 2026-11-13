@@ -1,7 +1,6 @@
 packages:
   - actions/*
   - changelog
-  - shared/*
   - tooling
 
 engineStrict: true

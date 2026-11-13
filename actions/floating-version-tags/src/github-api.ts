@@ -1,8 +1,7 @@
-import type { Octokit } from '@simbo-actions/octokit';
-
+import type { Octokit } from './create-octokit.js';
 import { HTTP_STATUS_NOT_FOUND, MAX_TAG_DEPTH } from './floating-version-tags-constants.js';
 
-export type { Octokit } from '@simbo-actions/octokit';
+export type { Octokit } from './create-octokit.js';
 
 /**
  * Identifies a repository on GitHub.

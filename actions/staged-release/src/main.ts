@@ -1,7 +1,7 @@
 import { info, setOutput } from '@actions/core';
-import { createOctokit } from '@simbo-actions/octokit';
 
 import { parseActionInputs } from './action-inputs.js';
+import { createOctokit } from './create-octokit.js';
 import { findAssets } from './find-assets.js';
 import {
   assertTagExists,

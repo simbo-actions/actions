@@ -109,7 +109,8 @@ updates them.
 4. Update the version and the checksums where the tool is pinned.
 5. For Gitleaks, add a patch changeset for `gitleaks-scan`; the new version
    reaches all repositories with the next release of the action.
-6. Update the local installations (`brew upgrade gitleaks osv-scanner`).
+6. Update the local installations
+   (`brew upgrade actionlint gitleaks osv-scanner shellcheck`).
 
 ## Security Fixes as Overrides
 
