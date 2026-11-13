@@ -50,6 +50,81 @@ export interface ActionsSettings {
 }
 
 /**
+ * A label of issues and pull requests.
+ */
+export interface Label {
+  name: string;
+
+  /**
+   * The color as six hex digits, without `#`.
+   */
+  color: string;
+
+  description?: string;
+
+  /**
+   * The current name of a label to rename.
+   */
+  old_name?: string;
+}
+
+/**
+ * A required reviewer of a deployment environment.
+ */
+export interface EnvironmentReviewer {
+  type: 'User' | 'Team';
+  id: number;
+}
+
+/**
+ * A branch or tag pattern that may deploy to an environment.
+ */
+export interface DeploymentPolicy {
+  name: string;
+  type: 'branch' | 'tag';
+}
+
+/**
+ * A deployment environment; secrets and variables are not managed.
+ */
+export interface Environment {
+  name: string;
+  wait_timer?: number;
+  prevent_self_review?: boolean;
+  reviewers?: EnvironmentReviewer[];
+  deployment_branch_policy?: { protected_branches: boolean; custom_branch_policies: boolean } | null;
+
+  /**
+   * The branches and tags that may deploy, with `custom_branch_policies`.
+   */
+  deployment_policies?: DeploymentPolicy[];
+}
+
+/**
+ * An autolink reference, for example `TICKET-123` to an issue tracker.
+ */
+export interface Autolink {
+  key_prefix: string;
+  url_template: string;
+  is_alphanumeric?: boolean;
+}
+
+/**
+ * The value of a custom property; `null` removes it.
+ */
+export type CustomPropertyValue = string | string[] | null;
+
+/**
+ * The areas whose unconfigured entries are deleted.
+ */
+export interface PruneSettings {
+  labels?: boolean;
+  rulesets?: boolean;
+  environments?: boolean;
+  autolinks?: boolean;
+}
+
+/**
  * The settings configuration. Every section and every key is optional;
  * only what is configured is applied.
  */
@@ -59,7 +134,12 @@ export interface SettingsConfig {
   security?: SecuritySettings;
   actions?: ActionsSettings;
   rulesets?: Ruleset[];
+  labels?: Label[];
+  environments?: Environment[];
+  autolinks?: Autolink[];
+  custom_properties?: Record<string, CustomPropertyValue>;
   immutable_releases?: boolean;
+  prune?: PruneSettings;
 }
 
 /**

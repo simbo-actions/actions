@@ -233,6 +233,9 @@ importers:
       '@simbo/stringify-error':
         specifier: ^2.0.0
         version: 2.0.0
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
     devDependencies:
       '@simbo/eslint-config':
         specifier: ^3.0.0

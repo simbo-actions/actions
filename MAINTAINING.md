@@ -185,8 +185,9 @@ new actions.
 ## Settings of Action Repositories
 
 1. Change
-   [`.github/managed-repository-settings.json`](.github/managed-repository-settings.json)
-   in a pull request, with a changeset (`--empty` if no action changes).
+   [`.github/managed-repository-settings.yml`](.github/managed-repository-settings.yml)
+   in a pull request, with a changeset (`--empty` if no action changes).  
+   Explain a non-obvious setting with a comment next to it.
 2. Every following publish applies the settings.  
    To apply them to all action repositories at once, run
    `apply-repository-settings` with `dry-run: true` first and check the changes.

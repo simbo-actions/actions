@@ -64,8 +64,60 @@ export const CONFIG_SECTIONS = [
   'security',
   'actions',
   'rulesets',
+  'labels',
+  'environments',
+  'autolinks',
+  'custom_properties',
   'immutable_releases',
+  'prune',
 ] as const;
+
+/**
+ * The keys of a label.
+ */
+export const LABEL_KEYS = ['name', 'color', 'description', 'old_name'] as const;
+
+/**
+ * A label color: six hex digits, with an optional `#`.
+ */
+export const LABEL_COLOR_PATTERN = /^#?[\da-f]{6}$/i;
+
+/**
+ * The keys of an environment.
+ */
+export const ENVIRONMENT_KEYS = [
+  'name',
+  'wait_timer',
+  'prevent_self_review',
+  'reviewers',
+  'deployment_branch_policy',
+  'deployment_policies',
+] as const;
+
+/**
+ * The maximum wait timer of an environment in minutes (30 days).
+ */
+export const MAX_WAIT_TIMER_MINUTES = 43_200;
+
+/**
+ * The maximum number of required reviewers of an environment.
+ */
+export const MAX_ENVIRONMENT_REVIEWERS = 6;
+
+/**
+ * The keys of an autolink.
+ */
+export const AUTOLINK_KEYS = ['key_prefix', 'url_template', 'is_alphanumeric'] as const;
+
+/**
+ * The areas that can be pruned.
+ */
+export const PRUNE_AREAS = ['labels', 'rulesets', 'environments', 'autolinks'] as const;
+
+/**
+ * Number of items per page when listing.
+ */
+export const ITEMS_PER_PAGE = 100;
 
 /**
  * HTTP status of the GitHub API for a missing resource.
@@ -109,3 +161,10 @@ export const BYPASS_ACTOR_TYPES = [
  * The bypass modes of a bypass actor.
  */
 export const BYPASS_MODES = ['always', 'pull_request', 'exempt'] as const;
+
+/**
+ * The deployment branch policy of an environment that every branch may
+ * deploy to; the GitHub API uses `null` for it.
+ */
+// eslint-disable-next-line unicorn/no-null -- the API value for "all branches"
+export const ALL_BRANCHES = null;

@@ -4,6 +4,7 @@ import { parseActionInputs } from './action-inputs.js';
 import { applySettings } from './apply-settings.js';
 import { createOctokit } from './create-octokit.js';
 import { SettingsClient } from './settings-client.js';
+import { changesCount, writeSummary } from './summary.js';
 
 /**
  * Main entry point for the apply-repository-settings action.
@@ -19,10 +20,11 @@ export async function main(): Promise<void> {
   const { changes } = client;
   setOutput('changed', String(changes.length > 0));
   setOutput('changes', JSON.stringify(changes));
+  await writeSummary(changes, { repository: `${owner}/${repo}`, dryRun });
 
   if (changes.length === 0) {
     info(`All settings of ${owner}/${repo} are already applied.`);
   } else {
-    info(`${dryRun ? 'Would apply' : 'Applied'} ${changes.length} change(s) to ${owner}/${repo}.`);
+    info(`${dryRun ? 'Would apply' : 'Applied'} ${changesCount(changes.length)} to ${owner}/${repo}.`);
   }
 }

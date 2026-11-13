@@ -1,10 +1,17 @@
 import {
   ALLOWED_ACTIONS_OPTIONS,
+  AUTOLINK_KEYS,
   BYPASS_ACTOR_KEYS,
   BYPASS_ACTOR_TYPES,
   BYPASS_MODES,
   CONFIG_SECTIONS,
+  ENVIRONMENT_KEYS,
+  LABEL_COLOR_PATTERN,
+  LABEL_KEYS,
+  MAX_ENVIRONMENT_REVIEWERS,
   MAX_TOPICS,
+  MAX_WAIT_TIMER_MINUTES,
+  PRUNE_AREAS,
   REPOSITORY_SETTING_TYPES,
   RULESET_ENFORCEMENT_OPTIONS,
   RULESET_KEYS,
@@ -13,7 +20,18 @@ import {
   TOPIC_PATTERN,
   WORKFLOW_PERMISSIONS_OPTIONS,
 } from './apply-repository-settings-constants.js';
-import type { ActionsSettings, Ruleset, SecuritySettings, SettingsConfig } from './apply-repository-settings.types.js';
+import type {
+  ActionsSettings,
+  Autolink,
+  CustomPropertyValue,
+  Environment,
+  Label,
+  PruneSettings,
+  Ruleset,
+  SecuritySettings,
+  SettingsConfig,
+} from './apply-repository-settings.types.js';
+import { parseYaml } from './parse-yaml.js';
 
 /**
  * Checks whether a value is a plain object.
@@ -247,41 +265,265 @@ function parseRulesets(value: unknown): Ruleset[] {
 }
 
 /**
+ * Ensures that the values of a key are unique.
+ *
+ * @param items - The items.
+ * @param path - The path for error messages.
+ * @param key - The key.
+ * @param normalize - Normalizes a value before comparing, for example to lowercase.
+ * @throws {Error} if two items have the same value.
+ */
+function assertUnique(
+  items: Record<string, unknown>[],
+  path: string,
+  key: string,
+  normalize: (value: string) => string = value => value,
+): void {
+  const seen = new Set<string>();
+  for (const item of items) {
+    const value = normalize(String(item[key]));
+    if (seen.has(value)) {
+      throw new Error(`Invalid configuration: two entries of "${path}" have the ${key} "${String(item[key])}".`);
+    }
+    seen.add(value);
+  }
+}
+
+/**
+ * Validates the section `labels`. Colors are normalized to six lowercase hex
+ * digits without `#`.
+ *
+ * @param value - The section.
+ * @returns The labels.
+ */
+function parseLabels(value: unknown): Label[] {
+  const labels = assertObjectArray(value, 'labels', LABEL_KEYS).map((label, index) => {
+    const path = `labels[${index}]`;
+    assertValue(label.name, `${path}.name`, 'string');
+    if (typeof label.color !== 'string' || !LABEL_COLOR_PATTERN.test(label.color)) {
+      throw new Error(`Invalid configuration: "${path}.color" must be six hex digits, for example "d73a4a".`);
+    }
+    for (const key of ['description', 'old_name'] as const) {
+      if (label[key] !== undefined) {
+        assertValue(label[key], `${path}.${key}`, 'string');
+      }
+    }
+    return { ...label, color: label.color.replace('#', '').toLowerCase() } as Label;
+  });
+  assertUnique(labels as unknown as Record<string, unknown>[], 'labels', 'name', name => name.toLowerCase());
+  return labels;
+}
+
+/**
+ * Validates the required reviewers of an environment.
+ *
+ * @param value - The reviewers.
+ * @param path - The path for error messages.
+ * @throws {Error} if a reviewer is invalid or there are too many.
+ */
+function assertReviewers(value: unknown, path: string): void {
+  const reviewers = assertObjectArray(value, path, ['type', 'id']);
+  if (reviewers.length > MAX_ENVIRONMENT_REVIEWERS) {
+    throw new Error(`Invalid configuration: "${path}" must have at most ${MAX_ENVIRONMENT_REVIEWERS} entries.`);
+  }
+  for (const [index, reviewer] of reviewers.entries()) {
+    assertValue(reviewer.type, `${path}[${index}].type`, ['User', 'Team']);
+    if (!Number.isSafeInteger(reviewer.id)) {
+      throw new TypeError(`Invalid configuration: "${path}[${index}].id" must be a number.`);
+    }
+  }
+}
+
+/**
+ * Validates the deployment branch policy of an environment; `null` allows all
+ * branches.
+ *
+ * @param value - The policy.
+ * @param path - The path for error messages.
+ * @throws {Error} if the policy is invalid.
+ */
+function assertBranchPolicy(value: unknown, path: string): void {
+  if (value === null) {
+    return;
+  }
+  const keys = ['protected_branches', 'custom_branch_policies'];
+  const policy = assertObject(value, path, keys);
+  for (const key of keys) {
+    assertValue(policy[key], `${path}.${key}`, 'boolean');
+  }
+  if (policy.protected_branches === policy.custom_branch_policies) {
+    throw new Error(
+      `Invalid configuration: exactly one of "protected_branches" and "custom_branch_policies" in "${path}" must be true.`,
+    );
+  }
+}
+
+/**
+ * Validates the deployment settings of an environment.
+ *
+ * @param environment - The environment.
+ * @param path - The path for error messages.
+ * @throws {Error} if the reviewers or the deployment policies are invalid.
+ */
+function assertDeploymentSettings(environment: Record<string, unknown>, path: string): void {
+  if (environment.reviewers !== undefined) {
+    assertReviewers(environment.reviewers, `${path}.reviewers`);
+  }
+  const policy = environment.deployment_branch_policy;
+  if (policy !== undefined) {
+    assertBranchPolicy(policy, `${path}.deployment_branch_policy`);
+  }
+  if (environment.deployment_policies === undefined) {
+    return;
+  }
+  if (!(isObject(policy) && policy.custom_branch_policies === true)) {
+    throw new Error(
+      `Invalid configuration: "${path}.deployment_policies" needs "deployment_branch_policy.custom_branch_policies: true".`,
+    );
+  }
+  const policies = assertObjectArray(environment.deployment_policies, `${path}.deployment_policies`, ['name', 'type']);
+  for (const [index, item] of policies.entries()) {
+    assertValue(item.name, `${path}.deployment_policies[${index}].name`, 'string');
+    assertValue(item.type, `${path}.deployment_policies[${index}].type`, ['branch', 'tag']);
+  }
+}
+
+/**
+ * Validates the section `environments`. Secrets and variables are not part of
+ * the configuration.
+ *
+ * @param value - The section.
+ * @returns The environments.
+ */
+function parseEnvironments(value: unknown): Environment[] {
+  const environments = assertObjectArray(value, 'environments', ENVIRONMENT_KEYS);
+  for (const [index, environment] of environments.entries()) {
+    const path = `environments[${index}]`;
+    assertValue(environment.name, `${path}.name`, 'string');
+    const timer = environment.wait_timer;
+    if (
+      timer !== undefined &&
+      (!Number.isSafeInteger(timer) || (timer as number) < 0 || (timer as number) > MAX_WAIT_TIMER_MINUTES)
+    ) {
+      throw new Error(
+        `Invalid configuration: "${path}.wait_timer" must be minutes from 0 to ${MAX_WAIT_TIMER_MINUTES}.`,
+      );
+    }
+    if (environment.prevent_self_review !== undefined) {
+      assertValue(environment.prevent_self_review, `${path}.prevent_self_review`, 'boolean');
+    }
+    assertDeploymentSettings(environment, path);
+  }
+  assertUnique(environments, 'environments', 'name', name => name.toLowerCase());
+  return environments as unknown as Environment[];
+}
+
+/**
+ * Validates the section `autolinks`.
+ *
+ * @param value - The section.
+ * @returns The autolinks.
+ */
+function parseAutolinks(value: unknown): Autolink[] {
+  const autolinks = assertObjectArray(value, 'autolinks', AUTOLINK_KEYS);
+  for (const [index, autolink] of autolinks.entries()) {
+    const path = `autolinks[${index}]`;
+    assertValue(autolink.key_prefix, `${path}.key_prefix`, 'string');
+    if (typeof autolink.url_template !== 'string' || !autolink.url_template.includes('<num>')) {
+      throw new Error(`Invalid configuration: "${path}.url_template" must be a URL that contains "<num>".`);
+    }
+    if (autolink.is_alphanumeric !== undefined) {
+      assertValue(autolink.is_alphanumeric, `${path}.is_alphanumeric`, 'boolean');
+    }
+  }
+  assertUnique(autolinks, 'autolinks', 'key_prefix', prefix => prefix.toLowerCase());
+  return autolinks as unknown as Autolink[];
+}
+
+/**
+ * Validates the section `custom_properties`: values of properties that the
+ * organization defines.
+ *
+ * @param value - The section.
+ * @returns The property values.
+ */
+function parseCustomProperties(value: unknown): Record<string, CustomPropertyValue> {
+  if (!isObject(value)) {
+    throw new Error('Invalid configuration: "custom_properties" must be an object.');
+  }
+  for (const [name, property] of Object.entries(value)) {
+    const valid =
+      property === null ||
+      typeof property === 'string' ||
+      (Array.isArray(property) && property.every(item => typeof item === 'string'));
+    if (!valid) {
+      throw new Error(
+        `Invalid configuration: "custom_properties.${name}" must be a string, an array of strings, or null.`,
+      );
+    }
+  }
+  return value as Record<string, CustomPropertyValue>;
+}
+
+/**
+ * Validates the section `immutable_releases`.
+ *
+ * @param value - The section.
+ * @returns Whether releases are immutable.
+ */
+function parseImmutableReleases(value: unknown): boolean {
+  assertValue(value, 'immutable_releases', 'boolean');
+  return value as boolean;
+}
+
+/**
+ * Validates the section `prune`.
+ *
+ * @param value - The section.
+ * @returns The areas to prune.
+ */
+function parsePrune(value: unknown): PruneSettings {
+  const section = assertObject(value, 'prune', PRUNE_AREAS);
+  for (const [key, setting] of Object.entries(section)) {
+    assertValue(setting, `prune.${key}`, 'boolean');
+  }
+  return section;
+}
+
+/**
  * Parses and validates a settings configuration.
  *
- * @param json - The contents of the configuration file.
+ * @param text - The contents of the configuration file, YAML or JSON.
  * @returns The validated configuration.
- * @throws {Error} if the JSON is invalid, a key is unknown, or a value has the wrong type.
+ * @throws {Error} if the file is invalid, a key is unknown, or a value has the wrong type.
  */
-export function parseConfig(json: string): SettingsConfig {
-  let data: unknown;
-  try {
-    data = JSON.parse(json);
-  } catch (error) {
-    throw new Error(`Invalid configuration: not valid JSON.`, { cause: error });
-  }
-  const root = assertObject(data, '(root)', CONFIG_SECTIONS);
+export function parseConfig(text: string): SettingsConfig {
+  const root = assertObject(parseYaml(text) ?? {}, '(root)', CONFIG_SECTIONS);
   const config: SettingsConfig = {};
-
-  if (root.repository !== undefined) {
-    config.repository = parseRepository(root.repository);
+  const parsers: { [K in keyof SettingsConfig]-?: (value: unknown) => SettingsConfig[K] } = {
+    repository: parseRepository,
+    topics: parseTopics,
+    security: parseSecurity,
+    actions: parseActions,
+    rulesets: parseRulesets,
+    labels: parseLabels,
+    environments: parseEnvironments,
+    autolinks: parseAutolinks,
+    custom_properties: parseCustomProperties,
+    immutable_releases: parseImmutableReleases,
+    prune: parsePrune,
+  };
+  for (const [section, parse] of Object.entries(parsers)) {
+    if (root[section] !== undefined) {
+      (config as Record<string, unknown>)[section] = parse(root[section]);
+    }
   }
-  if (root.topics !== undefined) {
-    config.topics = parseTopics(root.topics);
+  for (const area of PRUNE_AREAS) {
+    if (config.prune?.[area] && config[area] === undefined) {
+      throw new Error(
+        `Invalid configuration: "prune.${area}" needs the section "${area}"; an empty list deletes all ${area}.`,
+      );
+    }
   }
-  if (root.security !== undefined) {
-    config.security = parseSecurity(root.security);
-  }
-  if (root.actions !== undefined) {
-    config.actions = parseActions(root.actions);
-  }
-  if (root.rulesets !== undefined) {
-    config.rulesets = parseRulesets(root.rulesets);
-  }
-  if (root.immutable_releases !== undefined) {
-    assertValue(root.immutable_releases, 'immutable_releases', 'boolean');
-    config.immutable_releases = root.immutable_releases as boolean;
-  }
-
   return config;
 }

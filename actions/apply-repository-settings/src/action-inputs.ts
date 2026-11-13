@@ -23,13 +23,13 @@ export async function parseActionInputs(): Promise<ParsedActionInputs> {
   }
 
   const configPath = getInput('config', { required: true });
-  let json: string;
+  let text: string;
   try {
-    json = await readFile(configPath, 'utf8');
+    text = await readFile(configPath, 'utf8');
   } catch (error) {
     throw new Error(`Cannot read the configuration file: ${configPath}`, { cause: error });
   }
-  const config = parseConfig(json);
+  const config = parseConfig(text);
 
   const overrides = Object.fromEntries(
     ['description', 'homepage'].map(name => [name, getInput(name)] as const).filter(([, value]) => value !== ''),

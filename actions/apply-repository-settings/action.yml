@@ -1,6 +1,6 @@
 name: Apply Repository Settings
 
-description: A GitHub Action to apply repository settings, security features, Actions permissions, and rulesets from a configuration file, writing only what differs.
+description: A GitHub Action to apply repository settings, rulesets, labels, environments, and more from a YAML file, writing only what differs.
 
 author: Simon Lepel <simbo@simbo.de> (https://simbo.de/)
 
@@ -11,15 +11,16 @@ branding:
 inputs:
   token:
     description: >
-      The token to authenticate with. Needs "administration: write" on the
-      repository, for example a GitHub App installation token.
+      The token to authenticate with, for example a GitHub App installation
+      token. Needs "administration: write" on the repository; labels need
+      "issues: write".
     required: true
   repository:
     description: The repository to configure, in the format "owner/repo".
     required: false
     default: ${{ github.repository }}
   config:
-    description: The path to the JSON configuration file.
+    description: The path to the configuration file, YAML or JSON.
     required: true
   description:
     description: Overrides "repository.description" of the configuration.

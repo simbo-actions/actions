@@ -1,6 +1,6 @@
 import { info } from '@actions/core';
 
-import { HTTP_STATUS_NOT_FOUND } from './apply-repository-settings-constants.js';
+import { HTTP_STATUS_NOT_FOUND, ITEMS_PER_PAGE } from './apply-repository-settings-constants.js';
 import type { SettingChange } from './apply-repository-settings.types.js';
 import type { Octokit } from './create-octokit.js';
 
@@ -44,6 +44,26 @@ export class SettingsClient {
   public async read<T>(route: string, options: Record<string, unknown> = {}): Promise<T> {
     const response = await this.octokit.request(route, { ...this.parameters, ...options });
     return response.data as T;
+  }
+
+  /**
+   * Reads all pages of a list.
+   *
+   * @param route - The API route, for example `GET /repos/{owner}/{repo}/labels`.
+   * @param key - The key of the list in the response, or `undefined` if the response is the list.
+   * @param options - Additional request parameters.
+   * @returns The items of all pages.
+   */
+  public async readAll<T>(route: string, key?: string, options: Record<string, unknown> = {}): Promise<T[]> {
+    const items: T[] = [];
+    for (let page = 1; ; page++) {
+      const data = await this.read<unknown>(route, { ...options, per_page: ITEMS_PER_PAGE, page });
+      const pageItems = (key === undefined ? data : (data as Record<string, unknown>)[key]) as T[];
+      items.push(...pageItems);
+      if (pageItems.length < ITEMS_PER_PAGE) {
+        return items;
+      }
+    }
   }
 
   /**

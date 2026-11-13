@@ -229,7 +229,7 @@ jobs:
             cp "monorepo/actions/${name}/action.yml" "release/actions/${name}/"
             cp -R "monorepo/actions/${name}/dist" "release/actions/${name}/"
           done
-          cp monorepo/.github/managed-repository-settings.json release/
+          cp monorepo/.github/managed-repository-settings.yml release/
 
       - name: 📤 Upload Release
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -325,7 +325,7 @@ jobs:
         with:
           token: ${{ steps.app-token-configure.outputs.token }}
           repository: ${{ needs.build.outputs.repository }}
-          config: release/managed-repository-settings.json
+          config: release/managed-repository-settings.yml
           description: ${{ needs.build.outputs.description }}
           homepage: https://github.com/${{ github.repository }}
           topics: github-actions simbo-actions

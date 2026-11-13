@@ -90,6 +90,10 @@ function setup(
     ['/actions/permissions', () => state.actions],
     ['/actions/permissions/workflow', () => state.workflow],
     ['/rulesets', () => rulesets.map(({ id, name }) => ({ id, name }))],
+    ['/labels', () => []],
+    ['/environments', () => ({ environments: [] })],
+    ['/autolinks', () => []],
+    ['/properties/values', () => []],
     ['/immutable-releases', () => ({ enabled: state.immutable })],
     ['/topics', () => ({ names: state.topics })],
   ]);
@@ -210,5 +214,41 @@ describe('applySettings', () => {
     await applySettings(client, config);
     expect(writes).toEqual([]);
     expect(client.changes).toEqual([{ setting: 'immutable_releases', change: 'false → true' }]);
+  });
+
+  it('deletes unconfigured rulesets with prune', async () => {
+    const state = configuredState();
+    (state.rulesets as (Ruleset & { id: number })[]).push({ ...ruleset, id: 8, name: 'Old' });
+    const { client, writes } = setup(state);
+    await applySettings(client, { rulesets: [ruleset], prune: { rulesets: true } });
+    expect(writes).toEqual([
+      {
+        route: 'DELETE /repos/{owner}/{repo}/rulesets/{ruleset_id}',
+        parameters: { owner: 'o', repo: 'r', ruleset_id: 8 },
+      },
+    ]);
+    expect(client.changes).toEqual([{ setting: 'ruleset "Old"', change: 'delete' }]);
+  });
+
+  it('deletes all rulesets with prune and an empty list', async () => {
+    const { client, writes } = setup(configuredState());
+    await applySettings(client, { rulesets: [], prune: { rulesets: true } });
+    expect(writes.map(({ route }) => route)).toEqual(['DELETE /repos/{owner}/{repo}/rulesets/{ruleset_id}']);
+  });
+
+  it('applies labels, environments, autolinks, and custom properties', async () => {
+    const { client } = setup(configuredState());
+    await applySettings(client, {
+      labels: [{ name: 'bug', color: 'd73a4a' }],
+      environments: [{ name: 'release' }],
+      autolinks: [{ key_prefix: 'T-', url_template: 'https://t.example/<num>' }],
+      custom_properties: { team: 'platform' },
+    });
+    expect(client.changes.map(({ setting }) => setting)).toEqual([
+      'label "bug"',
+      'environment "release"',
+      'autolink "T-"',
+      'custom_properties.team',
+    ]);
   });
 });

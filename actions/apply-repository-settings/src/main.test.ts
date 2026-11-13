@@ -6,11 +6,16 @@ import { applySettings } from './apply-settings.js';
 import { createOctokit } from './create-octokit.js';
 import { main } from './main.js';
 import type { SettingsClient } from './settings-client.js';
+import { writeSummary } from './summary.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), setOutput: vi.fn() }));
 vi.mock('./create-octokit.js', () => ({ createOctokit: vi.fn(() => ({})) }));
 vi.mock('./action-inputs.js', () => ({ parseActionInputs: vi.fn() }));
 vi.mock('./apply-settings.js', () => ({ applySettings: vi.fn() }));
+vi.mock('./summary.js', async importOriginal => ({
+  ...(await importOriginal<typeof import('./summary.js')>()),
+  writeSummary: vi.fn(),
+}));
 
 describe('main', () => {
   beforeEach(() => {
@@ -37,7 +42,11 @@ describe('main', () => {
       'changes',
       JSON.stringify([{ setting: 'immutable_releases', change: 'false → true' }]),
     );
-    expect(info).toHaveBeenCalledWith('Applied 1 change(s) to o/r.');
+    expect(info).toHaveBeenCalledWith('Applied 1 change to o/r.');
+    expect(writeSummary).toHaveBeenCalledWith([{ setting: 'immutable_releases', change: 'false → true' }], {
+      repository: 'o/r',
+      dryRun: false,
+    });
   });
 
   it('reports a dry run', async () => {
@@ -46,7 +55,7 @@ describe('main', () => {
       client.changes.push({ setting: 'x', change: 'y' });
     });
     await main();
-    expect(info).toHaveBeenCalledWith('Would apply 1 change(s) to o/r.');
+    expect(info).toHaveBeenCalledWith('Would apply 1 change to o/r.');
   });
 
   it('reports when nothing changes', async () => {

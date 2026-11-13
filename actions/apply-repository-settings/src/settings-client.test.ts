@@ -27,6 +27,23 @@ describe('SettingsClient', () => {
     expect(request).toHaveBeenCalledWith('GET /x', { owner: 'o', repo: 'r', page: 1 });
   });
 
+  it('reads all pages of a list', async () => {
+    const full = Array.from({ length: 100 }, (_, index) => index);
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce({ data: { items: full } })
+      .mockResolvedValueOnce({ data: { items: [100] } });
+    const client = new SettingsClient(fakeOctokit(request), 'o', 'r', false);
+    expect(await client.readAll('GET /x', 'items', { a: 1 })).toEqual([...full, 100]);
+    expect(request).toHaveBeenNthCalledWith(2, 'GET /x', { owner: 'o', repo: 'r', a: 1, per_page: 100, page: 2 });
+  });
+
+  it('reads all pages of a plain list', async () => {
+    const request = vi.fn().mockResolvedValue({ data: [1, 2] });
+    const client = new SettingsClient(fakeOctokit(request), 'o', 'r', false);
+    expect(await client.readAll('GET /x')).toEqual([1, 2]);
+  });
+
   it('maps 204 and 404 to enabled and disabled', async () => {
     const request = vi
       .fn()

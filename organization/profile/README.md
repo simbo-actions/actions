@@ -19,9 +19,8 @@ There are currently _**6**_ GitHub Actions in this organization.
 
 - ### **Apply Repository Settings**
 
-  > A GitHub Action to apply repository settings, security features, Actions
-  > permissions, and rulesets from a configuration file, writing only what
-  > differs.
+  > A GitHub Action to apply repository settings, rulesets, labels,
+  > environments, and more from a YAML file, writing only what differs.
 
   ⚙️ **`simbo-actions/apply-repository-settings@<SHA> # v0.0.0`**
 

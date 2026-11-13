@@ -205,9 +205,10 @@ gh attestation verify signed-commit-v1.0.0.tar.gz --repo simbo-actions/actions
 
 The publish process owns the action repositories.  
 It creates a missing repository and, on every publish, applies the settings in
-[`.github/managed-repository-settings.json`](.github/managed-repository-settings.json)
+[`.github/managed-repository-settings.yml`](.github/managed-repository-settings.yml)
 with [`apply-repository-settings`](actions/apply-repository-settings/README.md):
-it compares them with the current state and corrects what differs.
+it compares them with the current state and corrects what differs.  
+The file is YAML, with comments that explain the choices.
 
 Manual changes in an action repository are reset by the next publish.
 
@@ -253,7 +254,7 @@ The workflow `publish-organization` publishes it on every change on `main`, the
 same way as an action:
 
 - it creates the repository if missing,
-- applies the settings of `.github/managed-repository-settings.json`,
+- applies the settings of `.github/managed-repository-settings.yml`,
 - and commits the content with `signed-commit`.
 
 The list of actions in the profile is generated with `pnpm run actions-list`.  
@@ -522,6 +523,11 @@ major version; see [MAINTAINING.md](MAINTAINING.md).
   the release waits for the smoke tests.  
   Reusable workflows of trusted publishers are used in read-only jobs, such as
   Google's osv-scanner workflows.
+- **YAML for configuration.** Why: it allows comments that explain a setting
+  next to it. It is read strictly, without duplicate keys, anchors, aliases, or
+  tags, so that every value is what the file shows; JSON stays valid YAML.  
+  Configurations of tools that require JSON stay JSON, for example
+  `.changeset/config.json`.
 - **Octokit client copied into every action.** Why: an unpublished shared
   package has no version, changelog, or release of its own.  
   The copies are identical, checked by `pnpm run check:actions`, until the

@@ -1,7 +1,7 @@
 # Apply Repository Settings _(GitHub Action)_
 
-A GitHub Action to apply repository settings, security features, Actions
-permissions, and rulesets from a configuration file, writing only what differs.
+A GitHub Action to apply repository settings, rulesets, labels, environments,
+and more from a YAML file, writing only what differs.
 
 > [!NOTE]  
 > Developed and maintained in the monorepo
@@ -9,7 +9,7 @@ permissions, and rulesets from a configuration file, writing only what differs.
 > published here automatically.  
 > Issues, questions, and contributions go to the monorepo.
 
-Keep the settings of a repository as code: a JSON file describes the intended
+Keep the settings of a repository as code: a YAML file describes the intended
 state, and the action compares it with the current state and changes only what
 differs.  
 Run it on a schedule to correct manual changes, or after creating a repository
@@ -29,17 +29,20 @@ to set it up.
 
 ## How It Works
 
-1. Reads and validates the configuration.  
-   Unknown keys and wrong types fail the action, so typos never pass silently.
+1. Reads and validates the configuration, YAML or JSON.  
+   Unknown keys, wrong types, duplicate keys, anchors, and tags fail the action,
+   so typos never pass silently.
 2. Reads the current settings of the repository.
 3. Compares each configured setting with its current value.  
-   Rulesets are matched by name; the order of rules and bypass actors does not
-   matter.
-4. Writes only the settings that differ, and lists every change in the log and
-   the output `changes`.  
+   Rulesets, labels, environments, and autolinks are matched by name; the order
+   of rules, bypass actors, and reviewers does not matter.
+4. Writes only the settings that differ, and lists every change in the log, the
+   job summary, and the output `changes`.  
    With `dry-run: true`, it only lists them.
 
-Settings that are not in the configuration are left unchanged.
+Settings that are not in the configuration are left unchanged.  
+Entries that are not configured, for example other labels, are kept, unless
+`prune` deletes them.
 
 ## Usage
 
@@ -74,65 +77,77 @@ jobs:
         uses: simbo-actions/apply-repository-settings@<SHA> # vX.Y.Z
         with:
           token: ${{ steps.app-token.outputs.token }}
-          config: .github/repository-settings.json
+          config: .github/repository-settings.yml
 ```
 
 ## Configuration
 
-Every section and every key is optional; only what is configured is applied.
+Every section and every key is optional; only what is configured is applied.  
+The file is YAML 1.2, so JSON works as well; comments explain the choices.
 
-```json
-{
-  "repository": {
-    "has_issues": true,
-    "has_pull_requests": true,
-    "has_wiki": false,
-    "allow_squash_merge": true,
-    "allow_merge_commit": false,
-    "allow_rebase_merge": false,
-    "allow_auto_merge": true,
-    "allow_update_branch": true,
-    "delete_branch_on_merge": true
-  },
-  "topics": ["github-actions", "automation"],
-  "security": {
-    "secret_scanning": true,
-    "secret_scanning_push_protection": true,
-    "dependabot_alerts": true,
-    "dependabot_security_updates": true,
-    "private_vulnerability_reporting": true
-  },
-  "actions": {
-    "enabled": true,
-    "allowed_actions": "all",
-    "sha_pinning_required": true,
-    "default_workflow_permissions": "read",
-    "can_approve_pull_request_reviews": false
-  },
-  "rulesets": [
-    {
-      "name": "Main Branch",
-      "target": "branch",
-      "enforcement": "active",
-      "conditions": {
-        "ref_name": { "include": ["refs/heads/main"], "exclude": [] }
-      },
-      "bypass_actors": [
-        {
-          "actor_id": 1,
-          "actor_type": "OrganizationAdmin",
-          "bypass_mode": "always"
-        }
-      ],
-      "rules": [
-        { "type": "deletion" },
-        { "type": "non_fast_forward" },
-        { "type": "required_linear_history" }
-      ]
-    }
-  ],
-  "immutable_releases": true
-}
+```yaml
+repository:
+  has_issues: true
+  has_wiki: false
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: false
+  delete_branch_on_merge: true
+
+topics: [github-actions, automation]
+
+security:
+  secret_scanning: true
+  secret_scanning_push_protection: true
+  dependabot_alerts: true
+  dependabot_security_updates: true
+  private_vulnerability_reporting: true
+
+actions:
+  allowed_actions: all
+  sha_pinning_required: true
+  default_workflow_permissions: read
+
+rulesets:
+  - name: Main Branch
+    target: branch
+    enforcement: active
+    conditions:
+      ref_name: { include: [refs/heads/main], exclude: [] }
+    bypass_actors:
+      - { actor_id: 1, actor_type: OrganizationAdmin, bypass_mode: always }
+    rules:
+      - type: deletion
+      - type: non_fast_forward
+
+labels:
+  - { name: bug, color: d73a4a, description: Something is broken }
+  # Renames "feature" to "enhancement" and keeps it on issues.
+  - { name: enhancement, color: a2eeef, old_name: feature }
+
+environments:
+  - name: production
+    wait_timer: 10
+    prevent_self_review: true
+    reviewers:
+      - { type: Team, id: 1234567 }
+    deployment_branch_policy:
+      { protected_branches: false, custom_branch_policies: true }
+    deployment_policies:
+      - { name: main, type: branch }
+      - { name: 'v*', type: tag }
+
+autolinks:
+  - key_prefix: TICKET-
+    url_template: https://tracker.example.com/browse/TICKET-<num>
+
+custom_properties:
+  team: platform
+
+immutable_releases: true
+
+prune:
+  labels: true
 ```
 
 | Section              | Keys                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -142,13 +157,32 @@ Every section and every key is optional; only what is configured is applied.
 | `security`           | `secret_scanning`, `secret_scanning_push_protection`, `dependabot_alerts`, `dependabot_security_updates`, `private_vulnerability_reporting` (booleans)                                                                                                                                                                                                                                                                                                                    |
 | `actions`            | `enabled`, `sha_pinning_required`, `can_approve_pull_request_reviews` (booleans); `allowed_actions` (`all`, `local_only`, `selected`); `default_workflow_permissions` (`read`, `write`)                                                                                                                                                                                                                                                                                   |
 | `rulesets`           | Rulesets as in the [GitHub API](https://docs.github.com/en/rest/repos/rules), each with a unique `name` and an `enforcement` (`active`, `evaluate`, `disabled`); allowed keys: `name`, `target`, `enforcement`, `conditions` (`ref_name`), `rules`, `bypass_actors`                                                                                                                                                                                                       |
+| `labels`             | `name`, `color` (six hex digits, `#` optional), `description`, `old_name` (the current name of a label to rename)                                                                                                                                                                                                                                                                                                                                                         |
+| `environments`       | `name`; `wait_timer` (minutes, 0 to 43200); `prevent_self_review`; `reviewers` (up to 6, `type` `User` or `Team` and its numeric `id`); `deployment_branch_policy` (`null` for all branches, or `protected_branches` and `custom_branch_policies`, exactly one `true`); `deployment_policies` (`name` patterns with `type` `branch` or `tag`, with `custom_branch_policies: true`)                                                                                        |
+| `autolinks`          | `key_prefix`, `url_template` (with `<num>`), `is_alphanumeric` (default `true`)                                                                                                                                                                                                                                                                                                                                                                                           |
+| `custom_properties`  | Values of custom properties that the organization defines: a string, a list of strings, or `null` to remove the value                                                                                                                                                                                                                                                                                                                                                     |
 | `immutable_releases` | boolean                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `prune`              | `labels`, `rulesets`, `environments`, `autolinks` (booleans, default `false`): delete the entries of the area that are not configured                                                                                                                                                                                                                                                                                                                                     |
 
-- Rulesets are created if missing and updated if they differ.  
-  Rulesets that are not configured are kept.
+- Rulesets, labels, environments, and autolinks are created if missing and
+  updated if they differ.  
+  Entries that are not configured are kept, unless `prune` is set for the area.
 - `actor_id` of a bypass actor: the app ID for `Integration`, `1` for
   `OrganizationAdmin`, the role ID for `RepositoryRole` (for example `5` for
   admins).
+- Labels, environments, and autolinks are matched ignoring case.  
+  A label with `old_name` is renamed, so issues keep it.
+- An environment keeps the settings that are not configured; secrets and
+  variables are never read or changed.  
+  `deployment_policies` replaces all branch and tag patterns of the environment.
+- An autolink cannot be updated via the API; a changed one is deleted and
+  created again.
+- `prune` needs the section of its area: `prune.labels` without `labels` fails,
+  an empty list deletes all entries.  
+  Pruning environments also deletes their secrets; run with `dry-run: true`
+  first.
+- YAML is read strictly: duplicate keys, anchors, aliases, and tags fail the
+  action, so that every value is what the file shows.
 
 ## Examples
 
@@ -183,7 +217,7 @@ jobs:
         uses: simbo-actions/apply-repository-settings@<SHA> # vX.Y.Z
         with:
           token: ${{ steps.app-token.outputs.token }}
-          config: .github/repository-settings.json
+          config: .github/repository-settings.yml
 
       - name: 📣 Report Drift
         if: steps.settings.outputs.changed == 'true'
@@ -202,10 +236,35 @@ Configure a new repository with shared settings and its own description:
   with:
     token: ${{ steps.app-token.outputs.token }}
     repository: my-org/${{ matrix.repository }}
-    config: settings/standard.json
+    config: settings/standard.yml
     description: ${{ matrix.description }}
     topics: ${{ matrix.topics }}
 ```
+
+### Labels Across Repositories
+
+Keep the same labels everywhere and remove the default labels nobody uses:
+
+```yaml
+# .github/labels.yml
+labels:
+  - { name: bug, color: d73a4a, description: Something is broken }
+  - { name: enhancement, color: a2eeef, description: New feature or request }
+  - { name: dependencies, color: 0366d6, description: Updates of dependencies }
+prune:
+  labels: true
+```
+
+```yaml
+- name: 🏷️ Apply Labels
+  uses: simbo-actions/apply-repository-settings@<SHA> # vX.Y.Z
+  with:
+    token: ${{ steps.app-token.outputs.token }}
+    config: .github/labels.yml
+```
+
+Labels alone need only `issues: write`, see
+[Token and Permissions](#token-and-permissions).
 
 ### Preview Changes
 
@@ -214,7 +273,7 @@ Configure a new repository with shared settings and its own description:
   uses: simbo-actions/apply-repository-settings@<SHA> # vX.Y.Z
   with:
     token: ${{ steps.app-token.outputs.token }}
-    config: .github/repository-settings.json
+    config: .github/repository-settings.yml
     dry-run: true
 ```
 
@@ -224,7 +283,7 @@ Configure a new repository with shared settings and its own description:
 | ------------- | ----------------------------------------------------------------------------------- | -------- | -------------------------- |
 | `token`       | The token to authenticate with, see [Token and Permissions](#token-and-permissions) | true     |                            |
 | `repository`  | The repository to configure (`owner/repo`)                                          | false    | `${{ github.repository }}` |
-| `config`      | The path to the JSON configuration file                                             | true     |                            |
+| `config`      | The path to the configuration file, YAML or JSON                                    | true     |                            |
 | `description` | Overrides `repository.description` of the configuration                             | false    |                            |
 | `homepage`    | Overrides `repository.homepage` of the configuration                                | false    |                            |
 | `topics`      | Overrides `topics` of the configuration; separated by whitespace or commas          | false    |                            |
@@ -239,21 +298,26 @@ Configure a new repository with shared settings and its own description:
 
 ## Token and Permissions
 
-The action needs **`administration: write`** on the repository, even to read
-some settings (security features, rulesets).  
-Use a GitHub App installation token restricted to the repository; the
-`GITHUB_TOKEN` cannot get this permission.
+Use a GitHub App installation token restricted to the repository, requested only
+for this step; the `GITHUB_TOKEN` cannot get `administration: write`.
 
-Request the token only for this step.  
+| Section                                                                                                      | Permission                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `repository`, `topics`, `security`, `actions`, `rulesets`, `environments`, `autolinks`, `immutable_releases` | `administration: write`, also to read some settings                                                                |
+| `labels`                                                                                                     | `issues: write`                                                                                                    |
+| `custom_properties`                                                                                          | permission to edit custom property values: repository admin, or the custom property permission of the organization |
+
+Request only what the configured sections need.  
 Administration access allows much more than the action does.
 
 ## Security
 
 - **Least privilege:** the action writes only settings that are configured and
-  differ; it never deletes rulesets or changes collaborators, teams, secrets, or
-  files.
-- **Strict configuration:** unknown keys and wrong types fail the action instead
-  of being ignored.
+  differ; it deletes only with `prune`, and never changes collaborators, teams,
+  secrets, variables, or files.
+- **Strict configuration:** unknown keys, wrong types, duplicate keys, anchors,
+  aliases, and tags fail the action instead of being ignored.  
+  Only the listed keys reach the API, so no key can change a request itself.
 - **Dry run:** `dry-run: true` shows all changes without applying them.
 - **Rate limits:** requests that hit a rate limit wait as long as GitHub asks
   for and are retried up to 4 times (`@octokit/plugin-throttling`).
@@ -270,12 +334,13 @@ Administration access allows much more than the action does.
 
 ## Limitations
 
-- Only the settings listed in [Configuration](#configuration); no labels, teams,
-  collaborators, environments, webhooks, or files.
-- Rulesets that are not configured are kept, not deleted.
+- Only the settings listed in [Configuration](#configuration); no teams,
+  collaborators, webhooks, secrets, variables, or files.
+- Custom properties must be defined by the organization first.
 - Some features depend on the plan: for example, secret scanning and code
-  scanning in private repositories need GitHub Advanced Security.
-- The configuration is JSON; YAML is not supported.
+  scanning in private repositories need GitHub Advanced Security, and
+  environments with protection rules in private repositories need a paid plan.
+- Runs on Linux runners only (x64 and arm64).
 
 ## License
 

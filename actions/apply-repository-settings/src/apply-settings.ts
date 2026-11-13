@@ -1,3 +1,7 @@
+import { applyAutolinks } from './apply-autolinks.js';
+import { applyCustomProperties } from './apply-custom-properties.js';
+import { applyEnvironments } from './apply-environments.js';
+import { applyLabels } from './apply-labels.js';
 import type { ActionsSettings, Ruleset, SecuritySettings, SettingsConfig } from './apply-repository-settings.types.js';
 import { rulesetMatches } from './matches.js';
 import type { SettingsClient } from './settings-client.js';
@@ -201,13 +205,15 @@ export async function applyActionsSettings(client: SettingsClient, actions: Acti
 
 /**
  * Creates or updates the configured rulesets, matched by name. Rulesets that
- * are not configured are kept.
+ * are not configured are kept, or deleted with `prune`; rulesets of the
+ * organization are never touched.
  *
  * @param client - The settings client.
  * @param rulesets - The configured rulesets.
+ * @param prune - Whether to delete rulesets of the repository that are not configured.
  */
-export async function applyRulesets(client: SettingsClient, rulesets: Ruleset[]): Promise<void> {
-  if (rulesets.length === 0) {
+export async function applyRulesets(client: SettingsClient, rulesets: Ruleset[], prune = false): Promise<void> {
+  if (!prune && rulesets.length === 0) {
     return;
   }
   const existing = await client.read<{ id: number; name: string }[]>('GET /repos/{owner}/{repo}/rulesets', {
@@ -231,6 +237,14 @@ export async function applyRulesets(client: SettingsClient, rulesets: Ruleset[])
     client.record({ setting, change: 'update' });
     await client.write('PUT /repos/{owner}/{repo}/rulesets/{ruleset_id}', { ruleset_id: match.id, ...ruleset });
   }
+  if (!prune) {
+    return;
+  }
+  const unconfigured = existing.filter(item => rulesets.every(ruleset => ruleset.name !== item.name));
+  for (const { id, name } of unconfigured) {
+    client.record({ setting: `ruleset "${name}"`, change: 'delete' });
+    await client.write('DELETE /repos/{owner}/{repo}/rulesets/{ruleset_id}', { ruleset_id: id });
+  }
 }
 
 /**
@@ -243,6 +257,28 @@ export async function applyImmutableReleases(client: SettingsClient, enabled: bo
   const route = '/repos/{owner}/{repo}/immutable-releases';
   const current = await client.read<{ enabled: boolean }>(`GET ${route}`);
   await applyToggle(client, 'immutable_releases', route, enabled, current.enabled);
+}
+
+/**
+ * Applies the labels, environments, autolinks, and custom properties.
+ *
+ * @param client - The settings client.
+ * @param config - The configuration.
+ */
+async function applyCollections(client: SettingsClient, config: SettingsConfig): Promise<void> {
+  const prune = config.prune ?? {};
+  if (config.labels !== undefined) {
+    await applyLabels(client, config.labels, prune.labels ?? false);
+  }
+  if (config.environments !== undefined) {
+    await applyEnvironments(client, config.environments, prune.environments ?? false);
+  }
+  if (config.autolinks !== undefined) {
+    await applyAutolinks(client, config.autolinks, prune.autolinks ?? false);
+  }
+  if (config.custom_properties !== undefined) {
+    await applyCustomProperties(client, config.custom_properties);
+  }
 }
 
 /**
@@ -268,7 +304,8 @@ export async function applySettings(client: SettingsClient, config: SettingsConf
   if (config.actions !== undefined) {
     await applyActionsSettings(client, config.actions);
   }
-  await applyRulesets(client, config.rulesets ?? []);
+  await applyRulesets(client, config.rulesets ?? [], config.prune?.rulesets);
+  await applyCollections(client, config);
   if (config.immutable_releases !== undefined) {
     await applyImmutableReleases(client, config.immutable_releases);
   }

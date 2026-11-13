@@ -1,6 +1,6 @@
 {
   "name": "apply-repository-settings",
-  "description": "A GitHub Action to apply repository settings, security features, Actions permissions, and rulesets from a configuration file, writing only what differs.",
+  "description": "A GitHub Action to apply repository settings, rulesets, labels, environments, and more from a YAML file, writing only what differs.",
   "version": "0.0.0",
   "private": true,
   "author": "Simon Lepel <simbo@simbo.de> (https://simbo.de)",
@@ -27,7 +27,8 @@
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
     "@octokit/plugin-throttling": "^11.0.5",
-    "@simbo/stringify-error": "^2.0.0"
+    "@simbo/stringify-error": "^2.0.0",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@simbo/eslint-config": "^3.0.0",
