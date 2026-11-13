@@ -8,7 +8,7 @@ more information about the monorepo itself.
 
 <!-- PACKAGES -->
 
-There are currently _**5**_ GitHub Actions managed in this repository.
+There are currently _**6**_ GitHub Actions managed in this repository.
 
 - ### **Apply Repository Settings _(GitHub Action)_**
 
@@ -56,6 +56,21 @@ There are currently _**5**_ GitHub Actions managed in this repository.
   •
   [CHANGELOG.md](https://github.com/simbo-actions/github-app-bot-user/blob/main/CHANGELOG.md)
   • [Releases](https://github.com/simbo-actions/github-app-bot-user/releases)
+
+- ### **Gitleaks Scan _(GitHub Action)_**
+
+  > A GitHub Action to scan the Git history for secrets with Gitleaks, from a
+  > pinned and checksum-verified binary, in one step.
+
+  ⚙️ **`simbo-actions/gitleaks-scan@<SHA> # v0.0.0`**
+
+  Latest Version: `0.0.0`
+
+  [Repository](https://github.com/simbo-actions/gitleaks-scan) •
+  [README.md](https://github.com/simbo-actions/gitleaks-scan/blob/main/README.md)
+  •
+  [CHANGELOG.md](https://github.com/simbo-actions/gitleaks-scan/blob/main/CHANGELOG.md)
+  • [Releases](https://github.com/simbo-actions/gitleaks-scan/releases)
 
 - ### **Signed Commit _(GitHub Action)_**
 

@@ -5,7 +5,8 @@ name: Auto-merge 🤖
 #
 # Merges low-risk Dependabot pull requests once the required checks pass:
 # updates of simbo-actions/* actions, and minor or patch updates of actions by
-# GitHub (actions/*, github/*), if only files under .github/ change.
+# trusted publishers (actions/*, github/*, google/*), if only files under
+# .github/ change.
 # Assigns all other Dependabot pull requests to the owner for review.
 #-------------------------------------------------------------------------------
 
@@ -64,7 +65,8 @@ jobs:
             result=false
           fi
 
-          # Only simbo-actions/* (any update) or actions/* and github/* (minor or patch)
+          # Only simbo-actions/* (any update) or trusted publishers actions/*, github/*,
+          # and google/* (minor or patch)
           IFS=',' read -ra names <<< "$DEPENDENCIES"
           if [[ ${#names[@]} -eq 0 ]]; then
             result=false
@@ -74,7 +76,7 @@ jobs:
             if [[ "$name" == simbo-actions/* ]]; then
               continue
             fi
-            if [[ "$name" == actions/* || "$name" == github/* ]] \
+            if [[ "$name" == actions/* || "$name" == github/* || "$name" == google/* ]] \
               && [[ "$UPDATE_TYPE" == 'version-update:semver-minor' || "$UPDATE_TYPE" == 'version-update:semver-patch' ]]; then
               continue
             fi

@@ -16,10 +16,12 @@ updates:
       simbo-actions:
         patterns:
           - simbo-actions/*
-      github-actions:
+      # Trusted publishers whose minor and patch updates are merged automatically
+      trusted-actions:
         patterns:
           - actions/*
           - github/*
+          - google/*
       third-party-actions:
         patterns:
           - '*'
@@ -27,6 +29,7 @@ updates:
           - simbo-actions/*
           - actions/*
           - github/*
+          - google/*
 
   # npm dependencies of all workspaces, weekly, minor and patch updates grouped
   # (one pull request per workspace); major updates come as separate pull requests

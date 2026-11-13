@@ -12,6 +12,7 @@ Commands are run from the repository root unless noted otherwise.
 | ------------------------------------------------------------------- | ----------------------------------------------------- |
 | [Dependabot pull requests](#dependabot-pull-requests)               | weekly, or when assigned                              |
 | [Scanner findings](#scanner-findings)                               | `checks` or `security` fails on osv-scanner           |
+| [Secret found](#secret-found)                                       | `checks` or the pre-commit hook fails on Gitleaks     |
 | [Expiring accepted findings](#expiring-accepted-findings)           | monthly                                               |
 | [Pinned tools](#pinned-tools)                                       | monthly                                               |
 | [Security fixes as overrides](#security-fixes-as-overrides)         | monthly                                               |
@@ -65,6 +66,20 @@ not allowed.
    [STANDARDS.md](STANDARDS.md#dependencies) in the same pull request.
 6. Add a changeset if bundled code changes.
 
+## Secret Found
+
+Gitleaks reports a potential secret, as annotation in `checks` or in the
+pre-commit hook. The value is redacted everywhere.
+
+1. Find the location in the annotation or the job summary of `checks`, or run
+   `gitleaks git -v --redact` locally.
+2. **Real secret:** revoke or rotate it at its provider **first**; a pushed
+   secret is compromised, also in a fork. Then remove it from the code. If it
+   reached `main`, check the audit log and the provider for misuse, and treat
+   the event as a [security report](#security-reports).
+3. **False positive:** add the fingerprint that `gitleaks git -v` prints to
+   `.gitleaksignore`, with a comment why, in the same pull request.
+
 ## Expiring Accepted Findings
 
 1. Open `osv-scanner.toml` and check every `effectiveUntil`.
@@ -74,24 +89,27 @@ not allowed.
 
 ## Pinned Tools
 
-Dependabot does not update tools downloaded in workflows.
+Dependabot does not update tools downloaded by workflows or built into actions.
+osv-scanner is not pinned here: Google's workflows bring it, and Dependabot
+updates them.
 
-| Tool        | Pinned in                                                        | Releases                                                             |
-| ----------- | ---------------------------------------------------------------- | -------------------------------------------------------------------- |
-| actionlint  | `.github/workflows/checks.yml`                                   | [rhysd/actionlint](https://github.com/rhysd/actionlint/releases)     |
-| osv-scanner | `.github/workflows/checks.yml`, `.github/workflows/security.yml` | [google/osv-scanner](https://github.com/google/osv-scanner/releases) |
+| Tool       | Pinned in                                                                                                                      | Releases                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| actionlint | `.github/workflows/checks.yml` (Linux amd64)                                                                                   | [rhysd/actionlint](https://github.com/rhysd/actionlint/releases)   |
+| Gitleaks   | [`actions/gitleaks-scan/src/gitleaks-scan-constants.ts`](actions/gitleaks-scan/src/gitleaks-scan-constants.ts) (all platforms) | [gitleaks/gitleaks](https://github.com/gitleaks/gitleaks/releases) |
 
 1. Check the latest release. Use it only if it is at least 7 days old.
 2. Read the release notes.
-3. Take the SHA-256 checksum of the Linux amd64 file from the release's checksum
-   file, for example:
+3. Take the SHA-256 checksums from the release's checksum file, for example:
 
    ```sh
-   gh release download v2.7.0 -R google/osv-scanner -p osv-scanner_SHA256SUMS -O - | grep linux_amd64
+   gh release download v8.30.1 -R gitleaks/gitleaks -p 'gitleaks_*_checksums.txt' -O - | grep -E '(linux|darwin)_(x64|arm64)'
    ```
 
-4. Update the version and the checksum in every workflow that pins the tool.
-5. Update the local installation (`brew upgrade osv-scanner`).
+4. Update the version and the checksums where the tool is pinned.
+5. For Gitleaks, add a patch changeset for `gitleaks-scan`; the new version
+   reaches all repositories with the next release of the action.
+6. Update the local installations (`brew upgrade gitleaks osv-scanner`).
 
 ## Security Fixes as Overrides
 

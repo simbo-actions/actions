@@ -21,7 +21,7 @@ local development, see [DEVELOPMENT.md](DEVELOPMENT.md).
 - [Trust Boundaries](#trust-boundaries)
 - [Tags and Versions](#tags-and-versions)
 - [Dependency Updates](#dependency-updates)
-- [Vulnerability and License Checks](#vulnerability-and-license-checks)
+- [Vulnerability, Secret, and License Checks](#vulnerability-secret-and-license-checks)
 - [Rate Limits](#rate-limits)
 - [Marketplace](#marketplace)
 - [Node.js Runtime](#nodejs-runtime)
@@ -50,7 +50,7 @@ own. Consumers only use the action repositories, pinned by commit SHA.
 ```mermaid
 flowchart LR
   subgraph monorepo["simbo-actions/actions (monorepo)"]
-    actions["actions/NAME/<br/>signed-commit, staged-release,<br/>floating-version-tags,<br/>apply-repository-settings,<br/>github-app-bot-user"]
+    actions["actions/NAME/<br/>signed-commit, staged-release,<br/>floating-version-tags,<br/>apply-repository-settings,<br/>github-app-bot-user, gitleaks-scan"]
     shared["shared/octokit<br/>API client with rate limits"]
     tooling["tooling/<br/>monorepo checks and helpers"]
     workflows[".github/workflows/<br/>checks, release, publish,<br/>publish-organization, security"]
@@ -330,7 +330,7 @@ Dependabot proposes updates; what is merged automatically depends on the risk.
 flowchart TD
   pr(["Dependabot pull request"]) --> kind{"what changes?"}
   kind -- "simbo-actions/*" --> auto["auto-merge after checks"]
-  kind -- "actions/*, github/*<br/>minor or patch" --> auto
+  kind -- "trusted publishers<br/>actions/*, github/*, google/*<br/>minor or patch" --> auto
   kind -- "other actions, majors" --> owner["assigned to the owner"]
   kind -- "npm, weekly group" --> owner
   auto --> autoMerged(["merged automatically"])
@@ -343,16 +343,29 @@ Updates of third-party actions and npm packages wait 7 days after their release
 (cooldown). Dependabot pull requests never receive secrets; the changeset for
 npm updates is created after the merge, in a job with the environment `release`.
 
-## Vulnerability and License Checks
+## Vulnerability, Secret, and License Checks
 
-| Check                                        | Tool                                                                                      | Scope                                   | Runs                                                         |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
-| Vulnerabilities and malicious packages       | [osv-scanner](https://github.com/google/osv-scanner), pinned with checksum                | all dependencies in `pnpm-lock.yaml`    | `checks` (pull requests, `main`), weekly `security`, locally |
-| Licenses allowed anywhere                    | osv-scanner (`--licenses`)                                                                | all dependencies                        | `checks`, locally                                            |
-| Licenses allowed in bundled code             | [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn) | production dependencies of every action | `checks`, locally                                            |
-| License file, README sections, monorepo note | `tooling/bin/check-actions.ts`                                                            | every action                            | `checks`, locally                                            |
+| Check                                        | Tool                                                                                                    | Scope                                   | Runs                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------- |
+| Vulnerabilities and malicious packages       | [osv-scanner](https://github.com/google/osv-scanner) via Google's reusable workflows                    | all dependencies in `pnpm-lock.yaml`    | `checks` (pull requests: new findings only; `main`), weekly `security`, locally |
+| Licenses allowed anywhere                    | osv-scanner (`--licenses`)                                                                              | all dependencies                        | `checks`, weekly `security`, locally                                            |
+| Secrets                                      | [Gitleaks](https://github.com/gitleaks/gitleaks) via [`gitleaks-scan`](actions/gitleaks-scan/README.md) | the whole Git history                   | `checks` (pull requests, `main`), locally, pre-commit hook                      |
+| Licenses allowed in bundled code             | [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn)               | production dependencies of every action | `checks`, locally                                                               |
+| License file, README sections, monorepo note | `tooling/bin/check-actions.ts`                                                                          | every action                            | `checks`, locally                                                               |
 
-The workflow `security` uploads the results of osv-scanner to code scanning.
+The osv-scanner workflows upload their results to code scanning; on pull
+requests, only findings that the pull request adds fail. The release is
+dispatched only after the scan on `main` passed. The scan job has no secrets and
+only `contents: read` and `security-events: write`. Remaining risk: Google's
+workflow runs a Docker image referenced by tag, not by digest; it is accepted
+because the job cannot write code or reach secrets (see
+[STANDARDS.md](STANDARDS.md), "strictness follows permissions").
+
+`gitleaks-scan` runs in the job `checks` and reports findings as annotations and
+in the job summary, with secrets redacted. False positives go into
+`.gitleaksignore`. The allowed licenses appear in `package.json` and in the
+workflows; `pnpm run check:actions` checks that they match.
+
 Accepted findings are listed in [`osv-scanner.toml`](osv-scanner.toml), each
 with a reason and an expiry date; security fixes of indirect dependencies are
 set as `overrides` in [`pnpm-workspace.yaml`](pnpm-workspace.yaml).

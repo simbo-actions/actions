@@ -29,6 +29,9 @@ change meets, see [STANDARDS.md](STANDARDS.md).
 - Git
 - [osv-scanner](https://github.com/google/osv-scanner), for
   `pnpm run check:vulnerabilities`: `brew install osv-scanner`
+- [Gitleaks](https://github.com/gitleaks/gitleaks), for `pnpm run check:secrets`
+  and the pre-commit hook: `brew install gitleaks`. Without it, the hook skips
+  the scan with a warning; CI scans anyway.
 
 ## Setup
 
@@ -68,14 +71,15 @@ Root scripts (run with `pnpm run <script>`):
 
 | Script                   | What it does                                                               |
 | ------------------------ | -------------------------------------------------------------------------- |
-| `preflight`              | Install, build, bundle, test, and check everything                         |
+| `preflight`              | Install, build, bundle, test, check, and scan everything                   |
 | `each:build`             | Build all workspaces (Turbo)                                               |
 | `each:bundle`            | Run post-build bundling steps                                              |
 | `each:test`              | Run all tests with coverage                                                |
 | `each:check`             | Type check and lint all workspaces                                         |
-| `check`                  | Format, boundaries, spelling, licenses, license files, vulnerabilities     |
+| `check`                  | Format, boundaries, spelling, licenses, license files                      |
 | `check:licenses`         | Check the licenses of the production dependencies of every action          |
-| `check:vulnerabilities`  | Scan all dependencies with osv-scanner                                     |
+| `check:vulnerabilities`  | Scan all dependencies with osv-scanner (needs a local installation)        |
+| `check:secrets`          | Scan the Git history with Gitleaks (needs a local installation)            |
 | `check:actions`          | Check `LICENSE.md`, README sections, and the monorepo note of every action |
 | `fix:format`             | Format all files with Prettier                                             |
 | `actions-list`           | Update the generated lists in `README.md` and `ACTIONS.md`                 |

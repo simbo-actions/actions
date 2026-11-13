@@ -10,6 +10,7 @@ body:
         - apply-repository-settings
         - floating-version-tags
         - github-app-bot-user
+        - gitleaks-scan
         - signed-commit
         - staged-release
         - New action

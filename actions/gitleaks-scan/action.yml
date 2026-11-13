@@ -1,0 +1,34 @@
+name: Gitleaks Scan
+
+description: A GitHub Action to scan the Git history for secrets with Gitleaks, from a pinned and checksum-verified binary, in one step.
+
+author: Simon Lepel <simbo@simbo.de> (https://simbo.de/)
+
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  working-directory:
+    description: >
+      The Git repository to scan. Check it out with "fetch-depth: 0" to scan the
+      whole history.
+    required: false
+    default: .
+  config:
+    description: >
+      A Gitleaks configuration file, relative to "working-directory". Defaults
+      to ".gitleaks.toml" in "working-directory" if it exists, otherwise the
+      default rules of Gitleaks.
+    required: false
+    default: ''
+
+outputs:
+  findings:
+    description: The number of findings.
+  sarif-file:
+    description: The path of the SARIF report, for example to upload it to code scanning.
+
+runs:
+  using: node24
+  main: dist/index.js

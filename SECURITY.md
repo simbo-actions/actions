@@ -33,6 +33,7 @@ action.
 | [`apply-repository-settings`](https://github.com/simbo-actions/apply-repository-settings) | latest 1.x |
 | [`staged-release`](https://github.com/simbo-actions/staged-release)                       | latest 1.x |
 | [`floating-version-tags`](https://github.com/simbo-actions/floating-version-tags)         | latest 1.x |
+| [`gitleaks-scan`](https://github.com/simbo-actions/gitleaks-scan)                         | latest 1.x |
 
 ## Security Practices
 
@@ -47,7 +48,9 @@ short:
   build provenance; immutable releases.
 - Secret scanning with push protection, code scanning, and Dependabot alerts.
 - All dependencies scanned with osv-scanner for vulnerabilities and malicious
-  packages, on every pull request and weekly.
+  packages, on every pull request, every push to `main`, and weekly.
+- The whole Git history scanned for secrets with Gitleaks on every pull request
+  and push to `main`.
 
 ## Verifying a Release
 

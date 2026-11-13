@@ -21,11 +21,12 @@
   "type": "module",
   "scripts": {
     "actions-list": "monorepo-packages-list --config=actions-list.config.ts",
-    "check": "pnpm run check:format && pnpm run check:boundaries && pnpm run check:spelling && pnpm run check:licenses && pnpm run check:actions && pnpm run check:vulnerabilities",
+    "check": "pnpm run check:format && pnpm run check:boundaries && pnpm run check:spelling && pnpm run check:licenses && pnpm run check:actions",
     "check:actions": "node tooling/bin/check-actions.ts",
     "check:boundaries": "turbo boundaries",
     "check:format": "prettier --check .",
     "check:licenses": "pnpm --recursive --filter \"./actions/*\" exec license-checker-rseidelsohn --production --excludePrivatePackages --onlyAllow \"0BSD;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;MIT\" --summary",
+    "check:secrets": "gitleaks git --redact --no-banner .",
     "check:spelling": "cspell",
     "check:vulnerabilities": "osv-scanner scan source --lockfile pnpm-lock.yaml --config osv-scanner.toml --licenses=\"0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC-BY-3.0,CC-BY-4.0,CC-BY-SA-4.0,CC0-1.0,ISC,MIT,MPL-2.0,Python-2.0,WTFPL\"",
     "clean": "pnpm run clean:turbo && pnpm run clean:node_modules",
@@ -43,7 +44,7 @@
     "ncu:latest": "ncu --interactive --target latest --reject='/^(@types/node)$/'",
     "ncu:minor": "ncu --interactive --target minor",
     "ncu:patch": "ncu --interactive --target patch",
-    "preflight": "pnpm install --frozen-lockfile && pnpm run each:build && pnpm run each:bundle && pnpm run each:test && pnpm run each:check && pnpm run check && echo 'CvCfn6IgG1sxOzMybUFsbCBDaGVja3MgUGFzc2VkIRtbMG0K' | base64 --decode",
+    "preflight": "pnpm install --frozen-lockfile && pnpm run each:build && pnpm run each:bundle && pnpm run each:test && pnpm run each:check && pnpm run check && pnpm run check:vulnerabilities && pnpm run check:secrets && echo 'CvCfn6IgG1sxOzMybUFsbCBDaGVja3MgUGFzc2VkIRtbMG0K' | base64 --decode",
     "prepare": "husky"
   },
   "devDependencies": {

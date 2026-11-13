@@ -4,8 +4,10 @@ name: Checks 🧐
 # "Checks" Workflow
 #
 # Runs tests, builds, and performs checks on pull requests and pushes to main,
-# including license and vulnerability checks (osv-scanner) and a smoke test of
-# github-app-bot-user against the GitHub API.
+# including a secret scan of the Git history (gitleaks-scan), license and
+# vulnerability checks (Google's osv-scanner workflows; on pull requests, only
+# new findings fail), and a smoke test of github-app-bot-user against the
+# GitHub API.
 # Requires a changeset in pull requests, except for Dependabot pull requests
 # that only change workflows.
 # Dispatches the release workflow if changesets are present on main branch.
@@ -54,7 +56,7 @@ jobs:
       - name: 🛎️ Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: 🔎 Lint Workflows
@@ -89,6 +91,9 @@ jobs:
       - name: 👷‍♂️ Build
         run: pnpm run each:build
 
+      - name: 🔐 Scan for Secrets
+        uses: ./actions/gitleaks-scan
+
       - name: 🎁 Bundle
         run: pnpm run each:bundle
 
@@ -97,22 +102,6 @@ jobs:
 
       - name: 👨‍🏫 Check
         run: pnpm run each:check
-
-      - name: 🛡️ Install osv-scanner
-        env:
-          OSV_SCANNER_VERSION: 2.7.0
-          OSV_SCANNER_SHA256: 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b
-        run: |
-          set -euo pipefail
-
-          # Download osv-scanner and verify its checksum.
-          mkdir -p "${RUNNER_TEMP}/bin"
-          binary="${RUNNER_TEMP}/bin/osv-scanner"
-          curl --fail --silent --show-error --location --output "$binary" \
-            "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
-          echo "${OSV_SCANNER_SHA256}  ${binary}" | sha256sum --check --strict
-          chmod +x "$binary"
-          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
 
       - name: 🧐 Root Checks
         run: pnpm run check
@@ -180,8 +169,39 @@ jobs:
           result=$(find .changeset -type f -name '*.md' -print -quit 2>/dev/null | grep -q . && echo 'true' || echo 'false')
           echo "result=${result}" >> "$GITHUB_OUTPUT"
 
+  vulnerabilities-pr:
+    name: vulnerabilities (new findings)
+    if: github.event_name == 'pull_request'
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+    with:
+      # Same scan as "pnpm run check:vulnerabilities".
+      scan-args: |-
+        --lockfile=pnpm-lock.yaml
+        --config=osv-scanner.toml
+        --licenses=0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC-BY-3.0,CC-BY-4.0,CC-BY-SA-4.0,CC0-1.0,ISC,MIT,MPL-2.0,Python-2.0,WTFPL
+
+  vulnerabilities:
+    if: github.event_name == 'push'
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+    with:
+      # Same scan as "pnpm run check:vulnerabilities".
+      scan-args: |-
+        --lockfile=pnpm-lock.yaml
+        --config=osv-scanner.toml
+        --licenses=0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC-BY-3.0,CC-BY-4.0,CC-BY-SA-4.0,CC0-1.0,ISC,MIT,MPL-2.0,Python-2.0,WTFPL
+
   dispatch-release:
-    needs: checks
+    needs:
+      - checks
+      - vulnerabilities
     if: >
       github.event_name == 'push' &&
       github.ref_name == 'main' &&

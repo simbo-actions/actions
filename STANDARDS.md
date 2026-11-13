@@ -13,6 +13,11 @@ repository, and the [profile for GitHub Actions](#profile-github-actions).
 - **Target** means: planned, not yet required.
 - **No exceptions.** Code that does not meet the standard is fixed or removed,
   not exempted.
+- **Strictness follows permissions.** Jobs with secrets or write access
+  (release, publish) meet every requirement to the letter. Read-only jobs
+  without secrets, such as scanners, may use the recommended setup of a
+  [trusted publisher](#dependencies); remaining risks are documented in
+  [ARCHITECTURE.md](ARCHITECTURE.md).
 
 The standard follows established frameworks without claiming certification:
 [OpenSSF Best Practices](https://www.bestpractices.dev/),
@@ -56,8 +61,11 @@ Required:
   [ARCHITECTURE.md](ARCHITECTURE.md#github-app) and added only together with the
   step that needs it.
 - All dependencies are scanned for known vulnerabilities and malicious packages
-  on every pull request, every push to `main`, and weekly. Findings are fixed or
-  accepted with a reason and an expiry date.
+  on every pull request (new findings fail), every push to `main`, and weekly.
+  Findings are fixed or accepted with a reason and an expiry date.
+- The whole Git history is scanned for secrets with Gitleaks on every pull
+  request and every push to `main`, and staged changes before every commit where
+  Gitleaks is installed. A found secret is revoked first, then removed.
 - Secret scanning with push protection, code scanning (CodeQL), Dependabot
   alerts, and private vulnerability reporting are on.
 - Vulnerabilities are reported privately, see [SECURITY.md](SECURITY.md).
@@ -73,7 +81,9 @@ Required:
   (artifact attestation, SLSA Build Level 2).
 - Third-party actions are pinned by full commit SHA, with the version as a
   comment. Own actions in this repository are used via `./actions/<name>`.
-- Tools downloaded in workflows are pinned by version and verified by checksum.
+- Tools downloaded in workflows or actions are pinned by version and verified by
+  checksum. In read-only jobs without secrets, an action of a trusted publisher
+  may download its tool itself.
 - Floating tags: only `vX`, only created and moved by the release process, only
   forward to the highest stable version of the major version, never to a
   prerelease. No `vX.Y` or `latest`. Documentation recommends pinning by SHA and
@@ -165,7 +175,10 @@ Required:
 Preferred:
 
 - Packages published with npm provenance.
-- For actions: actions by GitHub (`actions/*`, `github/*`) over others.
+- For actions: actions of **trusted publishers** over others. Trusted publishers
+  are `actions/*`, `github/*`, and `google/*`; their minor and patch updates are
+  merged automatically. Other actions are used only after a review, and every
+  update is reviewed.
 
 ### Maintenance
 
@@ -176,7 +189,7 @@ Required:
   | Update                                           | Handling                                                                                  |
   | ------------------------------------------------ | ----------------------------------------------------------------------------------------- |
   | `simbo-actions/*`                                | merged automatically after checks                                                         |
-  | `actions/*`, `github/*` (minor, patch)           | merged automatically after checks and 7 days cooldown                                     |
+  | Trusted publishers (minor, patch)                | merged automatically after checks and 7 days cooldown                                     |
   | Other actions, all major updates                 | reviewed and merged by a maintainer                                                       |
   | npm dependencies (weekly group, 7 days cooldown) | reviewed and merged by a maintainer; the changeset is added automatically after the merge |
   | Security updates                                 | reviewed and merged by a maintainer, promptly                                             |
@@ -263,16 +276,17 @@ Planned, not yet required:
 
 ## How the Standard Is Enforced
 
-| Requirement                                  | Enforced by                                                                      |
-| -------------------------------------------- | -------------------------------------------------------------------------------- |
-| Types, lint, format, spelling                | `pnpm run each:check`, `pnpm run check` in the workflow `checks`                 |
-| Tests and coverage                           | `pnpm run each:test` (Vitest thresholds)                                         |
-| Workflows and `action.yml`                   | actionlint with ShellCheck in `checks`                                           |
-| Licenses of bundled dependencies             | `pnpm run check:licenses` (license-checker-rseidelsohn)                          |
-| Vulnerabilities, all licenses                | `pnpm run check:vulnerabilities` (osv-scanner), weekly workflow `security`       |
-| License file, README sections, monorepo note | `pnpm run check:actions`                                                         |
-| Changeset per change                         | `checks` on pull requests                                                        |
-| Pinned actions                               | Actions setting "require SHA pinning"                                            |
-| Verified commits                             | Ruleset "Main Branch" (signed commits)                                           |
-| Protected release and floating tags          | Ruleset "Release Tags" (`v*`)                                                    |
-| Review                                       | Pull requests with required checks; [CONTRIBUTING.md](CONTRIBUTING.md) checklist |
+| Requirement                                  | Enforced by                                                                                          |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Types, lint, format, spelling                | `pnpm run each:check`, `pnpm run check` in the workflow `checks`                                     |
+| Tests and coverage                           | `pnpm run each:test` (Vitest thresholds)                                                             |
+| Workflows and `action.yml`                   | actionlint with ShellCheck in `checks`                                                               |
+| Licenses of bundled dependencies             | `pnpm run check:licenses` (license-checker-rseidelsohn)                                              |
+| Vulnerabilities, all licenses                | osv-scanner workflows of Google in `checks` and `security`; locally `pnpm run check:vulnerabilities` |
+| Secrets in the Git history                   | `gitleaks-scan` in `checks`; locally `pnpm run check:secrets` and the pre-commit hook                |
+| License file, README sections, monorepo note | `pnpm run check:actions`, also checks that all license lists match                                   |
+| Changeset per change                         | `checks` on pull requests                                                                            |
+| Pinned actions                               | Actions setting "require SHA pinning"                                                                |
+| Verified commits                             | Ruleset "Main Branch" (signed commits)                                                               |
+| Protected release and floating tags          | Ruleset "Release Tags" (`v*`)                                                                        |
+| Review                                       | Pull requests with required checks; [CONTRIBUTING.md](CONTRIBUTING.md) checklist                     |
