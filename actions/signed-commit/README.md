@@ -41,15 +41,18 @@ It supports:
 ## How It Works
 
 1. Reads the head of the target branch via the API and checks it against the
-   expected head (by default the local `HEAD`).
+   expected head (by default the local `HEAD`).  
+   With `create-branch`, a missing branch starts at `base`.
 2. Collects the files to commit: explicit `additions` and `deletions`, plus the
-   changes detected by Git (`detect-changes`).
-3. Creates the commit with `createCommitOnBranch`.  
+   changes detected by Git (`detect-changes`), filtered by `file-pattern`.
+3. Creates a missing branch, if `create-branch` is set.
+4. Creates the commit with `createCommitOnBranch`.  
    The author is the identity of the token, for example `my-app[bot]`; GitHub
    signs the commit.
-4. Creates the `tags` on the new commit, one API call per tag.
-5. Updates the local checkout (`sync`): fetches the branch and moves `HEAD` to
+5. Creates the `tags` on the new commit, one API call per tag.
+6. Updates the local checkout (`sync`): fetches the branch and moves `HEAD` to
    the new commit, without touching any files.
+7. Writes the commit, the tags, and the files to the job summary.
 
 Why: commits signed locally with a signing key of a bot are only verified if the
 key belongs to a user account.  
@@ -120,6 +123,49 @@ a workflow on `push: tags` runs once per tag:
   env:
     SHA: ${{ steps.commit.outputs.commit-sha }}
   run: echo "Released with commit $SHA"
+```
+
+### New Branch
+
+Commit to a branch that may not exist yet, for example for a pull request with
+generated changes:
+
+```yaml
+- name: 💾 Commit to a New Branch
+  id: commit
+  uses: simbo-actions/signed-commit@<SHA> # vX.Y.Z
+  with:
+    token: ${{ steps.app-token.outputs.token }}
+    branch: update/generated-files
+    create-branch: true
+    base: main
+    message: 'chore: update generated files'
+
+- name: 📬 Open Pull Request
+  if: steps.commit.outputs.committed == 'true'
+  env:
+    GH_TOKEN: ${{ steps.app-token.outputs.token }}
+  run: gh pr create --head update/generated-files --base main --fill
+```
+
+The checkout must be at the head of `base`, unless `expected-head-oid` is
+`remote`.  
+With `sync`, the local checkout switches to the new branch.
+
+### Only Matching Files
+
+Commit only the detected changes that match `file-pattern`, for example the
+build output, and leave everything else alone:
+
+```yaml
+- name: 💾 Commit Build
+  uses: simbo-actions/signed-commit@<SHA> # vX.Y.Z
+  with:
+    token: ${{ steps.app-token.outputs.token }}
+    message: 'build: update dist'
+    file-pattern: |
+      dist/**
+      !**/*.map
 ```
 
 ### Only Staged Changes
@@ -209,11 +255,14 @@ Do not fail a scheduled job when nothing changed:
 | `token`             | The token to authenticate with, see [Token and Permissions](#token-and-permissions)              | true     |                            |
 | `message`           | The commit message; first line is the headline, the remaining lines are the body                 | true     |                            |
 | `repository`        | The repository to commit to (`owner/repo`)                                                       | false    | `${{ github.repository }}` |
-| `branch`            | The existing branch to commit to                                                                 | false    | `${{ github.ref_name }}`   |
+| `branch`            | The branch to commit to                                                                          | false    | `${{ github.ref_name }}`   |
+| `create-branch`     | Whether to create the branch if it does not exist                                                | false    | `false`                    |
+| `base`              | Where a created branch starts: a branch or a commit SHA; only with `create-branch`               | false    | default branch             |
 | `working-directory` | The directory with the files; must be the repository root when detecting changes                 | false    | `.`                        |
 | `additions`         | Files to add or update, one path per line, relative to `working-directory`                       | false    |                            |
 | `deletions`         | Files to delete, one path per line, relative to `working-directory`                              | false    |                            |
 | `detect-changes`    | `all` (working tree), `staged` (index), or `none`, see [Detecting Changes](#detecting-changes)   | false    | `all`                      |
+| `file-pattern`      | Globs that filter the detected changes, one per line; `!` excludes                               | false    |                            |
 | `tags`              | Tags to create on the new commit, separated by whitespace                                        | false    |                            |
 | `if-no-changes`     | `error`, `warn`, or `ignore` when there is nothing to commit                                     | false    | `error`                    |
 | `sync`              | Whether to update the local checkout after the commit                                            | false    | `true`                     |
@@ -230,6 +279,7 @@ Do not fail a scheduled job when nothing changed:
 | ------------ | -------------------------------------------------------------------- |
 | `committed`  | `true` if a commit was created, otherwise `false`                    |
 | `commit-sha` | The SHA of the new commit; empty if no commit was created            |
+| `commit-url` | The URL of the new commit; empty if no commit was created            |
 | `files`      | The committed paths as JSON: `{"additions": [...], "deletions": []}` |
 
 `files` lists added and changed files under `additions`.  
@@ -277,6 +327,17 @@ explicit `additions` and `deletions`:
 - When detecting changes, `working-directory` must be the root of the Git
   repository.  
   Paths in the commit are relative to it.
+
+`file-pattern` filters the detected changes:
+
+- One glob per line, matched against the path relative to the repository root,
+  for example `dist/**`, `*.md`, or `src/**/*.{js,css}`.
+- A path is committed if it matches at least one pattern without `!` (or there
+  is none) and no pattern with `!`; the order does not matter.
+- `*` and `**` do not match names that start with a dot; name them explicitly,
+  for example `.github/**`.
+- Both paths of a rename are filtered separately.
+- Explicit `additions` and `deletions` are not filtered.
 
 ## Protection Against Overwriting
 
@@ -385,10 +446,14 @@ share the same limits; spread them, for example with a matrix and
 
 ## Empty Repositories and Missing Branches
 
-`createCommitOnBranch` needs an existing branch; the action does not create
-branches.  
-In an empty repository, create an initial commit first, for example by creating
-the repository with `auto_init`.  
+`createCommitOnBranch` needs an existing branch.  
+A missing branch fails the action, unless `create-branch` is `true`: then the
+action creates it at `base`, by default the head of the default branch, and
+commits on top of it.  
+Without changes, the branch is created as well, so that the `tags` have a place.
+
+An empty repository has no commit to start from: create an initial commit first,
+for example by creating the repository with `auto_init`.  
 That initial commit is created by GitHub and is verified as well.
 
 ## Limitations
@@ -401,6 +466,8 @@ That initial commit is created by GitHub and is verified as well.
   Very large commits may be rejected by the API; split them into several
   commits.
 - **Merge commits** cannot be created.
+- **Runners:** Linux only (x64 and arm64), with Node.js 24.8 or later, as on all
+  GitHub-hosted runners.
 
 ## License
 

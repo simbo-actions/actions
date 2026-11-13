@@ -134,6 +134,22 @@ export function parseActionInputs(): ParsedActionInputs {
   const ifNoChanges = parseOption<IfNoChangesOption>('if-no-changes', IF_NO_CHANGES_OPTIONS, 'error');
   const sync = parseBoolean('sync', true);
   const expectedHeadOid = getInput('expected-head-oid').toLowerCase();
+  const shouldCreateBranch = parseBoolean('create-branch', false);
+  const base = getInput('base')
+    .trim()
+    .replace(/^refs\/heads\//, '');
+  if (base && !/^[\da-f]{40}$/.test(base) && !isValidRefName(base)) {
+    throw new Error(`Invalid input "base": "${base}" (expected a branch name or a full commit SHA).`);
+  }
+  if (base && !shouldCreateBranch) {
+    throw new Error('Invalid input "base": it is only used with "create-branch: true".');
+  }
+  const filePatterns = parseLines(getInput('file-pattern'));
+  if (detectChanges === 'none' && filePatterns.length > 0) {
+    throw new Error(
+      'Invalid input "file-pattern": it filters detected changes and has no effect with "detect-changes: none".',
+    );
+  }
 
   return {
     token,
@@ -149,5 +165,8 @@ export function parseActionInputs(): ParsedActionInputs {
     ifNoChanges,
     sync,
     expectedHeadOid,
+    shouldCreateBranch,
+    base,
+    filePatterns,
   };
 }

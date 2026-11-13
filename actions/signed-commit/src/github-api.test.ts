@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createCommitOnBranch, createTag, getBranchHeadOid, type Octokit } from './github-api.js';
+import {
+  createBranch,
+  createCommitOnBranch,
+  createTag,
+  getBranchHeadOid,
+  getDefaultBranch,
+  type Octokit,
+} from './github-api.js';
 
 const repository = { owner: 'owner', repo: 'repo' };
 const sha = 'a'.repeat(40);
@@ -12,14 +19,18 @@ const sha = 'a'.repeat(40);
  * @param overrides.graphql - The GraphQL method.
  * @param overrides.createRef - The REST method to create a reference.
  * @param overrides.getRef - The REST method to get a reference.
+ * @param overrides.getRepo - The REST method to get a repository.
  * @returns The fake client.
  */
 function fakeOctokit(
-  overrides: { graphql?: unknown; createRef?: unknown; getRef?: unknown } = {},
+  overrides: { graphql?: unknown; createRef?: unknown; getRef?: unknown; getRepo?: unknown } = {},
 ): Octokit & { graphql: ReturnType<typeof vi.fn> } {
   return {
     graphql: overrides.graphql ?? vi.fn(),
-    rest: { git: { createRef: overrides.createRef ?? vi.fn(), getRef: overrides.getRef ?? vi.fn() } },
+    rest: {
+      git: { createRef: overrides.createRef ?? vi.fn(), getRef: overrides.getRef ?? vi.fn() },
+      repos: { get: overrides.getRepo ?? vi.fn() },
+    },
   } as unknown as Octokit & { graphql: ReturnType<typeof vi.fn> };
 }
 
@@ -81,6 +92,34 @@ describe('createCommitOnBranch', () => {
         fileChanges,
       },
     });
+  });
+});
+
+describe('getDefaultBranch', () => {
+  it('returns the default branch', async () => {
+    const getRepo = vi.fn().mockResolvedValue({ data: { default_branch: 'trunk' } });
+    expect(await getDefaultBranch(fakeOctokit({ getRepo }), repository)).toBe('trunk');
+    expect(getRepo).toHaveBeenCalledWith(repository);
+  });
+});
+
+describe('createBranch', () => {
+  it('creates the branch at the commit', async () => {
+    const createRef = vi.fn();
+    await createBranch(fakeOctokit({ createRef }), repository, 'feature', sha);
+    expect(createRef).toHaveBeenCalledWith({ ...repository, ref: 'refs/heads/feature', sha });
+  });
+
+  it('explains a rejected branch', async () => {
+    const createRef = vi.fn().mockRejectedValue(httpError(422));
+    await expect(createBranch(fakeOctokit({ createRef }), repository, 'feature', sha)).rejects.toThrow(
+      `Failed to create the branch "feature" at ${sha}: it was created meanwhile`,
+    );
+  });
+
+  it('rethrows other errors', async () => {
+    const createRef = vi.fn().mockRejectedValue(httpError(403));
+    await expect(createBranch(fakeOctokit({ createRef }), repository, 'feature', sha)).rejects.toThrow('HTTP 403');
   });
 });
 

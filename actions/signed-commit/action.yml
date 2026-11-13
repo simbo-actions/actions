@@ -23,9 +23,22 @@ inputs:
     required: false
     default: ${{ github.repository }}
   branch:
-    description: The existing branch to commit to.
+    description: >
+      The branch to commit to. It must exist, unless "create-branch" is "true".
     required: false
     default: ${{ github.ref_name }}
+  create-branch:
+    description: >
+      Whether to create the branch if it does not exist, at "base". Needs
+      "contents: write" like the commit.
+    required: false
+    default: 'false'
+  base:
+    description: >
+      Where a created branch starts: a branch name or a full commit SHA.
+      Defaults to the default branch. Only used with "create-branch".
+    required: false
+    default: ''
   working-directory:
     description: >
       The directory with the files to commit. Must be the root of the Git
@@ -47,6 +60,13 @@ inputs:
       "deletions").
     required: false
     default: all
+  file-pattern:
+    description: >
+      Glob patterns that filter the detected changes, one per line, for example
+      "dist/**"; a pattern starting with "!" excludes. Explicit "additions" and
+      "deletions" are not filtered.
+    required: false
+    default: ''
   tags:
     description: >
       Tags to create on the new commit, separated by whitespace. Each tag is
@@ -79,6 +99,8 @@ outputs:
     description: Whether a commit was created ("true" or "false").
   commit-sha:
     description: The SHA of the new commit; empty if no commit was created.
+  commit-url:
+    description: The URL of the new commit; empty if no commit was created.
   files:
     description: 'The committed paths as JSON: {"additions": [...], "deletions": [...]}.'
 

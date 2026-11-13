@@ -39,6 +39,9 @@ describe('parseActionInputs', () => {
       ifNoChanges: 'error',
       sync: true,
       expectedHeadOid: '',
+      shouldCreateBranch: false,
+      base: '',
+      filePatterns: [],
     });
   });
 
@@ -54,6 +57,9 @@ describe('parseActionInputs', () => {
     setInput('if-no-changes', 'warn');
     setInput('sync', 'false');
     setInput('expected-head-oid', 'REMOTE');
+    setInput('create-branch', 'true');
+    setInput('base', 'refs/heads/develop');
+    setInput('file-pattern', 'dist/**\n!**/*.map\n');
 
     expect(parseActionInputs()).toEqual({
       token: 'secret-token',
@@ -69,6 +75,9 @@ describe('parseActionInputs', () => {
       ifNoChanges: 'warn',
       sync: false,
       expectedHeadOid: 'remote',
+      shouldCreateBranch: true,
+      base: 'develop',
+      filePatterns: ['dist/**', '!**/*.map'],
     });
   });
 
@@ -92,6 +101,31 @@ describe('parseActionInputs', () => {
   ])('rejects invalid %s', (name, value, error) => {
     setInput(name, value);
     expect(() => parseActionInputs()).toThrow(error);
+  });
+
+  it('accepts a commit SHA as base', () => {
+    setInput('create-branch', 'true');
+    setInput('base', 'a'.repeat(40));
+    expect(parseActionInputs().base).toBe('a'.repeat(40));
+  });
+
+  it('rejects an invalid base', () => {
+    setInput('create-branch', 'true');
+    setInput('base', 'a..b');
+    expect(() => parseActionInputs()).toThrow(
+      'Invalid input "base": "a..b" (expected a branch name or a full commit SHA).',
+    );
+  });
+
+  it('rejects a base without "create-branch"', () => {
+    setInput('base', 'main');
+    expect(() => parseActionInputs()).toThrow('Invalid input "base": it is only used with "create-branch: true".');
+  });
+
+  it('rejects file patterns without detected changes', () => {
+    setInput('detect-changes', 'none');
+    setInput('file-pattern', 'dist/**');
+    expect(() => parseActionInputs()).toThrow('has no effect with "detect-changes: none"');
   });
 
   it.each(['main', 'release/v1.2', 'pkg-a/v1.0.0', 'feature/a_b-c', 'v1.0.0+build'])(

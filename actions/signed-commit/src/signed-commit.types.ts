@@ -56,4 +56,23 @@ export interface ParsedActionInputs {
   ifNoChanges: IfNoChangesOption;
   sync: boolean;
   expectedHeadOid: string;
+  shouldCreateBranch: boolean;
+  base: string;
+  filePatterns: string[];
+}
+
+/**
+ * Where the branch to commit to starts.
+ */
+export interface BranchHead {
+  /**
+   * The commit the branch points to, or will point to once created.
+   */
+  oid: string;
+
+  /**
+   * The branch or commit the missing branch is created from; `undefined` if
+   * the branch exists.
+   */
+  createdFrom?: string;
 }

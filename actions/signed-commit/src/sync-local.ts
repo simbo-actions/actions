@@ -6,9 +6,10 @@ import { getHeadOid, getRepositoryRoot, git, gitSucceeds } from './git.js';
  * Brings a local checkout up to date with a commit created via the API.
  *
  * Fetches the branch from `origin`, moves `HEAD` to the commit with a mixed
- * reset, and creates the tags locally. Files in the working tree are never
- * changed. Skips if the working directory is not a Git repository or if its
- * `HEAD` is not the parent of the commit.
+ * reset, and creates the tags locally. For a new branch, the checkout first
+ * switches to a local branch of that name at its current commit. Files in the
+ * working tree are never changed. Skips if the working directory is not a Git
+ * repository or if its `HEAD` is not the parent of the commit.
  *
  * @param params - The sync parameters.
  * @param params.workingDirectory - The local working directory.
@@ -16,6 +17,7 @@ import { getHeadOid, getRepositoryRoot, git, gitSucceeds } from './git.js';
  * @param params.parentOid - The object ID of the parent of the commit.
  * @param params.commitOid - The object ID of the created commit.
  * @param params.tags - The tags created on the commit.
+ * @param params.switchBranch - Whether to switch to the branch first, because it was created.
  * @returns `true` if the checkout was updated.
  */
 export async function syncLocal(params: {
@@ -24,6 +26,7 @@ export async function syncLocal(params: {
   parentOid: string;
   commitOid: string;
   tags: string[];
+  switchBranch?: boolean;
 }): Promise<boolean> {
   const { workingDirectory, branch, parentOid, commitOid, tags } = params;
 
@@ -42,6 +45,10 @@ export async function syncLocal(params: {
     await git(root, ['fetch', '--no-tags', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`]);
     if (!(await gitSucceeds(root, ['cat-file', '-e', commitOid]))) {
       throw new Error(`commit ${commitOid} not found after fetching ${branch}`);
+    }
+    if (params.switchBranch) {
+      // HEAD is the parent of the commit, so switching changes no files.
+      await git(root, ['switch', '--quiet', '--force-create', branch]);
     }
     await git(root, ['reset', '--mixed', '--quiet', commitOid]);
     for (const tag of tags) {

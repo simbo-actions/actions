@@ -61,6 +61,45 @@ export async function getBranchHeadOid(
 }
 
 /**
+ * Returns the default branch of a repository.
+ *
+ * @param octokit - The Octokit client.
+ * @param repository - The repository.
+ * @returns The branch name.
+ */
+export async function getDefaultBranch(octokit: Octokit, repository: RepositoryRef): Promise<string> {
+  return (await octokit.rest.repos.get({ ...repository })).data.default_branch;
+}
+
+/**
+ * Creates a branch pointing to a commit.
+ *
+ * @param octokit - The Octokit client.
+ * @param repository - The repository.
+ * @param branch - The branch name.
+ * @param sha - The commit object ID.
+ * @throws {Error} if the branch exists meanwhile or the commit does not exist.
+ */
+export async function createBranch(
+  octokit: Octokit,
+  repository: RepositoryRef,
+  branch: string,
+  sha: string,
+): Promise<void> {
+  try {
+    await octokit.rest.git.createRef({ ...repository, ref: `refs/heads/${branch}`, sha });
+  } catch (error) {
+    if (!hasStatus(error, HTTP_STATUS_UNPROCESSABLE_ENTITY)) {
+      throw error;
+    }
+    throw new Error(
+      `Failed to create the branch "${branch}" at ${sha}: it was created meanwhile, the commit does not exist, or a ruleset forbids it. Re-run to commit to the existing branch.`,
+      { cause: error },
+    );
+  }
+}
+
+/**
  * Creates a commit on a branch via the GraphQL mutation `createCommitOnBranch`.
  * GitHub signs the commit, so it is shown as verified.
  *

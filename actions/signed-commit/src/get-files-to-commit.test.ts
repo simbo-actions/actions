@@ -1,7 +1,7 @@
 import { chmod, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { warning } from '@actions/core';
+import { info, warning } from '@actions/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createGitFixture, createTempDir, type GitFixture } from '../tests/git-fixture.js';
@@ -9,7 +9,7 @@ import { createGitFixture, createTempDir, type GitFixture } from '../tests/git-f
 import { getFilesToCommit, normalizeRepositoryPath } from './get-files-to-commit.js';
 import type { DetectChangesOption } from './signed-commit.types.js';
 
-vi.mock('@actions/core', () => ({ warning: vi.fn() }));
+vi.mock('@actions/core', () => ({ info: vi.fn(), warning: vi.fn() }));
 
 /**
  * Decodes base64 contents.
@@ -29,18 +29,20 @@ function decode(contents: string): string {
  * @param lists - Explicit additions and deletions.
  * @param lists.additionsList - Explicit additions.
  * @param lists.deletionsList - Explicit deletions.
+ * @param lists.filePatterns - Patterns that filter the detected changes.
  * @returns The additions as path-to-contents record and the deleted paths.
  */
 async function collect(
   fixture: GitFixture,
   detectChanges: DetectChangesOption,
-  lists: { additionsList?: string[]; deletionsList?: string[] } = {},
+  lists: { additionsList?: string[]; deletionsList?: string[]; filePatterns?: string[] } = {},
 ): Promise<{ additions: Record<string, string>; deletions: string[] }> {
   const { additions, deletions } = await getFilesToCommit({
     workingDirectory: fixture.dir,
     additionsList: lists.additionsList ?? [],
     deletionsList: lists.deletionsList ?? [],
     detectChanges,
+    filePatterns: lists.filePatterns ?? [],
   });
   return {
     additions: Object.fromEntries(additions.map(({ path, contents }) => [path, decode(contents)])),
@@ -72,6 +74,7 @@ describe('getFilesToCommit', () => {
       'nested/file.txt': 'nested',
     });
     vi.mocked(warning).mockClear();
+    vi.mocked(info).mockClear();
   });
 
   afterEach(async () => {
@@ -160,6 +163,7 @@ describe('getFilesToCommit', () => {
         additionsList: [],
         deletionsList: [],
         detectChanges: 'all',
+        filePatterns: [],
       });
       expect(Buffer.from(additions[0].contents, 'base64')).toEqual(bytes);
     });
@@ -300,6 +304,7 @@ describe('getFilesToCommit', () => {
         additionsList: ['sub/file.txt'],
         deletionsList: [],
         detectChanges: 'none',
+        filePatterns: [],
       });
       expect(additions.map(({ path }) => path)).toEqual(['sub/file.txt']);
     });
@@ -341,11 +346,45 @@ describe('getFilesToCommit', () => {
     });
   });
 
+  describe('file-pattern', () => {
+    it('commits only detected changes that match the patterns', async () => {
+      await fixture.write('dist/index.js', 'index');
+      await fixture.write('dist/index.js.map', 'map');
+      await fixture.write('modify.txt', 'new');
+      fixture.git('rm', '--quiet', 'delete.txt');
+
+      expect(await collect(fixture, 'all', { filePatterns: ['dist/**', '*.txt', '!**/*.map'] })).toEqual({
+        additions: { 'dist/index.js': 'index', 'modify.txt': 'new' },
+        deletions: ['delete.txt'],
+      });
+      expect(info).toHaveBeenCalledWith('Skipped 1 changed path(s) that do not match "file-pattern".');
+    });
+
+    it('does not filter explicit additions and deletions', async () => {
+      await fixture.write('notes.md', 'notes');
+      await fixture.write('modify.txt', 'new');
+
+      expect(
+        await collect(fixture, 'all', {
+          additionsList: ['notes.md'],
+          deletionsList: ['keep.txt'],
+          filePatterns: ['dist/**'],
+        }),
+      ).toEqual({ additions: { 'notes.md': 'notes' }, deletions: ['keep.txt'] });
+    });
+  });
+
   describe('working directory', () => {
     it('must be a Git repository when detecting changes', async () => {
       const dir = await createTempDir();
       await expect(
-        getFilesToCommit({ workingDirectory: dir, additionsList: [], deletionsList: [], detectChanges: 'all' }),
+        getFilesToCommit({
+          workingDirectory: dir,
+          additionsList: [],
+          deletionsList: [],
+          detectChanges: 'all',
+          filePatterns: [],
+        }),
       ).rejects.toThrow('is not a Git repository');
     });
 
@@ -356,6 +395,7 @@ describe('getFilesToCommit', () => {
           additionsList: [],
           deletionsList: [],
           detectChanges: 'all',
+          filePatterns: [],
         }),
       ).rejects.toThrow('must be the root of the Git repository');
     });

@@ -53,6 +53,27 @@ describe('syncLocal', () => {
     expect(local.git('diff', '--cached', '--name-only')).toBe('');
   });
 
+  it('switches to a new branch without moving the local base branch', async () => {
+    other.git('push', '--quiet', 'origin', 'HEAD:feature');
+    await local.write('file.txt', 'local change');
+
+    expect(
+      await syncLocal({
+        workingDirectory: local.dir,
+        branch: 'feature',
+        parentOid,
+        commitOid,
+        tags: [],
+        switchBranch: true,
+      }),
+    ).toBe(true);
+
+    expect(local.git('symbolic-ref', '--short', 'HEAD')).toBe('feature');
+    expect(local.git('rev-parse', 'HEAD')).toBe(commitOid);
+    expect(local.git('rev-parse', 'refs/heads/main')).toBe(parentOid);
+    expect(await readFile(join(local.dir, 'file.txt'), 'utf8')).toBe('local change');
+  });
+
   it('keeps existing local tags', async () => {
     local.git('tag', 'v1.0.0', parentOid);
     await syncLocal({ workingDirectory: local.dir, branch: 'main', parentOid, commitOid, tags: ['v1.0.0'] });

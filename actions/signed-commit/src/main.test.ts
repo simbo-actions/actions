@@ -5,9 +5,10 @@ import { parseActionInputs } from './action-inputs.js';
 import { createOctokit } from './create-octokit.js';
 import { getFilesToCommit } from './get-files-to-commit.js';
 import { getHeadOid, getRepositoryRoot } from './git.js';
-import { createCommitOnBranch, createTag, getBranchHeadOid } from './github-api.js';
+import { createBranch, createCommitOnBranch, createTag, getBranchHeadOid, getDefaultBranch } from './github-api.js';
 import { main } from './main.js';
 import type { FileChanges, ParsedActionInputs } from './signed-commit.types.js';
+import { writeSummary } from './summary.js';
 import { syncLocal } from './sync-local.js';
 
 vi.mock('@actions/core', () => ({
@@ -21,7 +22,14 @@ vi.mock('./create-octokit.js', () => ({ createOctokit: vi.fn(() => ({})) }));
 vi.mock('./action-inputs.js', () => ({ parseActionInputs: vi.fn() }));
 vi.mock('./get-files-to-commit.js', () => ({ getFilesToCommit: vi.fn() }));
 vi.mock('./git.js', () => ({ getHeadOid: vi.fn(), getRepositoryRoot: vi.fn() }));
-vi.mock('./github-api.js', () => ({ createCommitOnBranch: vi.fn(), createTag: vi.fn(), getBranchHeadOid: vi.fn() }));
+vi.mock('./github-api.js', () => ({
+  createBranch: vi.fn(),
+  createCommitOnBranch: vi.fn(),
+  createTag: vi.fn(),
+  getBranchHeadOid: vi.fn(),
+  getDefaultBranch: vi.fn(),
+}));
+vi.mock('./summary.js', () => ({ writeSummary: vi.fn() }));
 vi.mock('./sync-local.js', () => ({ syncLocal: vi.fn() }));
 
 const remoteHead = 'a'.repeat(40);
@@ -41,6 +49,9 @@ const defaultInputs: ParsedActionInputs = {
   ifNoChanges: 'error',
   sync: true,
   expectedHeadOid: '',
+  shouldCreateBranch: false,
+  base: '',
+  filePatterns: [],
 };
 
 const someChanges: FileChanges = {
@@ -89,13 +100,34 @@ describe('main', () => {
     expect(setOutput).toHaveBeenCalledWith('files', JSON.stringify({ additions: ['a.txt'], deletions: ['b.txt'] }));
     expect(setOutput).toHaveBeenCalledWith('committed', 'true');
     expect(setOutput).toHaveBeenCalledWith('commit-sha', commitOid);
+    expect(setOutput).toHaveBeenCalledWith('commit-url', `https://github.com/owner/repo/commit/${commitOid}`);
     expect(syncLocal).toHaveBeenCalledWith({
       workingDirectory: '/work',
       branch: 'main',
       parentOid: remoteHead,
       commitOid,
       tags: [],
+      switchBranch: false,
     });
+    expect(writeSummary).toHaveBeenCalledWith({
+      repository: 'owner/repo',
+      branch: 'main',
+      head: { oid: remoteHead },
+      message: { headline: 'chore: update' },
+      commitOid,
+      commitUrl: `https://github.com/owner/repo/commit/${commitOid}`,
+      tags: [],
+      fileChanges: someChanges,
+    });
+    expect(createBranch).not.toHaveBeenCalled();
+  });
+
+  it('links the commit on the server of the workflow', async () => {
+    setup();
+    vi.stubEnv('GITHUB_SERVER_URL', 'https://github.example.com');
+    await main();
+    expect(setOutput).toHaveBeenCalledWith('commit-url', `https://github.example.com/owner/repo/commit/${commitOid}`);
+    vi.unstubAllEnvs();
   });
 
   it('creates every tag with its own call, in order', async () => {
@@ -130,7 +162,88 @@ describe('main', () => {
   it('fails if the branch does not exist', async () => {
     setup();
     vi.mocked(getBranchHeadOid).mockResolvedValue(undefined);
-    await expect(main()).rejects.toThrow('The branch "main" does not exist in owner/repo');
+    await expect(main()).rejects.toThrow(
+      'The branch "main" does not exist in owner/repo. Set "create-branch" to "true" to create it',
+    );
+  });
+
+  describe('create-branch', () => {
+    const baseHead = 'd'.repeat(40);
+
+    /**
+     * Mocks a missing branch "feature" and an existing branch "main".
+     */
+    function mockBranches(): void {
+      vi.mocked(getBranchHeadOid).mockImplementation(async (_octokit, _repository, branch) =>
+        branch === 'main' ? baseHead : undefined,
+      );
+    }
+
+    it('creates a missing branch from the default branch and commits on it', async () => {
+      setup({ branch: 'feature', shouldCreateBranch: true });
+      mockBranches();
+      vi.mocked(getDefaultBranch).mockResolvedValue('main');
+      await main();
+      expect(createBranch).toHaveBeenCalledWith({}, { owner: 'owner', repo: 'repo' }, 'feature', baseHead);
+      expect(info).toHaveBeenCalledWith(`Created branch feature from main at ${baseHead}.`);
+      expect(createCommitOnBranch).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ branch: 'feature', expectedHeadOid: baseHead }),
+      );
+      expect(vi.mocked(syncLocal).mock.calls[0][0].switchBranch).toBe(true);
+      expect(vi.mocked(writeSummary).mock.calls[0][0].head).toEqual({ oid: baseHead, createdFrom: 'main' });
+    });
+
+    it('creates a missing branch from a base branch', async () => {
+      setup({ branch: 'feature', shouldCreateBranch: true, base: 'main' });
+      mockBranches();
+      await main();
+      expect(getDefaultBranch).not.toHaveBeenCalled();
+      expect(createBranch).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'feature', baseHead);
+    });
+
+    it('creates a missing branch from a commit', async () => {
+      setup({ branch: 'feature', shouldCreateBranch: true, base: 'e'.repeat(40) });
+      mockBranches();
+      await main();
+      expect(getBranchHeadOid).toHaveBeenCalledTimes(1);
+      expect(createBranch).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'feature', 'e'.repeat(40));
+    });
+
+    it('commits to an existing branch without creating it', async () => {
+      setup({ shouldCreateBranch: true, base: 'other' });
+      await main();
+      expect(createBranch).not.toHaveBeenCalled();
+    });
+
+    it('fails if the base branch is missing', async () => {
+      setup({ branch: 'feature', shouldCreateBranch: true, base: 'missing' });
+      mockBranches();
+      await expect(main()).rejects.toThrow(
+        'The base branch "missing" of the new branch "feature" does not exist in owner/repo.',
+      );
+      expect(createBranch).not.toHaveBeenCalled();
+    });
+
+    it('fails before creating the branch if the local HEAD is not the base', async () => {
+      setup({ branch: 'feature', shouldCreateBranch: true, base: 'main' }, { localHead: 'c'.repeat(40) });
+      mockBranches();
+      await expect(main()).rejects.toThrow('The branch "feature" is at');
+      expect(createBranch).not.toHaveBeenCalled();
+    });
+
+    it('creates the branch and the tags without changes', async () => {
+      setup(
+        { branch: 'feature', shouldCreateBranch: true, base: 'main', ifNoChanges: 'ignore', tags: ['v1.0.0'] },
+        {
+          changes: { additions: [], deletions: [] },
+        },
+      );
+      mockBranches();
+      await main();
+      expect(createBranch).toHaveBeenCalled();
+      expect(createTag).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'v1.0.0', baseHead);
+    });
   });
 
   describe('expected head', () => {
@@ -202,6 +315,9 @@ describe('main', () => {
       expect(createCommitOnBranch).not.toHaveBeenCalled();
       expect(createTag).toHaveBeenCalledWith({}, { owner: 'owner', repo: 'repo' }, 'v1.0.0', remoteHead);
       expect(info).toHaveBeenCalledWith(`Tagging the current head ${remoteHead} of main.`);
+      expect(writeSummary).toHaveBeenCalledWith(
+        expect.objectContaining({ commitUrl: '', tags: [{ name: 'v1.0.0', created: true }] }),
+      );
     });
 
     it('does not tag the current head with "error"', async () => {

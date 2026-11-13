@@ -2,9 +2,10 @@ import type { Stats } from 'node:fs';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, posix, sep } from 'node:path';
 
-import { warning } from '@actions/core';
+import { info, warning } from '@actions/core';
 import { getGitChanges, GitChangeStatus } from '@simbo/git-changes';
 
+import { matchesFilePatterns } from './file-pattern.js';
 import { existsInHead, getIndexMode, getRepositoryRoot, gitBuffer, gitSucceeds } from './git.js';
 import {
   EXECUTABLE_PERMISSION_BITS,
@@ -19,7 +20,7 @@ import type { DetectChangesOption, FileChanges, ParsedActionInputs } from './sig
  */
 type FilesToCommitInputs = Pick<
   ParsedActionInputs,
-  'workingDirectory' | 'additionsList' | 'deletionsList' | 'detectChanges'
+  'workingDirectory' | 'additionsList' | 'deletionsList' | 'detectChanges' | 'filePatterns'
 >;
 
 /**
@@ -240,7 +241,8 @@ async function resolveIndexPath(collection: Collection, path: string): Promise<v
  * Collects the files to commit from the explicit inputs and the detected Git changes.
  *
  * Explicit additions and deletions take precedence over detected changes.
- * Detected changes reflect the working tree (`all`) or the index (`staged`).
+ * Detected changes reflect the working tree (`all`) or the index (`staged`),
+ * filtered by the file patterns.
  *
  * @param inputs - The relevant action inputs.
  * @returns The file additions and deletions, sorted by path.
@@ -248,7 +250,7 @@ async function resolveIndexPath(collection: Collection, path: string): Promise<v
  * working directory is not the root of a Git repository when detecting changes.
  */
 export async function getFilesToCommit(inputs: FilesToCommitInputs): Promise<FileChanges> {
-  const { workingDirectory, additionsList, deletionsList, detectChanges } = inputs;
+  const { workingDirectory, additionsList, deletionsList, detectChanges, filePatterns } = inputs;
   const collection: Collection = { workingDirectory, additions: new Map(), deletions: new Set() };
 
   await addExplicitPaths(collection, additionsList, deletionsList);
@@ -260,7 +262,11 @@ export async function getFilesToCommit(inputs: FilesToCommitInputs): Promise<Fil
       explicitPaths.add(path);
     }
     const candidates = await getCandidatePaths(workingDirectory, detectChanges);
-    for (const path of candidates) {
+    const matching = candidates.filter(path => matchesFilePatterns(path, filePatterns));
+    if (matching.length < candidates.length) {
+      info(`Skipped ${candidates.length - matching.length} changed path(s) that do not match "file-pattern".`);
+    }
+    for (const path of matching) {
       if (explicitPaths.has(path)) {
         continue;
       }

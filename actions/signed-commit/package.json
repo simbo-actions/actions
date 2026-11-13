@@ -9,7 +9,7 @@
   "bugs": "https://github.com/simbo-actions/actions/issues",
   "repository": "github:simbo-actions/actions",
   "engines": {
-    "node": ">=24"
+    "node": ">=24.8"
   },
   "type": "module",
   "scripts": {
