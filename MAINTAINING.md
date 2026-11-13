@@ -18,6 +18,7 @@ Commands are run from the repository root unless noted otherwise.
 | [Expiring accepted findings](#expiring-accepted-findings)           | monthly                                               |
 | [Pinned tools](#pinned-tools)                                       | monthly                                               |
 | [Security fixes as overrides](#security-fixes-as-overrides)         | monthly                                               |
+| [Major updates](#major-updates)                                     | monthly                                               |
 | [Marketplace listing](#marketplace-listing)                         | after a release                                       |
 | [Failed release](#failed-release)                                   | when release or publish fails                         |
 | [Settings of action repositories](#settings-of-action-repositories) | when a setting should change                          |
@@ -118,6 +119,21 @@ updates them.
    The new version reaches all repositories with the next release of the action.
 6. Update the local installations
    (`brew upgrade actionlint gitleaks osv-scanner shellcheck`).
+
+## Major Updates
+
+Dependabot proposes no major updates of npm dependencies: they often need
+changes to code or configuration and are planned work.  
+`@types/node` follows the Node.js runtime, see
+[Node.js runtime](#nodejs-runtime).
+
+1. List the available major updates: `pnpm outdated -r`.
+2. For every update, read the release notes and the migration guide.  
+   Decide whether to update now, later, or not at all.
+3. Update interactively with `pnpm run ncu:latest` (it never offers
+   `@types/node`), one package or a group of related packages per pull request.
+4. Run `pnpm run preflight` and fix what breaks.
+5. Add a changeset for the affected actions if bundled code changes.
 
 ## Security Fixes as Overrides
 

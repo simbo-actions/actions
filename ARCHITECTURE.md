@@ -359,8 +359,8 @@ flowchart TD
   pr(["Dependabot pull request"]) --> kind{"what changes?"}
   kind -- "simbo-actions/*" --> auto["auto-merge after checks"]
   kind -- "trusted publishers<br/>actions/*, github/*, google/*<br/>minor or patch" --> auto
-  kind -- "other actions, majors" --> owner["assigned to the owner"]
-  kind -- "npm, weekly group" --> owner
+  kind -- "other actions,<br/>majors of actions" --> owner["assigned to the owner"]
+  kind -- "npm minor or patch,<br/>weekly" --> owner
   auto --> autoMerged(["merged automatically"])
   owner --> ownerMerged(["reviewed and merged by the owner"])
   ownerMerged -- "npm dependencies changed" --> changeset["job dependency-changeset:<br/>patch changeset for affected actions"]

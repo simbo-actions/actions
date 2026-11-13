@@ -91,6 +91,7 @@ Root scripts (run with `pnpm run <script>`):
 | `fix:format`             | Format all files with Prettier                                                |
 | `actions-list`           | Update the generated list of actions in the organization profile              |
 | `ncu:patch`, `ncu:minor` | Update dependencies interactively                                             |
+| `ncu:latest`             | Major updates interactively, without `@types/node`                            |
 
 Workspace scripts (run inside a workspace, or with
 `pnpm --filter <name> run <script>`):
