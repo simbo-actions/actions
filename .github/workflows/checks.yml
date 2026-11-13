@@ -59,22 +59,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: 🔎 Lint Workflows
-        env:
-          ACTIONLINT_VERSION: 1.7.12
-          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
-        run: |
-          set -euo pipefail
-
-          # Download actionlint and verify its checksum; shellcheck is preinstalled on the runner.
-          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
-          curl --fail --silent --show-error --location --output "${RUNNER_TEMP}/${archive}" \
-            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
-          echo "${ACTIONLINT_SHA256}  ${RUNNER_TEMP}/${archive}" | sha256sum --check --strict
-          tar --extract --gzip --file "${RUNNER_TEMP}/${archive}" --directory "$RUNNER_TEMP" actionlint
-
-          "${RUNNER_TEMP}/actionlint" -color -shellcheck "$(command -v shellcheck)"
-
       - name: 🚛 Install pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
@@ -91,11 +75,28 @@ jobs:
       - name: 👷‍♂️ Build
         run: pnpm run each:build
 
+      - name: 🎁 Bundle
+        run: pnpm run each:bundle
+
       - name: 🔐 Scan for Secrets
         uses: ./actions/gitleaks-scan
 
-      - name: 🎁 Bundle
-        run: pnpm run each:bundle
+      - name: 🔎 Lint Workflows
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          set -euo pipefail
+
+          # Runs after the bundle: actionlint checks that dist/ of local actions exists.
+          # Download actionlint and verify its checksum; shellcheck is preinstalled on the runner.
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location --output "${RUNNER_TEMP}/${archive}" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  ${RUNNER_TEMP}/${archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "${RUNNER_TEMP}/${archive}" --directory "$RUNNER_TEMP" actionlint
+
+          "${RUNNER_TEMP}/actionlint" -color -shellcheck "$(command -v shellcheck)"
 
       - name: 👨‍🔬 Test
         run: pnpm run each:test

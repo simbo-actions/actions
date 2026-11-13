@@ -59,7 +59,7 @@ not allowed.
    3. Run `pnpm install` and `pnpm run preflight`.
 4. **Vulnerability without a usable fix:** if the package is not bundled and the
    vulnerable code path is not reachable, add an entry to `osv-scanner.toml`
-   with the ID, a reason, and `effectiveUntil` at most three months ahead.
+   with the ID, a reason, and `ignoreUntil` at most three months ahead.
    Otherwise, replace the dependency.
 5. **License not allowed:** replace the dependency, or, for a development tool
    with an acceptable license, extend the list in `check:vulnerabilities` and in
@@ -82,7 +82,7 @@ pre-commit hook. The value is redacted everywhere.
 
 ## Expiring Accepted Findings
 
-1. Open `osv-scanner.toml` and check every `effectiveUntil`.
+1. Open `osv-scanner.toml` and check every `ignoreUntil`.
 2. For entries expiring within the next month, check whether a fix exists now
    and follow [Scanner findings](#scanner-findings).
 3. Remove entries that are no longer needed.
