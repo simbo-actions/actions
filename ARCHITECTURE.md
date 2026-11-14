@@ -198,6 +198,9 @@ sequenceDiagram
   release->>release: job release: apply and check the patch
   release->>main: signed commit "ci(release): …"
   release->>main: tag ACTION/vX.Y.Z (one API call per tag)
+Only the dispatch by `checks` releases: the workflow skips runs whose actor is
+not `github-actions[bot]`, so a manual run cannot bypass failed checks. A re-run
+keeps the actor of the original run.  
   main->>publish: push event per tag
   publish->>publish: publish one action (see next section)
 ```
