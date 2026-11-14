@@ -113,6 +113,40 @@ describe('main', () => {
     expect(movedOutput()).toEqual(['v1']);
   });
 
+  it('replaces an annotated tag whose message names another release', async () => {
+    vi.mocked(parseActionInputs).mockReturnValue({ ...inputs, annotated: true });
+    mockTags({ 'v1.1.0': 'new', 'v1.2.0': 'new', v1: 'new*' });
+    const outdated = 'v1 → v1.1.0 (latest stable release of major version 1)';
+    const getState = vi.mocked(getTagState).getMockImplementation();
+    vi.mocked(getTagState).mockImplementation(async (octokit, repositoryRef, tag) => {
+      const state = await getState?.(octokit, repositoryRef, tag);
+      return tag === 'v1' && state ? { ...state, message: outdated } : state;
+    });
+    await main();
+    expect(writeTag).toHaveBeenCalledWith(expect.anything(), repository, {
+      tag: 'v1',
+      sha: 'new',
+      exists: true,
+      message: 'v1 → v1.2.0 (latest stable release of major version 1)',
+    });
+    expect(info).toHaveBeenCalledWith('Replaced v1 by an annotated tag at v1.2.0.');
+  });
+
+  it('keeps an annotated tag with the message of the release', async () => {
+    vi.mocked(parseActionInputs).mockReturnValue({ ...inputs, annotated: true });
+    mockTags({ 'v1.2.0': 'new', v1: 'new*' });
+    const getState = vi.mocked(getTagState).getMockImplementation();
+    vi.mocked(getTagState).mockImplementation(async (octokit, repositoryRef, tag) => {
+      const state = await getState?.(octokit, repositoryRef, tag);
+      return tag === 'v1' && state
+        ? { ...state, message: 'v1 → v1.2.0 (latest stable release of major version 1)' }
+        : state;
+    });
+    await main();
+    expect(writeTag).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledWith('Kept v1: already at v1.2.0.');
+  });
+
   it('replaces an annotated tag by a lightweight tag', async () => {
     mockTags({ 'v1.2.0': 'new', v1: 'new*' });
     await main();

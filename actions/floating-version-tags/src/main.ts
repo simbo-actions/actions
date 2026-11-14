@@ -52,7 +52,10 @@ async function updateFloatingTag(
     return { name: floating.name, action: 'kept', reason: `${highest.tag} is newer` };
   }
   const current = await getTagState(octokit, repository, floating.name);
-  if (current?.commit === sha && current.annotated === inputs.annotated) {
+  const message = inputs.annotated ? tagMessage(floating, release) : undefined;
+  // An annotated tag is kept only if its message names this release, which
+  // differs if two release tags point to the same commit.
+  if (current?.commit === sha && current.annotated === inputs.annotated && current.message === message) {
     return { name: floating.name, action: 'kept', reason: `already at ${release.tag}` };
   }
   const action = current === undefined ? 'created' : current.commit === sha ? 'replaced' : 'moved';
@@ -62,7 +65,7 @@ async function updateFloatingTag(
       tag: floating.name,
       sha,
       exists: current !== undefined,
-      message: inputs.annotated ? tagMessage(floating, release) : undefined,
+      message,
     });
   }
   const reasons = {

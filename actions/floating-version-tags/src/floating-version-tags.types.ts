@@ -78,6 +78,11 @@ export interface TagState {
    * Whether the tag is an annotated tag object.
    */
   annotated: boolean;
+
+  /**
+   * The message of an annotated tag, without trailing newlines.
+   */
+  message?: string;
 }
 
 /**

@@ -42,10 +42,15 @@ function httpError(status: number): Error & { status: number } {
  *
  * @param type - The object type.
  * @param sha - The object SHA.
+ * @param message - The message of a tag object.
  * @returns The response.
  */
-function objectResponse(type: string, sha: string): { data: { object: { type: string; sha: string } } } {
-  return { data: { object: { type, sha } } };
+function objectResponse(
+  type: string,
+  sha: string,
+  message = 'message',
+): { data: { object: { type: string; sha: string }; message: string } } {
+  return { data: { object: { type, sha }, message } };
 }
 
 describe('getTagState', () => {
@@ -59,11 +64,12 @@ describe('getTagState', () => {
     const getRef = vi.fn().mockResolvedValue(objectResponse('tag', 't1'));
     const getTag = vi
       .fn()
-      .mockResolvedValueOnce(objectResponse('tag', 't2'))
-      .mockResolvedValueOnce(objectResponse('commit', 'abc'));
+      .mockResolvedValueOnce(objectResponse('tag', 't2', 'v1 → v1.0.0\n'))
+      .mockResolvedValueOnce(objectResponse('commit', 'abc', 'inner'));
     expect(await getTagState(fakeOctokit({ getRef, getTag }), repository, 'v1.0.0')).toEqual({
       commit: 'abc',
       annotated: true,
+      message: 'v1 → v1.0.0',
     });
     expect(getTag).toHaveBeenNthCalledWith(1, { owner: 'owner', repo: 'repo', tag_sha: 't1' });
     expect(getTag).toHaveBeenNthCalledWith(2, { owner: 'owner', repo: 'repo', tag_sha: 't2' });

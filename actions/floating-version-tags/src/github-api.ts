@@ -38,6 +38,7 @@ export async function getTagState(
   tag: string,
 ): Promise<TagState | undefined> {
   let object: { type: string; sha: string };
+  let message: string | undefined;
   try {
     ({ object } = (await octokit.rest.git.getRef({ ...repository, ref: `tags/${tag}` })).data);
   } catch (error) {
@@ -48,12 +49,14 @@ export async function getTagState(
   }
   const annotated = object.type === 'tag';
   for (let depth = 0; object.type === 'tag' && depth < MAX_TAG_DEPTH; depth++) {
-    ({ object } = (await octokit.rest.git.getTag({ ...repository, tag_sha: object.sha })).data);
+    const { data } = await octokit.rest.git.getTag({ ...repository, tag_sha: object.sha });
+    message ??= data.message.replace(/\n+$/, '');
+    ({ object } = data);
   }
   if (object.type !== 'commit') {
     throw new Error(`The tag "${tag}" does not point to a commit (found: ${object.type}).`);
   }
-  return { commit: object.sha, annotated };
+  return { commit: object.sha, annotated, ...(message !== undefined && { message }) };
 }
 
 /**
