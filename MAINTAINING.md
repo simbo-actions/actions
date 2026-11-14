@@ -10,26 +10,26 @@ Commands are run from the repository root unless noted otherwise.
 
 ## Overview
 
-| Task                                                                | When                                                                    |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| [Dependabot pull requests](#dependabot-pull-requests)               | weekly, or when assigned                                                |
-| [Scanner findings](#scanner-findings)                               | `checks` or `security` fails on osv-scanner                             |
-| [Secret found](#secret-found)                                       | `checks`, `security`, or the pre-commit hook fails on Gitleaks          |
-| [Expiring accepted findings](#expiring-accepted-findings)           | monthly                                                                 |
-| [Pinned tools](#pinned-tools)                                       | monthly                                                                 |
-| [Security fixes as overrides](#security-fixes-as-overrides)         | monthly                                                                 |
-| [Major updates](#major-updates)                                     | monthly                                                                 |
-| [Marketplace listing](#marketplace-listing)                         | after a release                                                         |
-| [Failed release](#failed-release)                                   | when release or publish fails                                           |
-| [Settings of action repositories](#settings-of-action-repositories) | when a setting should change                                            |
-| [Organization profile](#organization-profile)                       | when the organization should be presented differently                   |
-| [Sandbox](#sandbox)                                                 | a write test in `smoke-tests` fails, or leftovers appear in the sandbox |
-| [Security reports](#security-reports)                               | when a report arrives                                                   |
-| [Pull requests from forks](#pull-requests-from-forks)               | when a contributor opens one                                            |
-| [App private key](#app-private-key)                                 | yearly, and immediately if it may have leaked                           |
-| [App permissions](#app-permissions)                                 | when a step needs a new permission                                      |
-| [Node.js runtime](#nodejs-runtime)                                  | when GitHub announces a new runtime                                     |
-| [New major version](#new-major-version)                             | with every major release                                                |
+| Task                                                                | When                                                                      |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [Dependabot pull requests](#dependabot-pull-requests)               | weekly, or when assigned                                                  |
+| [Scanner findings](#scanner-findings)                               | `checks` or `security` fails on osv-scanner                               |
+| [Secret found](#secret-found)                                       | `checks`, `security`, or the pre-commit hook fails on Gitleaks            |
+| [Expiring accepted findings](#expiring-accepted-findings)           | monthly                                                                   |
+| [Pinned tools](#pinned-tools)                                       | monthly                                                                   |
+| [Security fixes as overrides](#security-fixes-as-overrides)         | monthly                                                                   |
+| [Major updates](#major-updates)                                     | monthly                                                                   |
+| [Marketplace listing](#marketplace-listing)                         | after a release                                                           |
+| [Failed release](#failed-release)                                   | when release or publish fails                                             |
+| [Settings of action repositories](#settings-of-action-repositories) | when a setting should change                                              |
+| [Organization profile](#organization-profile)                       | when the organization should be presented differently                     |
+| [Sandbox](#sandbox)                                                 | a pull request waits for approval, or a write test in `smoke-tests` fails |
+| [Security reports](#security-reports)                               | when a report arrives                                                     |
+| [Pull requests from forks](#pull-requests-from-forks)               | when a contributor opens one                                              |
+| [App private key](#app-private-key)                                 | yearly, and immediately if it may have leaked                             |
+| [App permissions](#app-permissions)                                 | when a step needs a new permission                                        |
+| [Node.js runtime](#nodejs-runtime)                                  | when GitHub announces a new runtime                                       |
+| [New major version](#new-major-version)                             | with every major release                                                  |
 
 ## Dependabot Pull Requests
 
@@ -209,23 +209,46 @@ new actions.
 
 ## Sandbox
 
-The write tests of `smoke-tests` run on `main` against
+The write tests of `smoke-tests` run against
 [`simbo-actions/sandbox`](https://github.com/simbo-actions/sandbox) (see
 [ARCHITECTURE.md](ARCHITECTURE.md#integration-tests)).
 
+**Approving a run of a pull request:**
+
+1. Read the diff of the pull request, at least everything under `.github/`, and
+   the scripts and dependencies it changes: the code runs with the key of the
+   app `simbo-actions-sandbox`, which is admin of the sandbox.
+2. Approve only the commit you read; every push needs a new approval.
+3. In the run of `checks`, choose **Review deployments**, select
+   `smoke-test-pr`, and approve.
+4. **Suspicious run:** if an approved run did more than the tests, or the
+   sandbox shows content nobody created on purpose, treat the sandbox key as
+   leaked: delete it in the settings of the app `simbo-actions-sandbox` first,
+   then follow [App private key](#app-private-key), remove the content, and
+   check the audit log.
+
+**A write test fails:**
+
 1. Open the failed job and its job summary; the verification step names what
    differed.
-2. **Cause in the action:** fix it on `main`; the release waits for the smoke
+2. **Cause in the action:** fix it; on `main`, the release waits for the smoke
    tests.
 3. **Cause in the sandbox,** for example a manual change: the next run
-   configures the sandbox again and first removes leftovers of earlier runs
-   (branches, tags, and releases under `smoke/`, the `v1` tags, all labels).
-4. **Missing environment or credentials:** the environment `smoke-test` allows
-   only `main` and holds the secret `SIMBO_ACTIONS_APP_PRIVATE_KEY` and the
-   variable `SIMBO_ACTIONS_APP_CLIENT_ID`, like `release`, see
+   configures the sandbox again and removes the leftovers of finished runs.
+4. **Missing environment or credentials:** `smoke-test` (only `main`) and
+   `smoke-test-pr` (all branches, a maintainer approves) hold the secret
+   `SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY` and the variable
+   `SIMBO_ACTIONS_SANDBOX_APP_CLIENT_ID`, see
    [App private key](#app-private-key).
-5. The sandbox can be deleted at any time; the next run on `main` creates it
-   again.
+
+**Recreating the sandbox:** the sandbox can be deleted at any time.
+
+1. The next run on `main` creates it with the app `simbo-actions`, then fails
+   with a warning.
+2. Add the new repository to the installation of the app `simbo-actions-sandbox`
+   (organization settings → GitHub Apps → `simbo-actions-sandbox` → Repository
+   access).
+3. Re-run the failed jobs.
 
 ## Security Reports
 
@@ -246,14 +269,20 @@ Workflows of pull requests from forks need approval.
 
 ## App Private Key
 
-The private key of the GitHub App `simbo-actions` lives in the environments
-`release` and `smoke-test` as `SIMBO_ACTIONS_APP_PRIVATE_KEY`.
+Two GitHub Apps have private keys:
+
+| App                     | Secret                                  | Environments                  |
+| ----------------------- | --------------------------------------- | ----------------------------- |
+| `simbo-actions`         | `SIMBO_ACTIONS_APP_PRIVATE_KEY`         | `release`                     |
+| `simbo-actions-sandbox` | `SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY` | `smoke-test`, `smoke-test-pr` |
+
+Rotate both the same way.
 
 Yearly rotation:
 
 1. In the app settings, generate a new private key.
-2. Store it in the password manager and set it in both environments of this
-   repository (Settings → Environments → `release` and `smoke-test` → Secrets).
+2. Store it in the password manager and set it in every environment of the app
+   (Settings → Environments → the environment → Secrets).
 3. Run a workflow that uses the app, for example re-run the last publish, and
    check that it works.
 4. Delete the old key in the app settings.

@@ -60,8 +60,10 @@ Required:
 - Inputs, secrets, and other untrusted values reach scripts only via environment
   variables, never via `${{ }}` inside a script.
 - No secrets in pull request workflows. Jobs that need secrets use the
-  environment `release`, or `smoke-test` for the integration tests, and run only
-  on `main` or release tags.
+  environment `release` and run only on `main` or release tags.  
+  The only exception are the integration tests: they get a key that can reach
+  nothing but the sandbox repository, on pull requests only after a maintainer
+  approved the run.
 - No own cryptography: tokens, signatures, and hashes come from established
   libraries or GitHub.
 - Automation acts through a dedicated GitHub App with the least installation
@@ -115,8 +117,9 @@ Required:
 - Smoke tests against the real GitHub API, one job per action in the workflow
   `smoke-tests`; the release waits for them.  
   Read-only tests run without secrets on every pull request. Actions that need
-  write access are tested on `main` against the repository
-  `simbo-actions/sandbox`, with a GitHub App token restricted to it.
+  write access are tested against the repository `simbo-actions/sandbox`, as a
+  GitHub App installed only there: on `main`, and on pull requests after
+  approval.
 
 ### Behavior
 

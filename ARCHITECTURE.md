@@ -126,31 +126,51 @@ per action, before every release:
 
 - **Read-only tests** run on every pull request and push, without secrets, for
   example dry runs against public repositories.
-- **Write tests** run only on `main`, in the environment `smoke-test`, against
-  the repository
-  [`simbo-actions/sandbox`](https://github.com/simbo-actions/sandbox):
-  - `apply-repository-settings` creates and configures the sandbox like an
-    action repository, checks that a second run changes nothing, and creates and
+- **Write tests** run against the repository
+  [`simbo-actions/sandbox`](https://github.com/simbo-actions/sandbox), on `main`
+  and on pull requests of this repository:
+  - `apply-repository-settings` configures the sandbox like an action
+    repository, checks that a second run changes nothing, and creates and
     renames a label;
   - `signed-commit` commits to a new branch with a file pattern, commits on top,
     and tags the head without changes;
   - `staged-release` publishes a release with an asset and generated notes and
     skips it in a re-run;
-  - `floating-version-tags` creates and moves an annotated `v1`.
+  - `floating-version-tags` creates and moves an annotated floating tag.
+
+The write tests act as a second GitHub App, `simbo-actions-sandbox`, which is
+installed only on the sandbox.  
+Its key can do nothing outside the sandbox, so the tests can also run for code
+that is not merged yet:
+
+| Run                                     | Environment     | Runs                                |
+| --------------------------------------- | --------------- | ----------------------------------- |
+| Push to `main`                          | `smoke-test`    | automatically, before the release   |
+| Pull request from a branch of this repo | `smoke-test-pr` | after a maintainer approves the run |
+| Pull request from a fork, Dependabot    | –               | not at all; reported as skipped     |
+
+Only the job `sandbox` uses the app `simbo-actions`: on `main`, in the
+environment `release`, it creates the sandbox if it is missing.
 
 Like the privileged jobs of the release, the write tests run only prebuilt
 actions and no npm code, and every token is restricted to the sandbox.  
-`checks` passes the private key to `smoke-tests` by name: a called workflow gets
-an environment secret only if its caller passes it. It resolves only in the jobs
-with the environment `smoke-test`, so pull requests never see it.  
+`checks` passes both keys to `smoke-tests` by name: a called workflow gets an
+environment secret only if its caller passes it. Each key resolves only in the
+jobs whose environment holds it.
+
+Runs may overlap, for example several pull requests and `main`.  
+Every name carries the run ID: branches and tags under `smoke/<run>-<attempt>/`,
+labels `smoke-<run>-<attempt>`, and the floating tags of a run under its own
+prefix.
+
 The sandbox keeps no history of the tests:
 
 - nothing is committed to its `main`, which holds only the initial commit of
   `auto_init`;
 - every job removes its branches, tags, releases, and labels, also when it
   fails;
-- the job `sandbox` first removes what an earlier run left behind, for example
-  when a runner was lost, so that every run starts clean.
+- the first job removes what finished runs left behind, for example when a
+  runner was lost; runs that are still going are left alone.
 
 What stays are the settings and rulesets, applied the same way on every run.
 
@@ -300,17 +320,18 @@ the latest versions.
 
 ## GitHub App
 
-All automation that writes in the organization acts as one GitHub App,
-`simbo-actions[bot]`.  
+All automation that writes in the organization acts as the GitHub App
+`simbo-actions[bot]`; the integration tests act as a second app,
+`simbo-actions-sandbox[bot]`, which can only reach the sandbox.  
 No personal tokens are used.
 
-| Aspect                 | Setting                                                                                                                                                                                      |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Installation           | Organization `simbo-actions`, all repositories: the publish process creates new repositories, which must be covered without manual steps                                                     |
-| Repository permissions | `administration: write` to create and configure action repositories; `contents: write` for commits, tags, and releases; `issues: write` for the label tests in the sandbox; `metadata: read` |
-| Not granted            | `workflows` (no step writes workflow files), all organization permissions, webhooks and events                                                                                               |
-| Credentials            | In both environments `release` and `smoke-test`: the private key as secret (`SIMBO_ACTIONS_APP_PRIVATE_KEY`), the client ID as variable (`SIMBO_ACTIONS_APP_CLIENT_ID`)                      |
-| Rulesets               | Bypass actor in the rulesets of the monorepo and of every action repository, together with organization admins                                                                               |
+| Aspect                 | Setting                                                                                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Installation           | Organization `simbo-actions`, all repositories: the publish process creates new repositories, which must be covered without manual steps             |
+| Repository permissions | `administration: write` to create and configure action repositories; `contents: write` for commits, tags, and releases; `metadata: read`             |
+| Not granted            | `workflows` (no step writes workflow files), all organization permissions, webhooks and events                                                       |
+| Credentials            | In the environment `release`: the private key as secret (`SIMBO_ACTIONS_APP_PRIVATE_KEY`), the client ID as variable (`SIMBO_ACTIONS_APP_CLIENT_ID`) |
+| Rulesets               | Bypass actor in the rulesets of the monorepo and of every action repository, together with organization admins                                       |
 
 Two levels limit what a token can do:
 
@@ -323,12 +344,21 @@ Two levels limit what a token can do:
 - The private key is rotated yearly, and immediately if it may have leaked; see
   [MAINTAINING.md](MAINTAINING.md).
 
+The app `simbo-actions-sandbox` for the [integration tests](#integration-tests):
+
+| Aspect                 | Setting                                                                                                                                                                                      |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Installation           | Only the repository `simbo-actions/sandbox`                                                                                                                                                  |
+| Repository permissions | `administration: write` to configure the sandbox; `contents: write` for commits, tags, and releases; `issues: write` for labels; `metadata: read`                                            |
+| Credentials            | In the environments `smoke-test` and `smoke-test-pr`: the private key as secret (`SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY`), the client ID as variable (`SIMBO_ACTIONS_SANDBOX_APP_CLIENT_ID`) |
+
 ## Identity, Tokens, and Permissions
 
 Release and publish run as the GitHub App `simbo-actions[bot]`.  
 Its private key lives in the environment `release`, which only `main` and
-release tags can use, and in the environment `smoke-test` for the integration
-tests, which only `main` can use.  
+release tags can use.  
+The integration tests use the app `simbo-actions-sandbox` instead, see
+[Integration Tests](#integration-tests).  
 Every step requests its own token, restricted to one repository and the
 permissions it needs.
 
@@ -346,8 +376,9 @@ permissions it needs.
 | Build jobs                       | `GITHUB_TOKEN` | monorepo          | `contents: read`, no environment                                    |
 | Build provenance (publish job)   | `GITHUB_TOKEN` | monorepo          | `id-token: write`, `attestations: write`                            |
 | Create sandbox (smoke tests)     | app token      | monorepo (scope)  | `administration: write`, only if missing                            |
-| Configure sandbox, label tests   | app token      | sandbox           | `administration: write`, `issues: write`                            |
-| Write tests (smoke tests)        | app token      | sandbox           | `contents: write`                                                   |
+| Configure sandbox, label tests   | sandbox app    | sandbox           | `administration: write`, `contents: write`, `issues: write`         |
+| Write tests (smoke tests)        | sandbox app    | sandbox           | `contents: write`                                                   |
+| Cleanup of finished runs         | `GITHUB_TOKEN` | monorepo          | `actions: read`                                                     |
 
 ```mermaid
 flowchart LR
@@ -363,14 +394,15 @@ the API.
 
 ## Trust Boundaries
 
-| Context                                                   | Secrets | Can write to                               |
-| --------------------------------------------------------- | ------- | ------------------------------------------ |
-| Pull requests, Dependabot, forks                          | none    | nothing (read-only `GITHUB_TOKEN`)         |
-| Push to `main` (checks)                                   | none    | dispatches the release only                |
-| Build jobs of release and publish                         | none    | nothing; they hand over an artifact        |
-| Jobs with environment `release` on `main` or release tags | app key | monorepo and action repositories, per step |
-| Jobs with environment `smoke-test` on `main`              | app key | the sandbox only                           |
-| Organization admins                                       | –       | everything, via ruleset bypass             |
+| Context                                                   | Secrets         | Can write to                               |
+| --------------------------------------------------------- | --------------- | ------------------------------------------ |
+| Pull requests, Dependabot, forks                          | none            | nothing (read-only `GITHUB_TOKEN`)         |
+| Push to `main` (checks)                                   | none            | dispatches the release only                |
+| Build jobs of release and publish                         | none            | nothing; they hand over an artifact        |
+| Jobs with environment `release` on `main` or release tags | app key         | monorepo and action repositories, per step |
+| Jobs with environment `smoke-test` on `main`              | sandbox app key | the sandbox only                           |
+| Jobs with environment `smoke-test-pr`, after approval     | sandbox app key | the sandbox only                           |
+| Organization admins                                       | –               | everything, via ruleset bypass             |
 
 Jobs with an environment run no npm code: a process started by a dependency
 during install or build could otherwise read the private key from a later step
@@ -381,6 +413,9 @@ published actions, pinned by SHA, instead of the ones built in the same run
 removes this risk; it is planned.
 
 Fork pull requests need approval before their workflows run.  
+Write tests of a pull request need approval as well: the code of the pull
+request runs with the sandbox key, so the maintainer reads its changes,
+especially workflows and scripts, before approving.  
 The rulesets apply to all automation; only the app and organization admins
 bypass them.
 

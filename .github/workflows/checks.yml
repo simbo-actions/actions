@@ -180,12 +180,16 @@ jobs:
 
   smoke-tests:
     permissions:
+      # "actions: read" lets the sandbox cleanup see which runs are finished.
+      actions: read
       contents: read
     uses: ./.github/workflows/smoke-tests.yml
+    # Each secret resolves only in the jobs whose environment holds it: the app
+    # key in "release" (main), the sandbox app key in "smoke-test" (main) and
+    # "smoke-test-pr" (pull requests of this repository, after approval).
     secrets:
-      # Only the environment "smoke-test" holds it; it resolves only in its
-      # jobs on main, never on pull requests.
       SIMBO_ACTIONS_APP_PRIVATE_KEY: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+      SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY: ${{ secrets.SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY }}
 
   dispatch-release:
     needs:

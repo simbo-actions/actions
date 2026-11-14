@@ -139,9 +139,26 @@ Workspace scripts (run inside a workspace, or with
   `actions/signed-commit/tests/git-fixture.ts`).
 - Code that calls the GitHub API is tested with a fake Octokit client.  
   No test calls the real API, except the smoke tests in the workflow
-  `smoke-tests`: read-only tests on every pull request, and write tests on
-  `main` against `simbo-actions/sandbox`, see
+  `smoke-tests`: read-only tests on every pull request, and write tests against
+  `simbo-actions/sandbox`, see
   [ARCHITECTURE.md](ARCHITECTURE.md#integration-tests).
+
+### Testing Against the Sandbox
+
+Actions that write are tested against the real API in
+[`simbo-actions/sandbox`](https://github.com/simbo-actions/sandbox), also while
+they are developed:
+
+1. Push the branch and open a pull request in this repository.
+2. The write tests wait for approval: in the pull request, open the run of
+   `checks` and choose **Review deployments**, then approve `smoke-test-pr`.  
+   Read the changes of the pull request first; its code runs with the key of the
+   sandbox app.
+3. The results are in the job summaries and logs of the jobs `*-sandbox`.  
+   Every push to the pull request starts a new run, which needs a new approval.
+
+Pull requests from forks and Dependabot do not run the write tests; a maintainer
+tests the change on a branch of this repository.
 
 ## Adding an Action
 
@@ -169,9 +186,10 @@ Workspace scripts (run inside a workspace, or with
    it downloads the built actions, runs the action with
    `uses: ./smoke/actions/<name>`, and checks its outputs, with only the
    permissions the test needs.  
-   An action that writes is tested in a job `<name>-sandbox` on `main`, with the
-   environment `smoke-test`, an app token restricted to the sandbox, no npm
-   code, and a cleanup step that runs also on failure.
+   An action that writes is tested in a job `<name>-sandbox`, like the existing
+   ones: the same condition and environment, a token of the sandbox app, names
+   with the run ID, no npm code, and a cleanup step that runs also on failure.  
+   Add the new checks to the required checks of the ruleset "Main Branch".
 8. Add a changeset with a major bump for the first release (1.0.0), and run
    `pnpm run actions-list`.
 
