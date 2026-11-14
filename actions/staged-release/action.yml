@@ -1,0 +1,86 @@
+name: Staged Release
+
+description: A GitHub Action to create a complete GitHub release - draft, assets, then publish. Works with immutable releases.
+
+author: Simon Lepel <simbo@simbo.de> (https://simbo.de/)
+
+branding:
+  icon: package
+  color: green
+
+inputs:
+  token:
+    description: >
+      The token to authenticate with. Needs "contents: write" on the repository.
+    required: true
+  repository:
+    description: The repository to create the release in, in the format "owner/repo".
+    required: false
+    default: ${{ github.repository }}
+  tag:
+    description: The existing tag to release. The action never creates tags.
+    required: true
+  name:
+    description: The release title. Defaults to the tag.
+    required: false
+    default: ''
+  body:
+    description: The release notes. Use either "body" or "body-file".
+    required: false
+    default: ''
+  body-file:
+    description: A file with the release notes, relative to "working-directory".
+    required: false
+    default: ''
+  assets:
+    description: >
+      Files to upload as assets, one path or glob pattern per line, relative to
+      "working-directory". Every pattern must match at least one file.
+    required: false
+    default: ''
+  working-directory:
+    description: The directory "assets" and "body-file" are resolved against.
+    required: false
+    default: .
+  make-latest:
+    description: 'Whether to mark the release as latest: "true", "false", or "legacy".'
+    required: false
+    default: 'true'
+  prerelease:
+    description: Whether the release is a prerelease.
+    required: false
+    default: 'false'
+  publish:
+    description: Whether to publish the release. With "false", it stays a draft.
+    required: false
+    default: 'true'
+  if-released:
+    description: >
+      What to do if the tag is already released: "error" fails the action,
+      "skip" ends it successfully without changes, for example in a re-run.
+    required: false
+    default: error
+  generate-release-notes:
+    description: >
+      Whether GitHub generates release notes from the merged pull requests and
+      appends them to "body".
+    required: false
+    default: 'false'
+  discussion-category:
+    description: >
+      The category of a discussion that GitHub creates and links to the
+      release. The category must exist, and discussions must be enabled.
+    required: false
+    default: ''
+
+outputs:
+  release-id:
+    description: The ID of the release.
+  url:
+    description: The URL of the release page.
+  assets:
+    description: 'The uploaded assets as JSON: [{"name": ..., "size": ..., "url": ...}].'
+
+runs:
+  using: node24
+  main: dist/index.js
