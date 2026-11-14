@@ -218,9 +218,8 @@ The write tests of `smoke-tests` run on `main` against
 2. **Cause in the action:** fix it on `main`; the release waits for the smoke
    tests.
 3. **Cause in the sandbox,** for example a manual change: the next run
-   configures the sandbox again. Leftover branches, tags, and releases carry the
-   run ID in their name (`smoke/<run>-<attempt>`) and can be deleted as
-   organization admin; labels are removed by every run.
+   configures the sandbox again and first removes leftovers of earlier runs
+   (branches, tags, and releases under `smoke/`, the `v1` tags, all labels).
 4. **Missing environment or key:** the environment `smoke-test` allows only
    `main` and holds `SIMBO_ACTIONS_APP_PRIVATE_KEY`, see
    [App private key](#app-private-key).

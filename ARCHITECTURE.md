@@ -140,8 +140,16 @@ per action, before every release:
 
 Like the privileged jobs of the release, the write tests run only prebuilt
 actions and no npm code, and every token is restricted to the sandbox.  
-Every job removes what it created, also when it fails; branches and tags carry
-the run ID, so leftovers of an earlier run do not interfere.
+The sandbox keeps no history of the tests:
+
+- nothing is committed to its `main`, which holds only the initial commit of
+  `auto_init`;
+- every job removes its branches, tags, releases, and labels, also when it
+  fails;
+- the job `sandbox` first removes what an earlier run left behind, for example
+  when a runner was lost, so that every run starts clean.
+
+What stays are the settings and rulesets, applied the same way on every run.
 
 ## From Changeset to Release
 
