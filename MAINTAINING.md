@@ -220,8 +220,9 @@ The write tests of `smoke-tests` run on `main` against
 3. **Cause in the sandbox,** for example a manual change: the next run
    configures the sandbox again and first removes leftovers of earlier runs
    (branches, tags, and releases under `smoke/`, the `v1` tags, all labels).
-4. **Missing environment or key:** the environment `smoke-test` allows only
-   `main` and holds `SIMBO_ACTIONS_APP_PRIVATE_KEY`, see
+4. **Missing environment or credentials:** the environment `smoke-test` allows
+   only `main` and holds the secret `SIMBO_ACTIONS_APP_PRIVATE_KEY` and the
+   variable `SIMBO_ACTIONS_APP_CLIENT_ID`, like `release`, see
    [App private key](#app-private-key).
 5. The sandbox can be deleted at any time; the next run on `main` creates it
    again.

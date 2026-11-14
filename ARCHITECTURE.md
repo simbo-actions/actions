@@ -306,7 +306,7 @@ No personal tokens are used.
 | Installation           | Organization `simbo-actions`, all repositories: the publish process creates new repositories, which must be covered without manual steps                                                     |
 | Repository permissions | `administration: write` to create and configure action repositories; `contents: write` for commits, tags, and releases; `issues: write` for the label tests in the sandbox; `metadata: read` |
 | Not granted            | `workflows` (no step writes workflow files), all organization permissions, webhooks and events                                                                                               |
-| Credentials            | Private key in the environments `release` and `smoke-test` (`SIMBO_ACTIONS_APP_PRIVATE_KEY`), client ID as variable (`SIMBO_ACTIONS_APP_CLIENT_ID`)                                          |
+| Credentials            | In both environments `release` and `smoke-test`: the private key as secret (`SIMBO_ACTIONS_APP_PRIVATE_KEY`), the client ID as variable (`SIMBO_ACTIONS_APP_CLIENT_ID`)                      |
 | Rulesets               | Bypass actor in the rulesets of the monorepo and of every action repository, together with organization admins                                                                               |
 
 Two levels limit what a token can do:
