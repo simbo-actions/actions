@@ -1,7 +1,7 @@
 {
   "name": "signed-commit",
   "description": "A GitHub Action to create signed commits and tags via the GitHub API, shown as verified.",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "author": "Simon Lepel <simbo@simbo.de> (https://simbo.de)",
   "license": "MIT",

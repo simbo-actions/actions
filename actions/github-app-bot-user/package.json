@@ -1,7 +1,7 @@
 {
   "name": "github-app-bot-user",
   "description": "A GitHub Action to get the bot user of a GitHub App: user ID, login, name, and email for Git.",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "author": "Simon Lepel <simbo@simbo.de> (https://simbo.de)",
   "license": "MIT",
