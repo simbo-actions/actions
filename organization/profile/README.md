@@ -36,9 +36,9 @@ There are currently _**6**_ GitHub Actions in this organization.
   > A GitHub Action to move floating version tags like v1 forward to a release,
   > safely: forward only, never to prereleases.
 
-  ⚙️ **`simbo-actions/floating-version-tags@<SHA> # v1.0.0`**
+  ⚙️ **`simbo-actions/floating-version-tags@<SHA> # v1.0.1`**
 
-  Latest Version: `1.0.0`
+  Latest Version: `1.0.1`
 
   [Repository](https://github.com/simbo-actions/floating-version-tags)  • 
   [README.md](https://github.com/simbo-actions/floating-version-tags/blob/main/README.md)  • 
