@@ -17,6 +17,15 @@ name: Release 📬
 
 on:
   workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Short SHA of the checked commit (set by "Checks")'
+        required: false
+        default: ''
+      subject:
+        description: 'Subject of the checked commit (set by "Checks")'
+        required: false
+        default: ''
 
 permissions: {}
 
@@ -24,7 +33,12 @@ concurrency:
   cancel-in-progress: false
   group: ${{ github.workflow }}
 
-run-name: ${{ github.workflow }}
+run-name: >
+  ${{
+    inputs.commit != ''
+      && format('{0} {1} "{2}"', github.workflow, inputs.commit, inputs.subject)
+      || github.workflow
+  }}
 
 jobs:
   build:

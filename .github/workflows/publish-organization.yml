@@ -30,7 +30,12 @@ concurrency:
   cancel-in-progress: false
   group: ${{ github.workflow }}
 
-run-name: ${{ github.workflow }}
+run-name: >
+  ${{
+    github.event_name == 'push'
+      && format('{0} "{1}"', github.workflow, github.event.head_commit.message)
+      || github.workflow
+  }}
 
 env:
   REPOSITORY: ${{ github.repository_owner }}/.github

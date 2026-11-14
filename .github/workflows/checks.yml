@@ -43,7 +43,7 @@ run-name: >
       github.workflow,
       github.event_name == 'pull_request'
         && format('PR#{0} "{1}"', github.event.pull_request.number, github.event.pull_request.title)
-        || format('Branch {0}', github.ref_name)
+        || format('Branch {0} "{1}"', github.ref_name, github.event.head_commit.message)
     )
   }}
 
@@ -207,7 +207,14 @@ jobs:
       - name: '🎉 Workflow: Release'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main
+          MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          # Names the release run after the checked commit: short SHA and the
+          # first line of its message.
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            --field commit="${GITHUB_SHA:0:7}" \
+            --field subject="${MESSAGE%%$'\n'*}"
 
   dependency-changeset:
     needs: checks
