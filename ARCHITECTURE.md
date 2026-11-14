@@ -9,7 +9,7 @@ manages the action repositories in the organization
 
 ## Contents
 
-- [Why](#why)
+- [Approach](#approach)
 - [Overview](#overview)
 - [Repositories](#repositories)
 - [Integration Tests](#integration-tests)
@@ -28,24 +28,20 @@ manages the action repositories in the organization
 - [Node.js Runtime](#nodejs-runtime)
 - [Design Decisions](#design-decisions)
 
-## Why
+## Approach
 
-A JavaScript action must ship its build in its repository, and consumers expect
-moving version tags like `v1`.
+Three properties of GitHub Actions shape this monorepo:
 
-Done by hand, every release means, for every action:
+- A JavaScript action runs from the build that is committed in its repository.
+- The Marketplace lists one action per repository, from its root `action.yml`.
+- Workflows reference an action by a tag; a major tag like `v1` has to follow
+  every release of its major version.
 
-- building
-- committing the build
-- tagging
-- creating the release
-- moving the tags
+So every release writes to the repository that its users run: build, commit,
+tags, release. This step decides which code runs in their workflows, so it is
+automated, reproducible, and restricted.
 
-That is tedious and error-prone, and it happens exactly where an attacker would
-like to slip in a change: a workflow that runs an action executes whatever its
-tag points to.
-
-This monorepo automates all of it from one source.  
+This monorepo keeps source and distribution apart.  
 Actions are developed and tested here. A release builds them in CI and then:
 
 - commits the build to the action repository as a verified commit,
@@ -98,8 +94,8 @@ flowchart LR
 
 The action repositories have issues, pull requests, discussions, wiki, and
 projects disabled.  
-Every action README starts with a note that points to the monorepo; issues and
-contributions go there.
+The section "About Simbo's Actions" of every action README points to the
+monorepo; issues and contributions go there.
 
 Workspaces in the monorepo:
 
@@ -198,13 +194,13 @@ sequenceDiagram
   release->>release: job release: apply and check the patch
   release->>main: signed commit "ci(release): …"
   release->>main: tag ACTION/vX.Y.Z (one API call per tag)
-Only the dispatch by `checks` releases: the workflow skips runs whose actor is
-not `github-actions[bot]`, so a manual run cannot bypass failed checks. A re-run
-keeps the actor of the original run.  
   main->>publish: push event per tag
   publish->>publish: publish one action (see next section)
 ```
 
+Only the dispatch by `checks` releases: the workflow skips runs whose actor is
+not `github-actions[bot]`, so a manual run cannot bypass failed checks. A re-run
+keeps the actor of the original run.  
 The release commit and the tags are created via the GitHub API with
 [`signed-commit`](actions/signed-commit/README.md), so they are verified.  
 The tag `changelog/vX.Y.Z` of the monorepo changelog starts no publish run.
@@ -501,20 +497,20 @@ created after the merge, in a job with the environment `release`.
   would need secrets in Dependabot workflows.
 - Auto-merge requires that both the pull request and the event come from
   Dependabot (`github.actor`), and fails closed if the changed files cannot be
+  read.
 - **Updates of workflow pins get no changeset.** Dependabot pull requests are
   exempt from the changeset requirement; they release no action and are listed
   in the Git history.
-  read.
 
 ## Vulnerability, Secret, and License Checks
 
-| Check                                        | Tool                                                                                                    | Scope                                   | Runs                                                                                                   |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Vulnerabilities and malicious packages       | [osv-scanner](https://github.com/google/osv-scanner) via Google's reusable workflows                    | all dependencies in `pnpm-lock.yaml`    | `checks` (pull requests: new findings only; `main`), weekly `security`, locally                        |
-| Licenses allowed anywhere                    | osv-scanner (`--licenses`)                                                                              | all dependencies                        | `checks`, weekly `security`, locally                                                                   |
-| Secrets                                      | [Gitleaks](https://github.com/gitleaks/gitleaks) via [`gitleaks-scan`](actions/gitleaks-scan/README.md) | new commits; the whole Git history      | `checks` (pull requests, `main`: their commits), weekly `security` (history), locally, pre-commit hook |
-| Licenses allowed in bundled code             | [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn)               | production dependencies of every action | `checks`, locally                                                                                      |
-| License file, README sections, monorepo note | `tooling/bin/check-actions.ts`, which also checks the Octokit copies and the license lists              | every action                            | `checks`, locally                                                                                      |
+| Check                                  | Tool                                                                                                    | Scope                                   | Runs                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Vulnerabilities and malicious packages | [osv-scanner](https://github.com/google/osv-scanner) via Google's reusable workflows                    | all dependencies in `pnpm-lock.yaml`    | `checks` (pull requests: new findings only; `main`), weekly `security`, locally                        |
+| Licenses allowed anywhere              | osv-scanner (`--licenses`)                                                                              | all dependencies                        | `checks`, weekly `security`, locally                                                                   |
+| Secrets                                | [Gitleaks](https://github.com/gitleaks/gitleaks) via [`gitleaks-scan`](actions/gitleaks-scan/README.md) | new commits; the whole Git history      | `checks` (pull requests, `main`: their commits), weekly `security` (history), locally, pre-commit hook |
+| Licenses allowed in bundled code       | [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn)               | production dependencies of every action | `checks`, locally                                                                                      |
+| License file, README sections          | `tooling/bin/check-actions.ts`, which also checks the Octokit copies and the license lists              | every action                            | `checks`, locally                                                                                      |
 
 The osv-scanner workflows upload their results to code scanning.  
 On pull requests, only findings that the pull request adds fail.  

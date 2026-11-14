@@ -3,12 +3,6 @@
 A GitHub Action to move floating version tags like `v1` forward to a release,
 safely: forward only, never to prereleases.
 
-> [!NOTE]  
-> Developed and maintained in the monorepo
-> [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
-> published here automatically.  
-> Issues, questions, and contributions go to the monorepo.
-
 Consumers of GitHub Actions like to write `uses: owner/action@v1` and get every
 fix of the major version automatically.
 
@@ -26,6 +20,7 @@ This action moves floating tags only by clear rules.
 - [Token and Permissions](#token-and-permissions)
 - [Security](#security)
 - [Limitations](#limitations)
+- [About Simbo's Actions](#about-simbos-actions)
 
 ## How It Works
 
@@ -230,6 +225,29 @@ bypass it, for example the GitHub App as bypass actor.
 - Annotated floating tags are not signed, see [Security](#security).
 - Moving a tag changes what `@vX` resolves to for every consumer at once; there
   is no gradual rollout.
+
+## About Simbo's Actions
+
+This action is part of [Simbo's Actions](https://github.com/simbo-actions), a
+family of GitHub Actions that are developed in one monorepo and published to
+their own repositories by an automated release process.
+
+- **Built from source in CI.** Every release is built in
+  [`simbo-actions/actions`](https://github.com/simbo-actions/actions), committed
+  to this repository as a verified commit, and published with checksums and
+  build provenance. Nothing in this repository is edited by hand.
+- **Tags that only move forward.** A version tag `vX.Y.Z` never changes. The
+  major tag `vX` is moved only by the release process, to the latest stable
+  release.
+- **One standard for every action.** Strict TypeScript, tests with at least 90 %
+  coverage, least-privilege tokens, pinned dependencies that are updated after a
+  cooldown, and scans for secrets and vulnerabilities; see the
+  [standards](https://github.com/simbo-actions/actions/blob/main/STANDARDS.md).
+- **Tested on GitHub.** Before each release, every action runs in integration
+  tests on GitHub; actions that write run against a sandbox repository.
+
+Issues, questions, and contributions go to
+[`simbo-actions/actions`](https://github.com/simbo-actions/actions).
 
 ## License
 

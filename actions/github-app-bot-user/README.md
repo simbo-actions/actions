@@ -3,12 +3,6 @@
 A GitHub Action to get the bot user of a GitHub App, with user ID, login, name,
 and email for Git.
 
-> [!NOTE]  
-> Developed and maintained in the monorepo
-> [`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
-> published here automatically.  
-> Issues, questions, and contributions go to the monorepo.
-
 Every GitHub App acts as a bot user named `<app-slug>[bot]`.  
 This action looks up that user and provides its user ID and the Git identity
 GitHub expects for commits by the app, for example
@@ -28,6 +22,7 @@ it gives a workflow both the token and the identity of the app.
 - [Token and Permissions](#token-and-permissions)
 - [Security](#security)
 - [Limitations](#limitations)
+- [About Simbo's Actions](#about-simbos-actions)
 
 ## How It Works
 
@@ -199,6 +194,29 @@ None of the outputs is secret.
 - It fails if no bot user exists for the slug, or if the user found is not a
   bot.
 - Runs on Linux runners only (x64 and arm64).
+
+## About Simbo's Actions
+
+This action is part of [Simbo's Actions](https://github.com/simbo-actions), a
+family of GitHub Actions that are developed in one monorepo and published to
+their own repositories by an automated release process.
+
+- **Built from source in CI.** Every release is built in
+  [`simbo-actions/actions`](https://github.com/simbo-actions/actions), committed
+  to this repository as a verified commit, and published with checksums and
+  build provenance. Nothing in this repository is edited by hand.
+- **Tags that only move forward.** A version tag `vX.Y.Z` never changes. The
+  major tag `vX` is moved only by the release process, to the latest stable
+  release.
+- **One standard for every action.** Strict TypeScript, tests with at least 90 %
+  coverage, least-privilege tokens, pinned dependencies that are updated after a
+  cooldown, and scans for secrets and vulnerabilities; see the
+  [standards](https://github.com/simbo-actions/actions/blob/main/STANDARDS.md).
+- **Tested on GitHub.** Before each release, every action runs in integration
+  tests on GitHub; actions that write run against a sandbox repository.
+
+Issues, questions, and contributions go to
+[`simbo-actions/actions`](https://github.com/simbo-actions/actions).
 
 ## License
 

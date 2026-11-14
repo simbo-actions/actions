@@ -10,23 +10,33 @@ export const REQUIRED_README_SECTIONS: readonly string[] = [
   'Token and Permissions',
   'Security',
   'Limitations',
+  "About Simbo's Actions",
   'License',
 ];
 
 /**
- * The link to the monorepo that the note on top of every action README contains.
+ * The heading of the section about the organization, shared by every action
+ * README; its text is the template `tooling/about-section.md`.
  */
-export const MONOREPO_URL = 'https://github.com/simbo-actions/actions';
+export const ABOUT_HEADING = "## About Simbo's Actions";
 
 /**
- * Checks the README of an action: required sections, and the note that the
- * action is developed in the monorepo and published automatically.
+ * The entry for the section about the organization in the contents of every
+ * action README.
+ */
+export const ABOUT_CONTENTS_ENTRY = "- [About Simbo's Actions](#about-simbos-actions)";
+
+/**
+ * Checks the README of an action: required sections, and the section about the
+ * organization, identical to the template, last before "License" and listed in
+ * the contents.
  *
  * @param name - The action name, for messages.
  * @param readme - The README text.
+ * @param aboutSection - The template of the section about the organization.
  * @returns The problems found; empty if everything is correct.
  */
-export function checkActionReadme(name: string, readme: string): string[] {
+export function checkActionReadme(name: string, readme: string, aboutSection: string): string[] {
   const problems: string[] = [];
   const headings = new Set([...readme.matchAll(/^## (.+)$/gm)].map(match => match[1].trim()));
 
@@ -35,10 +45,14 @@ export function checkActionReadme(name: string, readme: string): string[] {
     problems.push(`${name}: README.md is missing the section(s): ${missing.join(', ')}.`);
   }
 
-  const intro = readme.split(/^## /m, 1)[0];
-  // The note links the monorepo; a Markdown link target, not a URL anywhere in the text.
-  if (!intro.includes(`](${MONOREPO_URL})`) || !intro.includes('published here automatically')) {
-    problems.push(`${name}: README.md has no note about the monorepo before the first section.`);
+  const start = readme.indexOf(`${ABOUT_HEADING}\n`);
+  const end = readme.indexOf('\n## License\n', start);
+  if (start !== -1 && (end === -1 || readme.slice(start, end).trim() !== aboutSection.trim())) {
+    problems.push(`${name}: README.md must contain tooling/about-section.md unchanged, directly before "License".`);
+  }
+
+  if (!readme.includes(`\n${ABOUT_CONTENTS_ENTRY}\n`)) {
+    problems.push(`${name}: README.md must list "${ABOUT_CONTENTS_ENTRY}" in its contents.`);
   }
 
   return problems;

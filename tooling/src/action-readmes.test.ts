@@ -1,38 +1,43 @@
 import { describe, expect, it } from 'vitest';
 
-import { checkActionReadme, MONOREPO_URL, REQUIRED_README_SECTIONS } from './action-readmes.ts';
+import { ABOUT_CONTENTS_ENTRY, ABOUT_HEADING, checkActionReadme, REQUIRED_README_SECTIONS } from './action-readmes.ts';
 
-const note = `> [!NOTE]\n> Developed in [the monorepo](${MONOREPO_URL}) and published here automatically.\n`;
-const sections = REQUIRED_README_SECTIONS.map(section => `## ${section}\n\nText.\n`).join('\n');
+const about = `${ABOUT_HEADING}\n\nPart of the organization.\n`;
+const contents = `## Contents\n\n- [Usage](#usage)\n${ABOUT_CONTENTS_ENTRY}\n`;
+const sections = REQUIRED_README_SECTIONS.filter(section => !ABOUT_HEADING.endsWith(section))
+  .map(section => (section === 'License' ? `${about}\n## License\n\nText.\n` : `## ${section}\n\nText.\n`))
+  .join('\n');
+const complete = `# A\n\nIntro.\n\n${contents}\n${sections}`;
 
 describe('checkActionReadme', () => {
   it('accepts a complete README', () => {
-    expect(checkActionReadme('a', `# A\n\nIntro.\n\n${note}\n${sections}`)).toEqual([]);
+    expect(checkActionReadme('a', complete, about)).toEqual([]);
   });
 
   it('reports missing sections', () => {
-    const readme = `# A\n\n${note}\n## Usage\n\n## Inputs\n`;
-    expect(checkActionReadme('a', readme)).toEqual([
-      'a: README.md is missing the section(s): How It Works, Examples, Outputs, Token and Permissions, Security, Limitations, License.',
+    const readme = `# A\n\n${contents}\n## Usage\n\n## Inputs\n`;
+    expect(checkActionReadme('a', readme, about)).toEqual([
+      "a: README.md is missing the section(s): How It Works, Examples, Outputs, Token and Permissions, Security, Limitations, About Simbo's Actions, License.",
     ]);
   });
 
-  it('reports a missing note', () => {
-    expect(checkActionReadme('a', `# A\n\n${sections}`)).toEqual([
-      'a: README.md has no note about the monorepo before the first section.',
+  it('reports a section about the organization that differs from the template', () => {
+    expect(checkActionReadme('a', complete, `${ABOUT_HEADING}\n\nOther text.\n`)).toEqual([
+      'a: README.md must contain tooling/about-section.md unchanged, directly before "License".',
     ]);
   });
 
-  it('requires a link to the monorepo, not only its URL', () => {
-    const unlinked = `> [!NOTE]\n> Developed in ${MONOREPO_URL} and published here automatically.\n`;
-    expect(checkActionReadme('a', `# A\n\n${unlinked}\n${sections}`)).toEqual([
-      'a: README.md has no note about the monorepo before the first section.',
+  it('requires the section about the organization directly before "License"', () => {
+    const readme = `# A\n\n${contents}\n${about}\n${sections.replace(about, '')}`;
+    expect(checkActionReadme('a', readme, about)).toEqual([
+      'a: README.md must contain tooling/about-section.md unchanged, directly before "License".',
     ]);
   });
 
-  it('requires the note before the first section', () => {
-    expect(checkActionReadme('a', `# A\n\n${sections}\n${note}`)).toEqual([
-      'a: README.md has no note about the monorepo before the first section.',
+  it('requires the section about the organization in the contents', () => {
+    const readme = complete.replace(`${ABOUT_CONTENTS_ENTRY}\n`, '');
+    expect(checkActionReadme('a', readme, about)).toEqual([
+      `a: README.md must list "${ABOUT_CONTENTS_ENTRY}" in its contents.`,
     ]);
   });
 });

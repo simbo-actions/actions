@@ -221,8 +221,9 @@ tests the change on a branch of this repository.
    The action is published to `simbo-actions/<name>`.
 4. Add `LICENSE.md` with the current year, and link it in the README as
    `https://simbo.mit-license.org/@<year>`.
-5. Start the README with the note about the monorepo (copy it from another
-   action).
+5. End the README with the section "About Simbo's Actions" from
+   [`tooling/about-section.md`](tooling/about-section.md), unchanged, before
+   **License**, and list it in the contents.
 6. Write the README with all sections required by [STANDARDS.md](STANDARDS.md).
 7. Write the code and tests.  
    Report the result in the job summary in the style of the other actions, and

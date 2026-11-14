@@ -115,9 +115,34 @@ For convenience, `@vX` follows the latest stable release of a major version.
 It moves only forward, only by the release process, but it can change; a SHA pin
 cannot.
 
-All actions are developed in the monorepo
-[`simbo-actions/actions`](https://github.com/simbo-actions/actions) and
-published to their repositories automatically.  
-Issues, questions, and contributions go there; see its
+## How It Works
+
+GitHub runs an action from the repository and the ref that a workflow names.  
+A JavaScript action ships its build in that repository, the Marketplace lists
+one action per repository, and most workflows reference an action by a major tag
+like `v1` that has to follow every release.
+
+With many actions, this usually means one of two compromises:
+
+- separate repositories, each with its own builds, tags, settings, and
+  dependency updates;
+- or one repository with all builds and prefixed tags, and no Marketplace
+  listings.
+
+Simbo's Actions keeps source and distribution apart:
+
+- All actions are developed, tested, and released in the monorepo
+  [`simbo-actions/actions`](https://github.com/simbo-actions/actions), under one
+  set of standards and tooling.
+- A release builds each action in CI and publishes it to its own repository: a
+  verified commit, the version tag, a release with checksums and build
+  provenance, and the major tag moved forward.
+- The release process creates and configures these repositories; they accept no
+  other changes.
+
+The details are in the
+[architecture](https://github.com/simbo-actions/actions/blob/main/ARCHITECTURE.md).
+
+Issues, questions, and contributions go to the monorepo; see its
 [standards](https://github.com/simbo-actions/actions/blob/main/STANDARDS.md) and
 [security policy](https://github.com/simbo-actions/actions/blob/main/SECURITY.md).

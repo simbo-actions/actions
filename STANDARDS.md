@@ -154,9 +154,8 @@ Required:
 
 Required:
 
-- Every action has a README that starts with a note that the action is developed
-  in this monorepo and published automatically.  
-  It has these sections, checked in CI (`pnpm run check:actions`):
+- Every action has a README with these sections, checked in CI
+  (`pnpm run check:actions`):
   - purpose (introduction)
   - **How It Works**
   - **Usage** (pinned by SHA)
@@ -166,6 +165,9 @@ Required:
   - **Token and Permissions**
   - **Security**
   - **Limitations**
+  - **About Simbo's Actions**, the same in every action, from
+    [`tooling/about-section.md`](tooling/about-section.md), and listed in the
+    contents
   - **License**
 - Every change to an action comes with a changeset; the changelog and the
   release notes are generated from it.
@@ -250,8 +252,8 @@ Required:
 - **Generated repositories accept nothing:** the action repositories and the
   organization repository `simbo-actions/.github` are written only by the
   publish process. They have issues, pull requests, discussions, wiki, and
-  projects disabled; every action README starts with a note that points to this
-  repository.
+  projects disabled; the section "About Simbo's Actions" of every action README
+  points to this repository.
 - [Conventional Commits](https://www.conventionalcommits.org/), checked by
   commitlint.
 
@@ -318,17 +320,17 @@ Planned, not yet required:
 
 ## How the Standard Is Enforced
 
-| Requirement                                  | Enforced by                                                                                          |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Types, lint, format, spelling                | `pnpm run each:check`, `pnpm run check` in the workflow `checks`                                     |
-| Tests and coverage                           | `pnpm run each:test` (Vitest thresholds)                                                             |
-| Workflows and `action.yml`                   | actionlint with ShellCheck in `checks`                                                               |
-| Licenses of bundled dependencies             | `pnpm run check:licenses` (license-checker-rseidelsohn)                                              |
-| Vulnerabilities, all licenses                | osv-scanner workflows of Google in `checks` and `security`; locally `pnpm run check:vulnerabilities` |
-| Secrets in the Git history                   | `gitleaks-scan` in `checks` and `security`; locally `pnpm run check:secrets` and the pre-commit hook |
-| License file, README sections, monorepo note | `pnpm run check:actions`, also checks that all license lists match                                   |
-| Changeset per change                         | `checks` on pull requests                                                                            |
-| Pinned actions                               | Actions setting "require SHA pinning"                                                                |
-| Verified commits                             | Ruleset "Main Branch" (signed commits)                                                               |
-| Protected release and floating tags          | Ruleset "Release Tags" (`v*`)                                                                        |
-| Review                                       | Pull requests with required checks; [CONTRIBUTING.md](CONTRIBUTING.md) checklist                     |
+| Requirement                         | Enforced by                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Types, lint, format, spelling       | `pnpm run each:check`, `pnpm run check` in the workflow `checks`                                     |
+| Tests and coverage                  | `pnpm run each:test` (Vitest thresholds)                                                             |
+| Workflows and `action.yml`          | actionlint with ShellCheck in `checks`                                                               |
+| Licenses of bundled dependencies    | `pnpm run check:licenses` (license-checker-rseidelsohn)                                              |
+| Vulnerabilities, all licenses       | osv-scanner workflows of Google in `checks` and `security`; locally `pnpm run check:vulnerabilities` |
+| Secrets in the Git history          | `gitleaks-scan` in `checks` and `security`; locally `pnpm run check:secrets` and the pre-commit hook |
+| License file, README sections       | `pnpm run check:actions`, also checks that all license lists match                                   |
+| Changeset per change                | `checks` on pull requests                                                                            |
+| Pinned actions                      | Actions setting "require SHA pinning"                                                                |
+| Verified commits                    | Ruleset "Main Branch" (signed commits)                                                               |
+| Protected release and floating tags | Ruleset "Release Tags" (`v*`)                                                                        |
+| Review                              | Pull requests with required checks; [CONTRIBUTING.md](CONTRIBUTING.md) checklist                     |
