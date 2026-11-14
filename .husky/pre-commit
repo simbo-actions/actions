@@ -1,0 +1,6 @@
+# Scan the staged changes for secrets before they are committed.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --pre-commit --staged --redact --no-banner .
+else
+  echo "gitleaks is not installed; skipping the secret scan (brew install gitleaks)." >&2
+fi

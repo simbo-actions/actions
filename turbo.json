@@ -1,0 +1,44 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["clean:dist", "^build"],
+      "outputs": ["dist/**"],
+      "outputLogs": "new-only"
+    },
+    "bundle": {
+      "dependsOn": ["build", "^bundle"],
+      "outputs": ["dist/**"],
+      "outputLogs": "new-only"
+    },
+    "test": {
+      "dependsOn": ["build", "^test"],
+      "outputs": ["coverage/**"],
+      "outputLogs": "new-only"
+    },
+    "check": {
+      "dependsOn": ["^check"],
+      "cache": false
+    },
+    "check:format": {
+      "dependsOn": ["^check"],
+      "cache": false
+    },
+    "clean": {
+      "cache": false,
+      "outputLogs": "none"
+    },
+    "clean:node_modules": {
+      "cache": false,
+      "outputLogs": "none"
+    },
+    "clean:turbo": {
+      "cache": false,
+      "outputLogs": "none"
+    },
+    "clean:dist": {
+      "cache": false,
+      "outputLogs": "none"
+    }
+  }
+}

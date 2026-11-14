@@ -1,0 +1,35 @@
+# Artifacts
+
+/node_modules
+/.turbo
+/docs
+/coverage
+
+/actions/*/node_modules
+/actions/*/.turbo
+/actions/*/dist
+/actions/*/coverage
+
+/changelog/node_modules
+/changelog/.turbo
+/changelog/dist
+/changelog/coverage
+
+/tooling/node_modules
+/tooling/.turbo
+/tooling/coverage
+
+# IDE
+
+/.vscode/*
+!/.vscode/extensions.json
+!/.vscode/settings.json
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# Misc
+
+*.log

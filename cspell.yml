@@ -1,0 +1,9 @@
+import: '@simbo/cspell-config'
+words:
+  - OpenSSF
+  - rhysd
+  - rseidelsohn
+  - SARIF
+  - SLSA
+ignorePaths:
+  - docs/handoffs/

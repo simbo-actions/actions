@@ -1,0 +1,25 @@
+packages:
+  - actions/*
+  - changelog
+  - tooling
+
+engineStrict: true
+
+verifyDepsBeforeRun: warn
+
+minimumReleaseAge: 2880
+
+trustPolicy: no-downgrade
+
+minimumReleaseAgeExclude:
+  - '@simbo/*'
+
+# Security fixes for indirect development dependencies, until their dependents
+# require the fixed versions themselves. Remove an entry once it is no longer
+# needed (see MAINTAINING.md).
+overrides:
+  ajv@>=8.0.0 <8.18.0: ^8.18.0
+  fast-uri@>=3.0.0 <3.1.9: ^3.1.9
+  js-yaml@>=4.0.0 <4.3.2: ^4.3.2
+  launch-editor@<2.14.2: ^2.14.2
+  shell-quote@<1.11.0: ^1.11.0
