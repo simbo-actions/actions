@@ -24,6 +24,18 @@ describe('rulesetMatches', () => {
     rules: [{ type: 'pull_request', parameters: { required_approving_review_count: 0 } }, { type: 'deletion' }],
   };
 
+  it('accepts the null ID that the API returns for organization admins', () => {
+    const actual = {
+      ...ruleset,
+      bypass_actors: [
+        { actor_id: null, actor_type: 'OrganizationAdmin', bypass_mode: 'always' },
+        { actor_id: 5, actor_type: 'Integration', bypass_mode: 'always' },
+      ],
+    };
+    expect(rulesetMatches(ruleset, actual)).toBe(true);
+    expect(rulesetMatches(ruleset, { ...actual, bypass_actors: [actual.bypass_actors[0]] })).toBe(false);
+  });
+
   it('ignores order and additional fields from the API', () => {
     expect(
       rulesetMatches(ruleset, {

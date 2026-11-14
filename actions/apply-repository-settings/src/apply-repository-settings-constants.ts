@@ -168,3 +168,9 @@ export const BYPASS_MODES = ['always', 'pull_request', 'exempt'] as const;
  */
 // eslint-disable-next-line unicorn/no-null -- the API value for "all branches"
 export const ALL_BRANCHES = null;
+
+/**
+ * The ID that bypass actors of the type `OrganizationAdmin` are compared with;
+ * the API accepts any ID and returns `null`.
+ */
+export const ORGANIZATION_ADMIN_ID = 1;

@@ -1,3 +1,4 @@
+import { ORGANIZATION_ADMIN_ID } from './apply-repository-settings-constants.js';
 import type { BypassActor, Rule, Ruleset } from './apply-repository-settings.types.js';
 
 /**
@@ -29,7 +30,8 @@ export function matches(expected: unknown, actual: unknown): boolean {
 
 /**
  * Checks whether a ruleset from the API matches the configured ruleset,
- * independent of the order of rules and bypass actors.
+ * independent of the order of rules and bypass actors and of the ID of
+ * organization admins.
  *
  * @param expected - The configured ruleset.
  * @param actual - The ruleset from the API.
@@ -37,10 +39,11 @@ export function matches(expected: unknown, actual: unknown): boolean {
  */
 export function rulesetMatches(expected: Ruleset, actual: Partial<Ruleset>): boolean {
   const byType = (items: Rule[]): Rule[] => items.toSorted((a, b) => a.type.localeCompare(b.type));
+  // GitHub returns the ID of organization admins as null, whatever was sent.
   const byActor = (items: BypassActor[]): BypassActor[] =>
-    items.toSorted((a, b) =>
-      `${a.actor_type}${String(a.actor_id)}`.localeCompare(`${b.actor_type}${String(b.actor_id)}`),
-    );
+    items
+      .map(actor => (actor.actor_type === 'OrganizationAdmin' ? { ...actor, actor_id: ORGANIZATION_ADMIN_ID } : actor))
+      .toSorted((a, b) => `${a.actor_type}${String(a.actor_id)}`.localeCompare(`${b.actor_type}${String(b.actor_id)}`));
   const { rules = [], bypass_actors: bypassActors = [], ...rest } = expected;
   return (
     matches(rest, actual) &&
