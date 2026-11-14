@@ -1,7 +1,7 @@
 {
   "name": "apply-repository-settings",
   "description": "A GitHub Action to apply repository settings, rulesets, labels, environments, and more from a YAML file, writing only what differs.",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "author": "Simon Lepel <simbo@simbo.de> (https://simbo.de)",
   "license": "MIT",
