@@ -182,6 +182,10 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/smoke-tests.yml
+    secrets:
+      # Only the environment "smoke-test" holds it; it resolves only in its
+      # jobs on main, never on pull requests.
+      SIMBO_ACTIONS_APP_PRIVATE_KEY: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
 
   dispatch-release:
     needs:

@@ -18,6 +18,11 @@ name: Smoke Tests 💨
 
 on:
   workflow_call:
+    secrets:
+      # Resolves only in the jobs with the environment "smoke-test", which run
+      # only on main; a caller must pass it, or it stays empty there.
+      SIMBO_ACTIONS_APP_PRIVATE_KEY:
+        required: true
 
 permissions: {}
 

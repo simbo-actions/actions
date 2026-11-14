@@ -140,6 +140,9 @@ per action, before every release:
 
 Like the privileged jobs of the release, the write tests run only prebuilt
 actions and no npm code, and every token is restricted to the sandbox.  
+`checks` passes the private key to `smoke-tests` by name: a called workflow gets
+an environment secret only if its caller passes it. It resolves only in the jobs
+with the environment `smoke-test`, so pull requests never see it.  
 The sandbox keeps no history of the tests:
 
 - nothing is committed to its `main`, which holds only the initial commit of
