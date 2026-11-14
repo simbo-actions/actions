@@ -514,11 +514,12 @@ created after the merge, in a job with the environment `release`.
 
 The osv-scanner workflows upload their results to code scanning.  
 On pull requests, only findings that the pull request adds fail.  
-The release is dispatched only after the scan on `main` passed. The scan on
-`main` is not a required check of the ruleset: on pull requests its reusable
-call is skipped and reports only as `vulnerabilities`, so the check would never
-pass. The pull request variant `vulnerabilities (new findings) / osv-scan` is
-required.
+The pull request variant `vulnerabilities (new findings) / osv-scan` is a
+required check and blocks the merge.  
+The scan on `main` blocks the release instead: the release is dispatched only
+after it passed. It is not a required check, because required checks are
+evaluated on pull requests, where its reusable call is skipped and reports only
+as `vulnerabilities`.
 
 The scan job has no secrets and only `contents: read` and
 `security-events: write`.  
