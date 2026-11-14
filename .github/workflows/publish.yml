@@ -371,7 +371,7 @@ jobs:
 
       - name: 🏷️ Move Floating Version Tags
         if: ${{ !contains(needs.build.outputs.version, '-') }}
-        uses: simbo-actions/floating-version-tags@b8e8a639c9485a8ba1bae66dde7b88932d4b5b02 # v1.0.0
+        uses: simbo-actions/floating-version-tags@55899c98f3052a7fef926057e4e6bd219ae397ae # v1.0.1
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: ${{ needs.build.outputs.repository }}
