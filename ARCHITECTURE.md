@@ -110,12 +110,13 @@ Workspaces in the monorepo:
 | `changelog/`      | Changelog of the monorepo itself                               |
 | `organization/`   | Content of the organization repository `simbo-actions/.github` |
 
-The release and publish workflows use the actions of this repository, built in
-the same run: they publish themselves with
-[`signed-commit`](actions/signed-commit/README.md),
+The release and publish workflows use the published actions of this
+organization, pinned by SHA: [`signed-commit`](actions/signed-commit/README.md),
 [`apply-repository-settings`](actions/apply-repository-settings/README.md),
 [`staged-release`](actions/staged-release/README.md), and
-[`floating-version-tags`](actions/floating-version-tags/README.md).
+[`floating-version-tags`](actions/floating-version-tags/README.md).  
+A new version reaches the release process through a Dependabot pull request that
+a maintainer reviews, like any other dependency.
 
 Every action in `actions/<name>/` is published to `simbo-actions/<name>`.
 
@@ -152,8 +153,9 @@ that is not merged yet:
 Only the job `sandbox` uses the app `simbo-actions`: on `main`, in the
 environment `release`, it creates the sandbox if it is missing.
 
-Like the privileged jobs of the release, the write tests run only prebuilt
-actions and no npm code, and every token is restricted to the sandbox.  
+The write tests run the actions built in the same run, because they test this
+code; like the privileged jobs of the release, they run no npm code, and every
+token is restricted to the sandbox.  
 `checks` passes both keys to `smoke-tests` by name: a called workflow gets an
 environment secret only if its caller passes it. Each key resolves only in the
 jobs whose environment holds it.
@@ -215,13 +217,13 @@ flowchart TD
 
   subgraph buildJob["job: build (no environment, no secrets)"]
     build["checkout at tag, install, build"]
-    assemble["assemble content and assets,<br/>release notes from changelog,<br/>prebuilt internal actions"]
+    assemble["assemble content and assets,<br/>release notes from changelog"]
     build --> assemble
   end
 
   assemble -- "artifact" --> attest
 
-  subgraph job["job: publish (environment release, no npm code)"]
+  subgraph job["job: publish (environment release, no npm code,<br/>published actions pinned by SHA)"]
     attest["attest build provenance"]
     create["create repository if missing<br/>(auto_init)"]
     configure["apply-repository-settings<br/>(only what differs)"]
@@ -235,9 +237,9 @@ flowchart TD
 
 Third-party code (install, build) runs only in the job `build`, which has no
 environment and no secrets.  
-The job `publish` downloads its artifact and runs the prebuilt actions; it runs
-no npm code, which `pnpm run check:actions` checks for every job with an
-environment.  
+The job `publish` downloads its artifact and runs the published actions of this
+organization, pinned by SHA; it runs no npm code and no actions built in the
+same run, which `pnpm run check:actions` checks.  
 Each step requests its own token, see
 [Identity, Tokens, and Permissions](#identity-tokens-and-permissions).
 
@@ -407,10 +409,11 @@ the API.
 Jobs with an environment run no npm code: a process started by a dependency
 during install or build could otherwise read the private key from a later step
 on the same runner.  
-Remaining risk: a compromised build tool could change the prebuilt actions that
-the privileged job runs with a short-lived, narrowly scoped token. Using the
-published actions, pinned by SHA, instead of the ones built in the same run
-removes this risk; it is planned.
+Jobs with the environment `release` run only published actions, pinned by SHA,
+never the ones built in the same run: a compromised build tool cannot change the
+code that runs with the credentials.  
+A new version of an own action is used only after a maintainer merged its
+Dependabot pull request.
 
 Fork pull requests need approval before their workflows run.  
 Write tests of a pull request need approval as well: the code of the pull
@@ -585,9 +588,14 @@ major version; see [MAINTAINING.md](MAINTAINING.md).
   was first published; a shared file would change the year of older actions.
 - **Settings enforced on every publish.** Why: action repositories are
   generated; drift is corrected automatically instead of documented.
-- **The release process uses its own actions.** Why: every release exercises the
-  actions it publishes; a broken action fails the release before consumers see
-  it.
+- **The release process uses its latest published actions, pinned by SHA.** Why:
+  the code that runs with the credentials is a reviewed, attested release, not a
+  build of the same run. Every release still exercises the actions, because the
+  pins follow the releases through Dependabot.  
+  Bootstrap: the very first release had no published actions yet and used the
+  ones built in the same run; the following commit switched to the published
+  ones. A broken release of an own action is handled by pinning back, see
+  [MAINTAINING.md](MAINTAINING.md#broken-action-in-the-release-process).
 - **Separate jobs for build and credentials.** Why: steps of one job share the
   runner, so a process started by a dependency in an earlier step could read
   secrets of a later step. A job without secrets builds; a job without npm code

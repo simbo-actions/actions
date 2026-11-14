@@ -6,7 +6,8 @@
 // the note about the monorepo, if the copies of the Octokit client in the
 // actions differ, if a workflow scans with other allowed licenses than the
 // script "check:vulnerabilities", or if a job with an environment (and thereby
-// secrets) runs npm code.
+// secrets) runs npm code, or a job with the environment "release" runs a local
+// action.
 // Usage: node tooling/bin/check-actions.ts (from the repository root)
 //------------------------------------------------------------------------------
 
@@ -60,5 +61,5 @@ if (problems.length > 0) {
 }
 
 stdout.write(
-  '✔ All actions have a LICENSE.md, a matching license link, all README sections, and the monorepo note; all Octokit clients are identical; all workflows scan with the same allowed licenses; no job with an environment runs npm code.\n',
+  '✔ All actions have a LICENSE.md, a matching license link, all README sections, and the monorepo note; all Octokit clients are identical; all workflows scan with the same allowed licenses; no job with an environment runs npm code, and the release runs only published actions.\n',
 );

@@ -9,10 +9,10 @@ name: Release 📬
 # Dispatched by the "Checks" workflow on main branch.
 #
 # Two jobs: "build" integrates the changesets without any credentials and hands
-# the changes over as patch, together with the prebuilt signed-commit action.
-# "release" runs no npm code: it applies the patch, checks that it only touches
-# release files, and commits it with the app credentials. No Git credentials are
-# stored in a checkout.
+# the changes over as patch. "release" runs no npm code: it applies the patch,
+# checks that it only touches release files, and commits it with the published
+# signed-commit action, pinned by SHA, and the app credentials. No Git
+# credentials are stored in a checkout.
 #-------------------------------------------------------------------------------
 
 on:
@@ -117,11 +117,9 @@ jobs:
           set -euo pipefail
 
           echo "base-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          mkdir -p "${RUNNER_TEMP}/release/actions/signed-commit"
+          mkdir -p "${RUNNER_TEMP}/release"
           git add --all
           git diff --cached --binary > "${RUNNER_TEMP}/release/release.patch"
-          cp actions/signed-commit/action.yml "${RUNNER_TEMP}/release/actions/signed-commit/"
-          cp -R actions/signed-commit/dist "${RUNNER_TEMP}/release/actions/signed-commit/"
 
       - name: 📤 Upload Release
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -183,7 +181,7 @@ jobs:
           permission-contents: write
 
       - name: 💾 Commit Release and Create Tags
-        uses: ./release/actions/signed-commit
+        uses: simbo-actions/signed-commit@fe2015f4b29fa48148803a55e1434f90ebed17a4 # v1.0.0
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: main
