@@ -1,0 +1,31 @@
+name: 💡 Feature request
+description: Suggest an improvement or a new action.
+labels: [enhancement]
+body:
+  - type: input
+    id: action
+    attributes:
+      label: Action
+      description: >
+        The name of the action, "new action", or "release process" for the
+        release and publish process of this repository.
+      placeholder: signed-commit
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: What do you want to achieve, and why is it not possible today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How could the action support it? Inputs, outputs, behavior.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways you considered or use today.
