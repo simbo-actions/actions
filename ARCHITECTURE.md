@@ -498,6 +498,9 @@ created after the merge, in a job with the environment `release`.
   would need secrets in Dependabot workflows.
 - Auto-merge requires that both the pull request and the event come from
   Dependabot (`github.actor`), and fails closed if the changed files cannot be
+- **Updates of workflow pins get no changeset.** Dependabot pull requests are
+  exempt from the changeset requirement; they release no action and are listed
+  in the Git history.
   read.
 
 ## Vulnerability, Secret, and License Checks
@@ -512,7 +515,11 @@ created after the merge, in a job with the environment `release`.
 
 The osv-scanner workflows upload their results to code scanning.  
 On pull requests, only findings that the pull request adds fail.  
-The release is dispatched only after the scan on `main` passed.
+The release is dispatched only after the scan on `main` passed. The scan on
+`main` is not a required check of the ruleset: on pull requests its reusable
+call is skipped and reports only as `vulnerabilities`, so the check would never
+pass. The pull request variant `vulnerabilities (new findings) / osv-scan` is
+required.
 
 The scan job has no secrets and only `contents: read` and
 `security-events: write`.  

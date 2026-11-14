@@ -256,4 +256,4 @@ See [ARCHITECTURE.md](ARCHITECTURE.md#from-changeset-to-release).
 | Commit rejected with a commitlint error               | Use a Conventional Commits message, for example `feat(<scope>): …`                     |
 | Tests fail with a coverage threshold error            | Add tests for the uncovered code; the report is in `coverage/`                         |
 | `check:licenses` fails                                | The dependency's license is not allowed, see [STANDARDS.md](STANDARDS.md#dependencies) |
-| The workflow `checks` fails on "Missing Changeset"    | Add a changeset, or an empty one for changes without a release                         |
+| The workflow `checks` fails on "Missing Changeset"    | Add a changeset; changes without a release get one for the package `changelog`         |
