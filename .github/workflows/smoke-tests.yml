@@ -763,10 +763,10 @@ jobs:
           repositories: sandbox
           permission-contents: write
 
-      # Two commits outside of any branch, tagged v1.0.0 and v1.1.0. The tags
-      # are protected by the ruleset "Release Tags", which the app bypasses.
-      - name: 🧪 Create Release Tags
-        id: tags
+      # Two commits outside of any branch, for v1.0.0 and v1.1.0. The tags are
+      # protected by the ruleset "Release Tags", which the app bypasses.
+      - name: 🧪 Create Commits and Tag v1.0.0
+        id: commits
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
@@ -776,8 +776,10 @@ jobs:
           for version in 1.0.0 1.1.0; do
             sha="$(gh api --method POST "repos/${SANDBOX}/git/commits" -f "message=test: release ${version}" \
               -f "tree=${tree}" -f "parents[]=${main}" --jq '.sha')"
-            gh api --method POST "repos/${SANDBOX}/git/refs" --silent -f "ref=refs/tags/v${version}" -f "sha=${sha}"
             echo "v${version//./_}=${sha}" >> "$GITHUB_OUTPUT"
+            if [[ "$version" == 1.0.0 ]]; then
+              gh api --method POST "repos/${SANDBOX}/git/refs" --silent -f "ref=refs/tags/v${version}" -f "sha=${sha}"
+            fi
           done
 
       - name: 🏷️ Create v1 at v1.0.0
@@ -788,6 +790,12 @@ jobs:
           repository: ${{ env.SANDBOX }}
           tag: v1.0.0
           annotated: true
+
+      - name: 🧪 Tag v1.1.0
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SHA: ${{ steps.commits.outputs.v1_1_0 }}
+        run: gh api --method POST "repos/${SANDBOX}/git/refs" --silent -f 'ref=refs/tags/v1.1.0' -f "sha=${SHA}"
 
       - name: 🏷️ Move v1 to v1.1.0
         id: second
@@ -813,7 +821,7 @@ jobs:
           FIRST: ${{ steps.first.outputs.moved }}
           SECOND: ${{ steps.second.outputs.moved }}
           THIRD: ${{ steps.third.outputs.moved }}
-          V1_1_0: ${{ steps.tags.outputs.v1_1_0 }}
+          V1_1_0: ${{ steps.commits.outputs.v1_1_0 }}
         run: |
           set -euo pipefail
 
