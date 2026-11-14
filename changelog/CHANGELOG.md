@@ -1,5 +1,47 @@
 # changelog
 
+## 0.2.1
+
+### Patch Changes
+
+- 50a66a7: Clarify which vulnerability scan blocks the merge and which blocks
+  the release.
+- 1e06401: Describe the approach of Simbo's Actions in the organization profile,
+  the README, and the architecture.
+
+  - A section "How It Works" in the organization profile and the README explains
+    the constraints of GitHub Actions and how the monorepo separates source from
+    distribution.
+  - The architecture starts with "Approach" instead of "Why".
+  - The section "About Simbo's Actions" of every action README comes from
+    `tooling/about-section.md` and is checked by `check:actions`.
+
+- 119b3af: Complete the documentation of changesets and required checks.
+
+  - The troubleshooting entry for a missing changeset no longer suggests an
+    empty changeset.
+  - Document that Dependabot updates of workflow pins get no changeset.
+  - Document why the vulnerability scan on `main` is not a required check.
+
+- 5df5dde: Skip manual runs of the release workflow.
+
+  - Only the dispatch by the checks on `main` starts a release, so a release
+    cannot bypass failed checks.
+  - Re-runs of a failed release still work, because they keep the actor of the
+    original run.
+
+- 7bea88e: Name the runs on `main` after their commit.
+
+  - Release runs show the short SHA and the first line of the message of the
+    checked commit.
+  - Checks and Publish Organization runs on a push show the commit message.
+
+- 850deaa: Remove the manual trigger of the publish workflow.
+
+  - A failed publish is repeated by re-running its tag push run.
+  - Resolves the code scanning alerts for cache poisoning: a manual run checked
+    out a release tag in the cache scope of `main`.
+
 ## 0.2.0
 
 ### Minor Changes
