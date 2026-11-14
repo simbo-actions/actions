@@ -1,0 +1,36 @@
+name: GitHub App Bot User
+
+description: A GitHub Action to get the bot user of a GitHub App, with user ID, login, name, and email for Git.
+
+author: Simon Lepel <simbo@simbo.de> (https://simbo.de/)
+
+branding:
+  icon: user-check
+  color: blue
+
+inputs:
+  app-slug:
+    description: >
+      The slug of the GitHub App, for example the output "app-slug" of
+      actions/create-github-app-token. A "[bot]" suffix is accepted.
+    required: true
+  token:
+    description: The token for the API request. The bot user is public; any token works.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  id:
+    description: The user ID of the bot user.
+  login:
+    description: The login of the bot user, for example "my-app[bot]".
+  name:
+    description: The name for Git commits, same as the login.
+  email:
+    description: The noreply email for Git commits, for example "123+my-app[bot]@users.noreply.github.com".
+  author:
+    description: Name and email in the format "Name <email>", for example for "Co-authored-by" trailers.
+
+runs:
+  using: node24
+  main: dist/index.js

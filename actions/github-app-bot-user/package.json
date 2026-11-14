@@ -1,0 +1,42 @@
+{
+  "name": "github-app-bot-user",
+  "description": "A GitHub Action to get the bot user of a GitHub App: user ID, login, name, and email for Git.",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Simon Lepel <simbo@simbo.de> (https://simbo.de)",
+  "license": "MIT",
+  "homepage": "https://github.com/simbo-actions/github-app-bot-user#readme",
+  "bugs": "https://github.com/simbo-actions/actions/issues",
+  "repository": "github:simbo-actions/actions",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "check": "pnpm run check:types && pnpm run check:eslint",
+    "check:eslint": "eslint --max-warnings 0",
+    "check:types": "tsc --noEmit",
+    "clean": "pnpm run clean:dist && pnpm run clean:coverage",
+    "clean:coverage": "rm -rf coverage",
+    "clean:dist": "rm -rf dist",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest dev --coverage"
+  },
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
+    "@octokit/plugin-throttling": "^11.0.5",
+    "@simbo/stringify-error": "^2.0.0"
+  },
+  "devDependencies": {
+    "@simbo/eslint-config": "^3.0.0",
+    "@simbo/rollup-github-actions-config": "^2.0.0",
+    "@simbo/tsconfig": "^2.0.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "eslint": "^10.11.0",
+    "rollup": "^4.68.2",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  }
+}
