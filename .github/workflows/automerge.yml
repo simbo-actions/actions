@@ -1,0 +1,111 @@
+name: Auto-merge 🤖
+
+#-------------------------------------------------------------------------------
+# "Auto-merge" Workflow
+#
+# Merges low-risk Dependabot pull requests once the required checks pass:
+# minor or patch updates of actions by trusted publishers (actions/*, github/*,
+# google/*), if only files under .github/ change.
+# Updates of simbo-actions/* are reviewed: the privileged jobs of this
+# repository run these actions with the app's credentials.
+# Assigns all other Dependabot pull requests to the owner for review.
+#-------------------------------------------------------------------------------
+
+on: pull_request
+
+permissions: {}
+
+concurrency:
+  cancel-in-progress: true
+  group: >
+    ${{
+      format(
+        '{0}--PR#{1}',
+        github.workflow,
+        github.event.pull_request.number
+      )
+    }}
+
+run-name: >
+  ${{
+    format(
+      '{0} PR#{1} "{2}"',
+      github.workflow,
+      github.event.pull_request.number,
+      github.event.pull_request.title
+    )
+  }}
+
+jobs:
+  automerge:
+    # Both the pull request and the event must come from Dependabot, so that a
+    # push by someone else to a Dependabot branch is never merged automatically.
+    if: >
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: 🔍 Fetch Dependabot Metadata
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: 🧐 Check Pull Request
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+          ECOSYSTEM: ${{ steps.meta.outputs.package-ecosystem }}
+          DEPENDENCIES: ${{ steps.meta.outputs.dependency-names }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+        run: |
+          set -euo pipefail
+
+          result=true
+
+          # Only GitHub Actions updates
+          if [[ "$ECOSYSTEM" != 'github_actions' ]]; then
+            result=false
+          fi
+
+          # Only trusted publishers actions/*, github/*, and google/* (minor or patch)
+          IFS=',' read -ra names <<< "$DEPENDENCIES"
+          if [[ ${#names[@]} -eq 0 ]]; then
+            result=false
+          fi
+          for name in "${names[@]}"; do
+            name="$(echo "$name" | xargs)"
+            if [[ "$name" == actions/* || "$name" == github/* || "$name" == google/* ]] \
+              && [[ "$UPDATE_TYPE" == 'version-update:semver-minor' || "$UPDATE_TYPE" == 'version-update:semver-patch' ]]; then
+              continue
+            fi
+            result=false
+          done
+
+          # Only files under .github/; if the diff cannot be read, no automerge
+          if ! files="$(gh pr diff "$PR" --name-only)"; then
+            result=false
+          elif grep -qv '^\.github/' <<< "$files"; then
+            result=false
+          fi
+
+          echo "automerge=${result}" >> "$GITHUB_OUTPUT"
+
+      - name: 🔀 Enable Auto-merge
+        if: steps.check.outputs.automerge == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+        # --auto fails once the PR is already mergeable; the ruleset still
+        # enforces the required checks on the direct merge.
+        run: gh pr merge "$PR" --auto --squash || gh pr merge "$PR" --squash
+
+      - name: 🙋 Assign Owner
+        if: steps.check.outputs.automerge != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+          OWNER: simbo
+        run: gh pr edit "$PR" --add-assignee "$OWNER"

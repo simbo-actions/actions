@@ -1,0 +1,62 @@
+version: 2
+
+updates:
+  # GitHub Actions in workflows and composite actions, daily
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /actions/*
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+      exclude:
+        - simbo-actions/*
+    # One pull request per update across all directories
+    groups:
+      simbo-actions:
+        group-by: dependency-name
+        patterns:
+          - simbo-actions/*
+      # Trusted publishers whose minor and patch updates are merged automatically
+      trusted-actions:
+        group-by: dependency-name
+        patterns:
+          - actions/*
+          - github/*
+          - google/*
+      third-party-actions:
+        group-by: dependency-name
+        patterns:
+          - '*'
+        exclude-patterns:
+          - simbo-actions/*
+          - actions/*
+          - github/*
+          - google/*
+
+  # npm dependencies of all workspaces, weekly, minor and patch updates grouped
+  # into one pull request per update across all directories. Major updates are
+  # planned work, done by hand (see MAINTAINING.md, "Major Updates").
+  - package-ecosystem: npm
+    directories:
+      - /
+      - /actions/*
+      - /changelog
+      - /tooling
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          - version-update:semver-major
+    groups:
+      npm-dependencies:
+        group-by: dependency-name
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch

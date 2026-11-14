@@ -1,0 +1,946 @@
+name: Smoke Tests 💨
+
+#-------------------------------------------------------------------------------
+# "Smoke Tests" Workflow
+#
+# Runs the built actions on the runner against the real GitHub API: one job per
+# action, each with only the permissions its test needs. Unit tests cover the
+# logic; these tests cover the bundle, the runtime, the HTTP client, and the
+# API.
+# Read-only tests run without secrets on every pull request and push. The
+# write tests run against the repository simbo-actions/sandbox, as the GitHub
+# App simbo-actions-sandbox, which is installed only there: on main in the
+# environment "smoke-test", on pull requests from this repository in the
+# environment "smoke-test-pr", which needs the approval of a maintainer. They
+# run no npm code, isolate every run by its ID, and remove what they created.
+# Only the job "sandbox" uses the app simbo-actions, to create the sandbox on
+# main if it is missing.
+# Called by the "Checks" workflow, which waits for it before the release, so it
+# has no trigger, run-name, or concurrency of its own.
+#-------------------------------------------------------------------------------
+
+on:
+  workflow_call:
+    # A caller must pass the secrets, or they stay empty. Each resolves only in
+    # the jobs with an environment that holds it.
+    secrets:
+      # Environment "release": only main, only to create the sandbox.
+      SIMBO_ACTIONS_APP_PRIVATE_KEY:
+        required: true
+      # Environments "smoke-test" (main) and "smoke-test-pr" (with approval).
+      SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY:
+        required: true
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 📦 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 👷‍♂️ Build
+        run: pnpm exec turbo run build --filter='./actions/*'
+
+      - name: 🧰 Assemble Actions
+        run: |
+          set -euo pipefail
+
+          for directory in actions/*/; do
+            name="$(basename "$directory")"
+            mkdir -p "smoke/actions/${name}"
+            cp "${directory}action.yml" "smoke/actions/${name}/"
+            cp -R "${directory}dist" "smoke/actions/${name}/"
+          done
+          cp .github/managed-repository-settings.yml smoke/
+
+      - name: 📤 Upload Actions
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+          if-no-files-found: error
+          retention-days: 1
+
+  github-app-bot-user:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      - name: 🤖 Get Bot User
+        id: bot-user
+        uses: ./smoke/actions/github-app-bot-user
+        with:
+          app-slug: simbo-actions
+
+      - name: 🔍 Verify Bot User
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SLUG: simbo-actions
+          ID: ${{ steps.bot-user.outputs.id }}
+          LOGIN: ${{ steps.bot-user.outputs.login }}
+          NAME: ${{ steps.bot-user.outputs.name }}
+          EMAIL: ${{ steps.bot-user.outputs.email }}
+          AUTHOR: ${{ steps.bot-user.outputs.author }}
+        run: |
+          set -euo pipefail
+
+          fail() {
+            echo "::error title=Unexpected Bot User::$1 (id=${ID} login=${LOGIN} name=${NAME} email=${EMAIL} author=${AUTHOR})"
+            exit 1
+          }
+
+          # The outputs fit together.
+          [[ "$LOGIN" == "${SLUG}[bot]" ]] || fail 'login is not "<app-slug>[bot]"'
+          [[ "$ID" =~ ^[1-9][0-9]*$ ]] || fail 'id is not a positive number'
+          [[ "$NAME" == "$LOGIN" ]] || fail 'name differs from login'
+          [[ "$EMAIL" == "${ID}+${LOGIN}@users.noreply.github.com" ]] || fail 'email is not the noreply email'
+          [[ "$AUTHOR" == "${NAME} <${EMAIL}>" ]] || fail 'author is not "name <email>"'
+
+          # The outputs match an independent lookup of the user.
+          user="$(gh api "users/${LOGIN}" --jq '"\(.id) \(.login) \(.type)"')"
+          [[ "$user" == "${ID} ${LOGIN} Bot" ]] || fail "the API returns ${user}"
+
+          echo "Bot user: ${AUTHOR} (ID ${ID})"
+
+  gitleaks-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      # The test repositories are scanned with "history", "files", or
+      # "log-opts": the commits of this run's event are not in them.
+      - name: 🧪 Create Test Repositories
+        run: |
+          set -euo pipefail
+
+          # Generated at runtime, so that no token-like string is in this repository.
+          token="ghp_$(openssl rand -hex 18)"
+
+          commit() {
+            printf '%s\n' "$2" > "$1/config.txt"
+            git -C "$1" add config.txt
+            git -C "$1" commit --quiet --message "$3"
+          }
+
+          for repo in clean-repo leaky-repo fixed-repo; do
+            git init --quiet --initial-branch=main "$repo"
+            git -C "$repo" config user.name 'Smoke Test'
+            git -C "$repo" config user.email 'smoke-test@example.com'
+          done
+
+          commit clean-repo 'token = none' 'test: add config'
+          commit leaky-repo "token = ${token}" 'test: add config'
+          # The token is only in the older commit, not in the last one or the files.
+          commit fixed-repo "token = ${token}" 'test: add config'
+          commit fixed-repo 'token = none' 'test: remove token'
+
+          mkdir leaky-files
+          printf '%s\n' "token = ${token}" > leaky-files/config.txt
+
+      - name: 🔐 Scan Clean Repository
+        id: clean
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: clean-repo
+          scope: history
+
+      - name: 🔐 Scan Repository with a Fake Token
+        id: leaky
+        continue-on-error: true
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: leaky-repo
+          scope: history
+
+      - name: 🔐 Scan Only the Last Commit
+        id: last-commit
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: fixed-repo
+          log-opts: HEAD~1..HEAD
+
+      - name: 🔐 Scan the Whole History Without Failing
+        id: history
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: fixed-repo
+          scope: history
+          fail-on-findings: false
+
+      - name: 🔐 Scan the Files of a Repository
+        id: files
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: fixed-repo
+          scope: files
+
+      - name: 🔐 Scan Files with a Fake Token
+        id: leaky-files
+        continue-on-error: true
+        uses: ./smoke/actions/gitleaks-scan
+        with:
+          working-directory: leaky-files
+          scope: files
+
+      - name: 🔍 Verify Results
+        env:
+          CLEAN: ${{ steps.clean.outputs.findings }}
+          LEAKY: ${{ steps.leaky.outcome }} ${{ steps.leaky.outputs.findings }}
+          LEAKY_SARIF: ${{ steps.leaky.outputs.sarif-file }}
+          LAST_COMMIT: ${{ steps.last-commit.outputs.findings }} ${{ steps.last-commit.outputs.scanned }}
+          HISTORY: ${{ steps.history.outcome }} ${{ steps.history.outputs.findings }} ${{ steps.history.outputs.scanned }}
+          FILES: ${{ steps.files.outputs.findings }} ${{ steps.files.outputs.scanned }}
+          LEAKY_FILES: ${{ steps.leaky-files.outcome }} ${{ steps.leaky-files.outputs.findings }}
+        run: |
+          set -euo pipefail
+
+          failed=0
+          expect() {
+            if [[ "$2" == "$3" ]]; then
+              echo "✅ $1: $2"
+            else
+              echo "::error title=Unexpected Result::$1: expected \"$3\", got \"$2\""
+              failed=1
+            fi
+          }
+
+          expect 'clean repository' "$CLEAN" '0'
+          expect 'fake token' "$LEAKY" 'failure 1'
+          expect 'token only in an older commit, last commit' "$LAST_COMMIT" '0 commits of "HEAD~1..HEAD"'
+          expect 'token only in an older commit, history' "$HISTORY" 'success 1 history'
+          expect 'token only in an older commit, files' "$FILES" '0 files'
+          expect 'fake token in files' "$LEAKY_FILES" 'failure 1'
+          [[ -s "$LEAKY_SARIF" ]] || { echo '::error::The SARIF report is missing.'; failed=1; }
+          exit "$failed"
+
+  floating-version-tags:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      # A dry run against a public repository: it only reads tags. v4.0.0 of
+      # actions/checkout is older than later v4 and v5 releases, so neither "v4"
+      # nor "latest" may move to it.
+      - name: 🏷️ Check Floating Version Tags
+        id: floating
+        uses: ./smoke/actions/floating-version-tags
+        with:
+          token: ${{ github.token }}
+          repository: actions/checkout
+          tag: v4.0.0
+          major: true
+          latest: true
+          dry-run: true
+
+      # Tags with a prefix and without "v": of @actions/core@1.0.0 and 1.1.0 in
+      # actions/toolkit, 1.0.0 is the highest of 1.0 only, so only the minor
+      # tag would be created.
+      - name: 🏷️ Check Floating Tags with a Prefix
+        id: prefix
+        uses: ./smoke/actions/floating-version-tags
+        with:
+          token: ${{ github.token }}
+          repository: actions/toolkit
+          tag: '@actions/core@1.0.0'
+          prefix: '@actions/core@'
+          v-prefix: false
+          major: true
+          minor: true
+          latest: true
+          annotated: true
+          dry-run: true
+
+      # Without "tag", the action needs a workflow that runs for a tag.
+      - name: 🏷️ Check the Missing Tag Default
+        id: no-tag
+        continue-on-error: true
+        uses: ./smoke/actions/floating-version-tags
+        with:
+          token: ${{ github.token }}
+          repository: actions/checkout
+          dry-run: true
+
+      - name: 🔍 Verify Results
+        env:
+          MOVED: ${{ steps.floating.outputs.moved }}
+          PREFIX_MOVED: ${{ steps.prefix.outputs.moved }}
+          NO_TAG: ${{ steps.no-tag.outcome }}
+        run: |
+          set -euo pipefail
+
+          if ! jq --exit-status 'type == "array" and (index("v4") == null) and (index("latest") == null)' <<< "$MOVED" > /dev/null; then
+            echo "::error title=Unexpected Result::moved=${MOVED}"
+            exit 1
+          fi
+          echo "✅ Kept v4 and latest; would move: ${MOVED}"
+
+          if [[ "$PREFIX_MOVED" != '["@actions/core@1.0"]' ]]; then
+            echo "::error title=Unexpected Result::prefix: moved=${PREFIX_MOVED}"
+            exit 1
+          fi
+          echo "✅ With a prefix, only @actions/core@1.0 would be created."
+
+          if [[ "$NO_TAG" != 'failure' ]]; then
+            echo "::error title=Unexpected Result::without tag: ${NO_TAG}"
+            exit 1
+          fi
+          echo '✅ Without a tag outside of a tag workflow, the action failed.'
+
+  # Creates the sandbox if it is missing; the app simbo-actions-sandbox is
+  # installed only on the sandbox and cannot create it.
+  sandbox:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      contents: read
+    env:
+      SANDBOX: ${{ github.repository_owner }}/sandbox
+    steps:
+      - name: 🔍 Check Sandbox Repository
+        id: repo-exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Only "not found" means missing; any other error fails the step.
+          if output="$(gh api "repos/${SANDBOX}" --silent 2>&1)"; then
+            echo "result=true" >> "$GITHUB_OUTPUT"
+          elif grep -q 'HTTP 404' <<< "$output"; then
+            echo "result=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error title=Repository Check Failed::${output}"
+            exit 1
+          fi
+
+      - name: 🔑 Get App Token (Create Sandbox)
+        id: app-token
+        if: steps.repo-exists.outputs.result == 'false'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          permission-administration: write
+
+      # The app simbo-actions-sandbox must then be installed on the new
+      # repository; see MAINTAINING.md, "Sandbox".
+      - name: 🪄 Create Sandbox Repository
+        if: steps.repo-exists.outputs.result == 'false'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "orgs/${OWNER}/repos" --silent \
+            -f name=sandbox -F private=false -F auto_init=true \
+            -F has_issues=false -F has_wiki=false -F has_projects=false
+          echo "::warning title=Sandbox Created::Install the app simbo-actions-sandbox on ${SANDBOX}, then re-run."
+          exit 1
+
+  apply-repository-settings-sandbox:
+    needs: [build, sandbox]
+    if: >
+      !cancelled() &&
+      needs.build.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.sandbox.result) &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.user.login != 'dependabot[bot]'
+        )
+      )
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'push' && 'smoke-test' || 'smoke-test-pr' }}
+      deployment: false
+    permissions:
+      actions: read
+    env:
+      SANDBOX: ${{ github.repository_owner }}/sandbox
+      RUN: smoke-${{ github.run_id }}-${{ github.run_attempt }}
+      DESCRIPTION: >-
+        Actions Sandbox: the integration tests of simbo-actions/actions
+        create and remove branches, tags, releases, and labels here. Nothing in
+        it is meant to be used.
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      - name: 🔑 Get App Token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_SANDBOX_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY }}
+          repositories: sandbox
+          permission-administration: write
+          permission-contents: write
+          permission-issues: write
+
+      # Removes what a run left behind if it ended before its cleanup, for
+      # example when a runner was lost. Names carry the run ID, and only
+      # leftovers of finished runs are removed, so parallel runs are safe.
+      - name: 🧹 Remove Leftovers of Finished Runs
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RUNS_TOKEN: ${{ github.token }}
+          RUNS: repos/${{ github.repository }}/actions/runs
+        run: |
+          set -euo pipefail
+
+          finished() {
+            local id status
+            id="$(sed -nE 's/^smoke[-/]([0-9]+)-.*/\1/p' <<< "$1")"
+            [[ -n "$id" ]] || return 1
+            status="$(GH_TOKEN="$RUNS_TOKEN" gh api "${RUNS}/${id}" --jq '.status' 2>/dev/null || echo 'completed')"
+            [[ "$status" == 'completed' ]]
+          }
+
+          gh api --paginate "repos/${SANDBOX}/releases" --jq '.[] | "\(.id) \(.tag_name)"' |
+            while read -r id tag; do
+              if finished "$tag"; then
+                gh api --method DELETE "repos/${SANDBOX}/releases/${id}" --silent
+                echo "Removed release ${tag}."
+              fi
+            done
+
+          for prefix in heads/smoke/ tags/smoke/; do
+            gh api --paginate "repos/${SANDBOX}/git/matching-refs/${prefix}" --jq '.[].ref'
+          done |
+            while read -r ref; do
+              if finished "${ref#refs/*/}"; then
+                gh api --method DELETE "repos/${SANDBOX}/git/${ref}" --silent
+                echo "Removed ${ref#refs/}."
+              fi
+            done
+
+          gh api --paginate "repos/${SANDBOX}/labels" --jq '.[].name' |
+            while read -r label; do
+              if finished "$label"; then
+                gh api --method DELETE "repos/${SANDBOX}/labels/${label}" --silent
+                echo "Removed label ${label}."
+              fi
+            done
+          echo 'No leftovers of finished runs.'
+
+      # The sandbox is configured like an action repository, so the real
+      # configuration is tested as well.
+      - name: ⚙️ Apply Repository Settings
+        uses: ./smoke/actions/apply-repository-settings
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          config: smoke/managed-repository-settings.yml
+          description: ${{ env.DESCRIPTION }}
+          homepage: https://github.com/${{ github.repository }}
+          topics: simbo-actions
+
+      - name: 🧪 Check Repository Settings Again
+        id: settings-again
+        uses: ./smoke/actions/apply-repository-settings
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          config: smoke/managed-repository-settings.yml
+          description: ${{ env.DESCRIPTION }}
+          homepage: https://github.com/${{ github.repository }}
+          topics: simbo-actions
+          dry-run: true
+
+      - name: 🧪 Create Label Configurations
+        run: |
+          set -euo pipefail
+
+          cat > smoke/labels-create.yml <<YAML
+          labels:
+            - { name: ${RUN}, color: 'd73a4a', description: Created by the smoke tests }
+          YAML
+          cat > smoke/labels-rename.yml <<YAML
+          labels:
+            - { name: ${RUN}-renamed, color: '#0E8A16', old_name: ${RUN} }
+          YAML
+
+      - name: 🏷️ Create a Label
+        id: labels-create
+        uses: ./smoke/actions/apply-repository-settings
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          config: smoke/labels-create.yml
+
+      - name: 🏷️ Rename the Label
+        id: labels-rename
+        uses: ./smoke/actions/apply-repository-settings
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          config: smoke/labels-rename.yml
+
+      - name: 🔍 Verify Settings and Labels
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          AGAIN: ${{ steps.settings-again.outputs.changed }}
+          CREATED: ${{ steps.labels-create.outputs.changes }}
+          RENAMED: ${{ steps.labels-rename.outputs.changes }}
+        run: |
+          set -euo pipefail
+
+          failed=0
+          expect() {
+            if [[ "$2" == "$3" ]]; then
+              echo "✅ $1: $2"
+            else
+              echo "::error title=Unexpected Result::$1: expected \"$3\", got \"$2\""
+              failed=1
+            fi
+          }
+
+          expect 'settings after applying them' "$AGAIN" 'false'
+          expect 'label created' "$(jq -r '.[0].change' <<< "$CREATED")" 'create'
+          expect 'label renamed' "$(jq -r '.[0].change' <<< "$RENAMED")" "update (name \"${RUN}\" → \"${RUN}-renamed\", color d73a4a → 0e8a16)"
+          expect 'label in the sandbox' \
+            "$(gh api "repos/${SANDBOX}/labels/${RUN}-renamed" --jq '"\(.name) \(.color)"')" "${RUN}-renamed 0e8a16"
+          exit "$failed"
+
+      - name: 🧹 Remove Labels
+        if: always() && steps.app-token.outputs.token
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          for label in "$RUN" "${RUN}-renamed"; do
+            if gh api --method DELETE "repos/${SANDBOX}/labels/${label}" --silent 2>/dev/null; then
+              echo "Removed label ${label}."
+            fi
+          done
+
+  signed-commit-sandbox:
+    needs: [build, sandbox]
+    if: >
+      !cancelled() &&
+      needs.build.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.sandbox.result) &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.user.login != 'dependabot[bot]'
+        )
+      )
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'push' && 'smoke-test' || 'smoke-test-pr' }}
+      deployment: false
+    permissions: {}
+    env:
+      SANDBOX: ${{ github.repository_owner }}/sandbox
+      BRANCH: smoke/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      - name: 🔑 Get App Token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_SANDBOX_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY }}
+          repositories: sandbox
+          permission-contents: write
+
+      - name: 🛎️ Checkout Sandbox
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.SANDBOX }}
+          ref: main
+          path: sandbox
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
+
+      - name: 🧪 Write Files
+        run: |
+          set -euo pipefail
+          mkdir -p "sandbox/${BRANCH}"
+          echo 'committed' > "sandbox/${BRANCH}/a.txt"
+          echo 'not committed' > sandbox/ignored.txt
+
+      # A new branch from main, only the files that match, and a tag.
+      - name: ✍️ Commit to a New Branch
+        id: first
+        uses: ./smoke/actions/signed-commit
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          branch: ${{ env.BRANCH }}
+          create-branch: true
+          base: main
+          working-directory: sandbox
+          file-pattern: smoke/**
+          message: 'test: first commit of the smoke tests'
+          tags: ${{ env.BRANCH }}/first
+
+      - name: 🧪 Change a File
+        run: echo 'changed' > "sandbox/${BRANCH}/a.txt"
+
+      # The local checkout is on the new branch now, so this commits on top.
+      - name: ✍️ Commit to the Branch
+        id: second
+        uses: ./smoke/actions/signed-commit
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          branch: ${{ env.BRANCH }}
+          working-directory: sandbox
+          file-pattern: smoke/**
+          message: 'test: second commit of the smoke tests'
+
+      - name: 🏷️ Tag the Head Without Changes
+        id: tag-only
+        uses: ./smoke/actions/signed-commit
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          branch: ${{ env.BRANCH }}
+          working-directory: sandbox
+          file-pattern: smoke/**
+          message: 'test: nothing to commit'
+          if-no-changes: ignore
+          tags: ${{ env.BRANCH }}/second
+
+      - name: 🔍 Verify Commits and Tags
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          FIRST: ${{ steps.first.outputs.commit-sha }}
+          FIRST_FILES: ${{ steps.first.outputs.files }}
+          FIRST_URL: ${{ steps.first.outputs.commit-url }}
+          SECOND: ${{ steps.second.outputs.commit-sha }}
+          TAG_ONLY: ${{ steps.tag-only.outputs.committed }}
+        run: |
+          set -euo pipefail
+
+          failed=0
+          expect() {
+            if [[ "$2" == "$3" ]]; then
+              echo "✅ $1: $2"
+            else
+              echo "::error title=Unexpected Result::$1: expected \"$3\", got \"$2\""
+              failed=1
+            fi
+          }
+
+          expect 'committed files' "$(jq -c '.additions' <<< "$FIRST_FILES")" "[\"${BRANCH}/a.txt\"]"
+          expect 'commit URL' "$FIRST_URL" "https://github.com/${SANDBOX}/commit/${FIRST}"
+          expect 'first commit verified' "$(gh api "repos/${SANDBOX}/commits/${FIRST}" --jq '.commit.verification.verified')" 'true'
+          expect 'second commit on the first' "$(gh api "repos/${SANDBOX}/commits/${SECOND}" --jq '.parents[0].sha')" "$FIRST"
+          expect 'branch head' "$(gh api "repos/${SANDBOX}/git/ref/heads/${BRANCH}" --jq '.object.sha')" "$SECOND"
+          expect 'tag on the first commit' "$(gh api "repos/${SANDBOX}/git/ref/tags/${BRANCH}/first" --jq '.object.sha')" "$FIRST"
+          expect 'nothing to commit' "$TAG_ONLY" 'false'
+          expect 'tag on the head' "$(gh api "repos/${SANDBOX}/git/ref/tags/${BRANCH}/second" --jq '.object.sha')" "$SECOND"
+          if gh api "repos/${SANDBOX}/contents/ignored.txt?ref=${SECOND}" --silent 2>/dev/null; then
+            expect 'ignored file not committed' 'committed' 'missing'
+          else
+            expect 'ignored file not committed' 'missing' 'missing'
+          fi
+          exit "$failed"
+
+      - name: 🧹 Remove Branch and Tags
+        if: always() && steps.app-token.outputs.token
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          for ref in "heads/${BRANCH}" "tags/${BRANCH}/first" "tags/${BRANCH}/second"; do
+            if gh api --method DELETE "repos/${SANDBOX}/git/refs/${ref}" --silent 2>/dev/null; then
+              echo "Removed ${ref}."
+            fi
+          done
+
+  staged-release-sandbox:
+    needs: [build, sandbox]
+    if: >
+      !cancelled() &&
+      needs.build.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.sandbox.result) &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.user.login != 'dependabot[bot]'
+        )
+      )
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'push' && 'smoke-test' || 'smoke-test-pr' }}
+      deployment: false
+    permissions: {}
+    env:
+      SANDBOX: ${{ github.repository_owner }}/sandbox
+      TAG: smoke/${{ github.run_id }}-${{ github.run_attempt }}/release
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      - name: 🔑 Get App Token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_SANDBOX_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY }}
+          repositories: sandbox
+          permission-contents: write
+
+      - name: 🧪 Create Tag and Asset
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          sha="$(gh api "repos/${SANDBOX}/git/ref/heads/main" --jq '.object.sha')"
+          gh api --method POST "repos/${SANDBOX}/git/refs" --silent -f "ref=refs/tags/${TAG}" -f "sha=${sha}"
+          mkdir assets
+          echo 'release asset' > assets/smoke.txt
+
+      - name: 📦 Create Release
+        id: release
+        uses: ./smoke/actions/staged-release
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          tag: ${{ env.TAG }}
+          body: Created by the smoke tests.
+          generate-release-notes: true
+          assets: assets/smoke.txt
+          prerelease: true
+          make-latest: false
+
+      - name: 📦 Create the Release Again
+        id: again
+        uses: ./smoke/actions/staged-release
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          tag: ${{ env.TAG }}
+          if-released: skip
+
+      - name: 🔍 Verify Release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ID: ${{ steps.release.outputs.release-id }}
+          ASSETS: ${{ steps.release.outputs.assets }}
+          AGAIN_ID: ${{ steps.again.outputs.release-id }}
+        run: |
+          set -euo pipefail
+
+          failed=0
+          expect() {
+            if [[ "$2" == "$3" ]]; then
+              echo "✅ $1: $2"
+            else
+              echo "::error title=Unexpected Result::$1: expected \"$3\", got \"$2\""
+              failed=1
+            fi
+          }
+
+          release="$(gh api "repos/${SANDBOX}/releases/${ID}")"
+          expect 'published prerelease' "$(jq -r '"\(.draft) \(.prerelease) \(.tag_name)"' <<< "$release")" "false true ${TAG}"
+          expect 'asset' "$(jq -r '[.assets[].name] | join(",")' <<< "$release")" 'smoke.txt'
+          expect 'asset output' "$(jq -r '.[0].name' <<< "$ASSETS")" 'smoke.txt'
+          expect 'body first, generated notes after it' \
+            "$(jq -r '(.body | startswith("Created by the smoke tests.")) and (.body | length > 30)' <<< "$release")" 'true'
+          expect 'skipped re-run' "$AGAIN_ID" "$ID"
+          exit "$failed"
+
+      - name: 🧹 Remove Release and Tag
+        if: always() && steps.app-token.outputs.token
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          if gh release delete "$TAG" --repo "$SANDBOX" --yes 2>/dev/null; then
+            echo 'Removed the release.'
+          fi
+          if gh api --method DELETE "repos/${SANDBOX}/git/refs/tags/${TAG}" --silent 2>/dev/null; then
+            echo 'Removed the tag.'
+          fi
+
+  floating-version-tags-sandbox:
+    needs: [build, sandbox]
+    if: >
+      !cancelled() &&
+      needs.build.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.sandbox.result) &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.user.login != 'dependabot[bot]'
+        )
+      )
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'push' && 'smoke-test' || 'smoke-test-pr' }}
+      deployment: false
+    permissions: {}
+    env:
+      SANDBOX: ${{ github.repository_owner }}/sandbox
+      # Tags of this run only, for example smoke/123-1/v1.0.0 and smoke/123-1/v1.
+      PREFIX: smoke/${{ github.run_id }}-${{ github.run_attempt }}/
+    steps:
+      - name: 📥 Download Actions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: smoke-actions
+          path: smoke
+
+      - name: 🔑 Get App Token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_SANDBOX_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_SANDBOX_APP_PRIVATE_KEY }}
+          repositories: sandbox
+          permission-contents: write
+
+      # Two commits outside of any branch, for v1.0.0 and v1.1.0.
+      - name: 🧪 Create Commits and Tag v1.0.0
+        id: commits
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          main="$(gh api "repos/${SANDBOX}/git/ref/heads/main" --jq '.object.sha')"
+          tree="$(gh api "repos/${SANDBOX}/git/commits/${main}" --jq '.tree.sha')"
+          for version in 1.0.0 1.1.0; do
+            sha="$(gh api --method POST "repos/${SANDBOX}/git/commits" -f "message=test: release ${version}" \
+              -f "tree=${tree}" -f "parents[]=${main}" --jq '.sha')"
+            echo "v${version//./_}=${sha}" >> "$GITHUB_OUTPUT"
+            if [[ "$version" == 1.0.0 ]]; then
+              gh api --method POST "repos/${SANDBOX}/git/refs" --silent -f "ref=refs/tags/${PREFIX}v${version}" -f "sha=${sha}"
+            fi
+          done
+
+      - name: 🏷️ Create v1 at v1.0.0
+        id: first
+        uses: ./smoke/actions/floating-version-tags
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          tag: ${{ env.PREFIX }}v1.0.0
+          prefix: ${{ env.PREFIX }}
+          annotated: true
+
+      - name: 🧪 Tag v1.1.0
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SHA: ${{ steps.commits.outputs.v1_1_0 }}
+        run: gh api --method POST "repos/${SANDBOX}/git/refs" --silent -f "ref=refs/tags/${PREFIX}v1.1.0" -f "sha=${SHA}"
+
+      - name: 🏷️ Move v1 to v1.1.0
+        id: second
+        uses: ./smoke/actions/floating-version-tags
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          tag: ${{ env.PREFIX }}v1.1.0
+          prefix: ${{ env.PREFIX }}
+          annotated: true
+
+      - name: 🏷️ Keep v1 for v1.0.0
+        id: third
+        uses: ./smoke/actions/floating-version-tags
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ env.SANDBOX }}
+          tag: ${{ env.PREFIX }}v1.0.0
+          prefix: ${{ env.PREFIX }}
+          annotated: true
+
+      - name: 🔍 Verify Floating Tag
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          FIRST: ${{ steps.first.outputs.moved }}
+          SECOND: ${{ steps.second.outputs.moved }}
+          THIRD: ${{ steps.third.outputs.moved }}
+          V1_1_0: ${{ steps.commits.outputs.v1_1_0 }}
+        run: |
+          set -euo pipefail
+
+          failed=0
+          expect() {
+            if [[ "$2" == "$3" ]]; then
+              echo "✅ $1: $2"
+            else
+              echo "::error title=Unexpected Result::$1: expected \"$3\", got \"$2\""
+              failed=1
+            fi
+          }
+
+          expect 'created' "$FIRST" "[\"${PREFIX}v1\"]"
+          expect 'moved' "$SECOND" "[\"${PREFIX}v1\"]"
+          expect 'kept' "$THIRD" '[]'
+          ref="$(gh api "repos/${SANDBOX}/git/ref/tags/${PREFIX}v1" --jq '"\(.object.type) \(.object.sha)"')"
+          expect 'annotated tag' "${ref%% *}" 'tag'
+          tag="$(gh api "repos/${SANDBOX}/git/tags/${ref##* }")"
+          expect 'tag target' "$(jq -r '.object.sha' <<< "$tag")" "$V1_1_0"
+          expect 'tag message' "$(jq -r '.message | rtrimstr("\n")' <<< "$tag")" "${PREFIX}v1 → ${PREFIX}v1.1.0 (latest stable release of major version 1)"
+          exit "$failed"
+
+      - name: 🧹 Remove Tags
+        if: always() && steps.app-token.outputs.token
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          for tag in v1 v1.0.0 v1.1.0; do
+            if gh api --method DELETE "repos/${SANDBOX}/git/refs/tags/${PREFIX}${tag}" --silent 2>/dev/null; then
+              echo "Removed ${PREFIX}${tag}."
+            fi
+          done

@@ -1,0 +1,191 @@
+name: Release 📬
+
+#-------------------------------------------------------------------------------
+# "Release" Workflow
+#
+# Integrates changesets, updates the list of actions in the organization
+# profile, creates a signed release commit on main, and tags every released
+# package with "<package>/v<version>".
+# Dispatched by the "Checks" workflow on main branch.
+#
+# Two jobs: "build" integrates the changesets without any credentials and hands
+# the changes over as patch, together with the prebuilt signed-commit action.
+# "release" runs no npm code: it applies the patch, checks that it only touches
+# release files, and commits it with the app credentials. No Git credentials are
+# stored in a checkout.
+#-------------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  cancel-in-progress: false
+  group: ${{ github.workflow }}
+
+run-name: ${{ github.workflow }}
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      base-sha: ${{ steps.patch.outputs.base-sha }}
+      packages: ${{ steps.bumped-packages.outputs.packages }}
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: 🚛 Install pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: 📥 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 👷 Build Signed Commit Action
+        run: pnpm exec turbo run build --filter=signed-commit
+
+      - name: 📝 Integrate Changesets
+        run: |
+          set -euo pipefail
+
+          # Bump versions and update changelogs
+          pnpm exec changeset version
+
+          # Fail if no changes were made
+          if git diff --quiet; then
+            echo "::error title=No Changesets Integrated::No version bumps or changelog updates were made by 'changeset version'."
+            exit 1
+          fi
+
+          # Update the lockfile
+          pnpm install --lockfile-only
+
+          # Update the versions in the list of actions in the organization profile
+          pnpm run actions-list
+
+      - name: 🧾 Collect Bumped Packages
+        id: bumped-packages
+        run: |
+          set -euo pipefail
+
+          # Get the names of changes files
+          changedFiles=$(git diff --name-only HEAD)
+
+          # Initialize an array of package versions for release
+          packages=()
+
+          # Loop through the changed files and check for package.json files.
+          # Check if the package.json has a version change, extract the package folder name and version.
+          # Join them with a slash and add it to the released packages list.
+          for file in $changedFiles; do
+            if [[ "$file" =~ ^(actions/[^/]+|changelog)/package\.json$ ]]; then
+              oldVersion=$(git show HEAD:"$file" | jq -r .version 2>/dev/null || echo)
+              newVersion=$(jq -r .version "$file")
+              if [[ -n "$oldVersion" && -n "$newVersion" && "$oldVersion" != "$newVersion" ]]; then
+                packageName=$(jq -r .name "$file")
+                packages+=("${packageName}/v${newVersion}")
+              fi
+            fi
+          done
+
+          # Fail if no packages are found
+          if [[ ${#packages[@]} -eq 0 ]]; then
+            echo "::error title=No Packages Found::No packages were found to release."
+            exit 1
+          fi
+
+          # Output the packages
+          echo "packages=${packages[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: 🩹 Create Release Patch
+        id: patch
+        run: |
+          set -euo pipefail
+
+          echo "base-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          mkdir -p "${RUNNER_TEMP}/release/actions/signed-commit"
+          git add --all
+          git diff --cached --binary > "${RUNNER_TEMP}/release/release.patch"
+          cp actions/signed-commit/action.yml "${RUNNER_TEMP}/release/actions/signed-commit/"
+          cp -R actions/signed-commit/dist "${RUNNER_TEMP}/release/actions/signed-commit/"
+
+      - name: 📤 Upload Release
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      contents: read
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.build.outputs.base-sha }}
+          path: monorepo
+          persist-credentials: false
+
+      - name: 📥 Download Release
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: release
+
+      - name: 🩹 Apply Release Patch
+        working-directory: monorepo
+        run: |
+          set -euo pipefail
+
+          git apply --index ../release/release.patch
+
+          # The patch must only touch the files a release changes.
+          release_files='^(actions/[^/]+/(package\.json|CHANGELOG\.md)|changelog/(package\.json|CHANGELOG\.md)|pnpm-lock\.yaml|organization/profile/README\.md)$'
+          changes="$(git diff --cached --name-status --no-renames HEAD)"
+          while IFS=$'\t' read -r status path; do
+            if [[ "$status" == 'D' && "$path" =~ ^\.changeset/[^/]+\.md$ ]]; then
+              continue
+            fi
+            if [[ ( "$status" == 'A' || "$status" == 'M' ) && "$path" =~ $release_files ]]; then
+              continue
+            fi
+            echo "::error title=Unexpected Change::The release patch changes ${path} (${status})."
+            exit 1
+          done <<< "$changes"
+
+      - name: 🔑 Get App Token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SIMBO_ACTIONS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SIMBO_ACTIONS_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: 💾 Commit Release and Create Tags
+        uses: ./release/actions/signed-commit
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          branch: main
+          working-directory: monorepo
+          message: 'ci(release): ${{ needs.build.outputs.packages }}'
+          tags: ${{ needs.build.outputs.packages }}
+          sync: false
