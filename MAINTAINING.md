@@ -10,26 +10,27 @@ Commands are run from the repository root unless noted otherwise.
 
 ## Overview
 
-| Task                                                                | When                                                                      |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [Dependabot pull requests](#dependabot-pull-requests)               | weekly, or when assigned                                                  |
-| [Scanner findings](#scanner-findings)                               | `checks` or `security` fails on osv-scanner                               |
-| [Secret found](#secret-found)                                       | `checks`, `security`, or the pre-commit hook fails on Gitleaks            |
-| [Expiring accepted findings](#expiring-accepted-findings)           | monthly                                                                   |
-| [Pinned tools](#pinned-tools)                                       | monthly                                                                   |
-| [Security fixes as overrides](#security-fixes-as-overrides)         | monthly                                                                   |
-| [Major updates](#major-updates)                                     | monthly                                                                   |
-| [Marketplace listing](#marketplace-listing)                         | after a release                                                           |
-| [Failed release](#failed-release)                                   | when release or publish fails                                             |
-| [Settings of action repositories](#settings-of-action-repositories) | when a setting should change                                              |
-| [Organization profile](#organization-profile)                       | when the organization should be presented differently                     |
-| [Sandbox](#sandbox)                                                 | a pull request waits for approval, or a write test in `smoke-tests` fails |
-| [Security reports](#security-reports)                               | when a report arrives                                                     |
-| [Pull requests from forks](#pull-requests-from-forks)               | when a contributor opens one                                              |
-| [App private key](#app-private-key)                                 | yearly, and immediately if it may have leaked                             |
-| [App permissions](#app-permissions)                                 | when a step needs a new permission                                        |
-| [Node.js runtime](#nodejs-runtime)                                  | when GitHub announces a new runtime                                       |
-| [New major version](#new-major-version)                             | with every major release                                                  |
+| Task                                                                          | When                                                                      |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [Dependabot pull requests](#dependabot-pull-requests)                         | weekly, or when assigned                                                  |
+| [Scanner findings](#scanner-findings)                                         | `checks` or `security` fails on osv-scanner                               |
+| [Secret found](#secret-found)                                                 | `checks`, `security`, or the pre-commit hook fails on Gitleaks            |
+| [Expiring accepted findings](#expiring-accepted-findings)                     | monthly                                                                   |
+| [Pinned tools](#pinned-tools)                                                 | monthly                                                                   |
+| [Security fixes as overrides](#security-fixes-as-overrides)                   | monthly                                                                   |
+| [Major updates](#major-updates)                                               | monthly                                                                   |
+| [Marketplace listing](#marketplace-listing)                                   | after a release                                                           |
+| [Failed release](#failed-release)                                             | when release or publish fails                                             |
+| [Broken action in the release process](#broken-action-in-the-release-process) | a merged update of an own action breaks release or publish                |
+| [Settings of action repositories](#settings-of-action-repositories)           | when a setting should change                                              |
+| [Organization profile](#organization-profile)                                 | when the organization should be presented differently                     |
+| [Sandbox](#sandbox)                                                           | a pull request waits for approval, or a write test in `smoke-tests` fails |
+| [Security reports](#security-reports)                                         | when a report arrives                                                     |
+| [Pull requests from forks](#pull-requests-from-forks)                         | when a contributor opens one                                              |
+| [App private key](#app-private-key)                                           | yearly, and immediately if it may have leaked                             |
+| [App permissions](#app-permissions)                                           | when a step needs a new permission                                        |
+| [Node.js runtime](#nodejs-runtime)                                            | when GitHub announces a new runtime                                       |
+| [New major version](#new-major-version)                                       | with every major release                                                  |
 
 ## Dependabot Pull Requests
 
@@ -50,7 +51,10 @@ Low-risk updates are merged automatically (see
    release starts.
 6. For `simbo-actions/*` updates, check that the new version was released by the
    release process of this repository: a verified tag and a release with build
-   provenance (see [SECURITY.md](SECURITY.md#verifying-a-release)).
+   provenance (see [SECURITY.md](SECURITY.md#verifying-a-release)).  
+   The release and publish workflows run the new version with the app
+   credentials from the next release on; read its changelog like that of any
+   other action.
 
 ## Scanner Findings
 
@@ -158,6 +162,21 @@ new actions.
    `https://github.com/simbo-actions/<action>/releases`.
 2. Edit the release and check "Publish this Action to the GitHub Marketplace".
 3. Choose the categories and save.
+
+## Broken Action in the Release Process
+
+The release and publish workflows use the published actions of this
+organization, pinned by SHA.  
+If a new version breaks them, the fix cannot be released with that version.
+
+1. Pin the affected action back to the last working version: replace the SHA and
+   the version comment in every workflow that uses it.  
+   Merge the pull request with a changeset for the package `changelog`; it
+   releases no action.
+2. Fix the action on `main` with a patch changeset; the release now runs with
+   the old version and publishes the fix.
+3. Merge the Dependabot pull request for the fixed version, after checking that
+   its release is complete (verified tag, release with build provenance).
 
 ## Failed Release
 

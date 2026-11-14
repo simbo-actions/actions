@@ -8,10 +8,10 @@ name: Publish Organization 🏢
 # configures the repository if necessary and commits the content as signed
 # commit.
 #
-# Two jobs: "build" builds the internal actions without any credentials and hands
-# them over with the content as artifact. "publish" runs no npm code; it only
-# uses the artifact, with the app credentials, and every token is restricted to
-# the repository and the permissions of the steps that use it.
+# Two jobs: "build" hands the content over as artifact, without any credentials.
+# "publish" runs no npm code; it uses the artifact and the published actions of
+# this organization, pinned by SHA, with the app credentials, and every token is
+# restricted to the repository and the permissions of the steps that use it.
 #-------------------------------------------------------------------------------
 
 on:
@@ -49,34 +49,11 @@ jobs:
           path: monorepo
           persist-credentials: false
 
-      - name: 🚛 Install pnpm
-        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-        with:
-          package_json_file: monorepo/package.json
-
-      - name: ⚙️ Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: monorepo/.nvmrc
-
-      - name: 📥 Install
-        working-directory: monorepo
-        run: pnpm install --frozen-lockfile
-
-      - name: 👷 Build
-        working-directory: monorepo
-        run: pnpm exec turbo run build --filter=signed-commit --filter=apply-repository-settings
-
-      - name: 🧰 Assemble Content and Actions
+      - name: 🧰 Assemble Content
         run: |
           set -euo pipefail
 
-          # The publish job runs these prebuilt actions; it never builds anything.
-          for name in apply-repository-settings signed-commit; do
-            mkdir -p "release/actions/${name}"
-            cp "monorepo/actions/${name}/action.yml" "release/actions/${name}/"
-            cp -R "monorepo/actions/${name}/dist" "release/actions/${name}/"
-          done
+          mkdir -p release
           cp -R monorepo/organization release/organization
           cp monorepo/.github/managed-repository-settings.yml release/
 
@@ -159,7 +136,7 @@ jobs:
           permission-administration: write
 
       - name: ⚙️ Apply Repository Settings
-        uses: ./release/actions/apply-repository-settings
+        uses: simbo-actions/apply-repository-settings@fb62739c6d16e25265f532c2b528bdd576f7e63b # v1.0.0
         with:
           token: ${{ steps.app-token-configure.outputs.token }}
           repository: ${{ env.REPOSITORY }}
@@ -194,7 +171,7 @@ jobs:
           cp -R "${FROM}/." "${TO}/"
 
       - name: 💾 Commit Changes
-        uses: ./release/actions/signed-commit
+        uses: simbo-actions/signed-commit@2182f3abcfb956e57d7505fda33c3c12c7eb4275 # v1.0.0
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: ${{ env.REPOSITORY }}

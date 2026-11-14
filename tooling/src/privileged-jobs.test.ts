@@ -18,8 +18,8 @@ jobs:
     environment:
       name: release
     steps:
-      # No npm code here, only prebuilt actions.
-      - uses: ./release/actions/signed-commit
+      # No npm code here, only published actions.
+      - uses: simbo-actions/signed-commit@0123456789abcdef0123456789abcdef01234567 # v1.0.0
       - run: |
           set -euo pipefail
           git apply ../release/release.patch
@@ -58,6 +58,28 @@ describe('checkPrivilegedJobs', () => {
     expect(checkPrivilegedJobs('test.yml', privileged)).toEqual([
       `test.yml: job "publish" has an environment but runs npm code: - ${offending}`,
     ]);
+  });
+
+  it.each(['environment: release', 'environment:\n      name: release\n      deployment: false'])(
+    'rejects local actions in a job with the environment release (%s)',
+    environment => {
+      const privileged = `jobs:\n  publish:\n    ${environment}\n    steps:\n      - uses: ./release/actions/signed-commit\n`;
+      expect(checkPrivilegedJobs('test.yml', privileged)).toEqual([
+        'test.yml: job "publish" has an environment but runs a local action; use the published action, pinned by SHA: - uses: ./release/actions/signed-commit',
+      ]);
+    },
+  );
+
+  it('accepts local actions in jobs with another environment', () => {
+    const tests =
+      'jobs:\n  sandbox:\n    environment:\n      name: smoke-test\n    steps:\n      - uses: ./smoke/actions/signed-commit\n';
+    expect(checkPrivilegedJobs('test.yml', tests)).toEqual([]);
+  });
+
+  it('accepts local actions in jobs without environment', () => {
+    expect(
+      checkPrivilegedJobs('test.yml', 'jobs:\n  checks:\n    steps:\n      - uses: ./actions/gitleaks-scan\n'),
+    ).toEqual([]);
   });
 
   it('ignores comments and words that only contain a command name', () => {

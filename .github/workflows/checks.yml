@@ -239,24 +239,19 @@ jobs:
       - name: 📦 Install
         run: pnpm install --frozen-lockfile
 
-      - name: 👷 Build Signed Commit Action
-        run: pnpm exec turbo run build --filter=signed-commit
-
       - name: 📝 Create Changeset for Dependency Updates
         id: changeset
         env:
           SHA: ${{ github.sha }}
         run: node tooling/bin/create-dependency-changeset.ts "$SHA"
 
-      - name: 🧰 Assemble Changeset and Action
+      - name: 🧰 Assemble Changeset
         if: steps.changeset.outputs.created == 'true'
         run: |
           set -euo pipefail
 
-          mkdir -p "${RUNNER_TEMP}/changeset/actions/signed-commit"
+          mkdir -p "${RUNNER_TEMP}/changeset"
           cp .changeset/dependency-updates-*.md "${RUNNER_TEMP}/changeset/"
-          cp actions/signed-commit/action.yml "${RUNNER_TEMP}/changeset/actions/signed-commit/"
-          cp -R actions/signed-commit/dist "${RUNNER_TEMP}/changeset/actions/signed-commit/"
 
       - name: 📤 Upload Changeset
         if: steps.changeset.outputs.created == 'true'
@@ -311,7 +306,7 @@ jobs:
           permission-contents: write
 
       - name: 💾 Commit Changeset
-        uses: ./changeset/actions/signed-commit
+        uses: simbo-actions/signed-commit@2182f3abcfb956e57d7505fda33c3c12c7eb4275 # v1.0.0
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: main
