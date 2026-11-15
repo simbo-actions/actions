@@ -290,7 +290,7 @@ Settings applied to every action repository:
 | Merge                  | Squash only, auto-merge allowed, update branch suggested, branches deleted after merge                                                                          |
 | Security               | Secret scanning with push protection, Dependabot alerts, private vulnerability reporting on                                                                     |
 |                        | Dependabot security updates and code scanning off: the content is generated and overwritten by every publish; the source is scanned in the monorepo             |
-| Actions                | SHA pinning required, `GITHUB_TOKEN` read-only, no pull request approvals                                                                                       |
+| Actions                | Off: the repositories have no workflows                                                                                                                         |
 | Ruleset "Main Branch"  | No deletion, no force push, linear history, signed commits, pull requests with squash only                                                                      |
 | Ruleset "Release Tags" | `v*` (release and floating tags): creating, updating, and deleting only via bypass                                                                              |
 | Bypass                 | The app `simbo-actions` and organization admins                                                                                                                 |
