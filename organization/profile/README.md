@@ -27,9 +27,9 @@ There are currently _**6**_ GitHub Actions in this organization.
   > A GitHub Action to apply repository settings, rulesets, labels,
   > environments, and more from a YAML file, writing only what differs.
 
-  ⚙️ **`simbo-actions/apply-repository-settings@<SHA> # v1.0.1`**
+  ⚙️ **`simbo-actions/apply-repository-settings@<SHA> # v1.0.2`**
 
-  Latest Version: `1.0.1`
+  Latest Version: `1.0.2`
 
   [Repository](https://github.com/simbo-actions/apply-repository-settings)  • 
   [README.md](https://github.com/simbo-actions/apply-repository-settings/blob/main/README.md)  • 
@@ -41,9 +41,9 @@ There are currently _**6**_ GitHub Actions in this organization.
   > A GitHub Action to move floating version tags like v1 forward to a release,
   > safely: forward only, never to prereleases.
 
-  ⚙️ **`simbo-actions/floating-version-tags@<SHA> # v1.0.1`**
+  ⚙️ **`simbo-actions/floating-version-tags@<SHA> # v1.0.2`**
 
-  Latest Version: `1.0.1`
+  Latest Version: `1.0.2`
 
   [Repository](https://github.com/simbo-actions/floating-version-tags)  • 
   [README.md](https://github.com/simbo-actions/floating-version-tags/blob/main/README.md)  • 
@@ -55,9 +55,9 @@ There are currently _**6**_ GitHub Actions in this organization.
   > A GitHub Action to get the bot user of a GitHub App: user ID, login, name,
   > and email for Git.
 
-  ⚙️ **`simbo-actions/github-app-bot-user@<SHA> # v1.0.1`**
+  ⚙️ **`simbo-actions/github-app-bot-user@<SHA> # v1.0.2`**
 
-  Latest Version: `1.0.1`
+  Latest Version: `1.0.2`
 
   [Repository](https://github.com/simbo-actions/github-app-bot-user)  • 
   [README.md](https://github.com/simbo-actions/github-app-bot-user/blob/main/README.md)  • 
@@ -69,9 +69,9 @@ There are currently _**6**_ GitHub Actions in this organization.
   > A GitHub Action to scan the Git history for secrets with Gitleaks, from a
   > pinned and checksum-verified binary, in one step.
 
-  ⚙️ **`simbo-actions/gitleaks-scan@<SHA> # v1.0.1`**
+  ⚙️ **`simbo-actions/gitleaks-scan@<SHA> # v1.0.2`**
 
-  Latest Version: `1.0.1`
+  Latest Version: `1.0.2`
 
   [Repository](https://github.com/simbo-actions/gitleaks-scan)  • 
   [README.md](https://github.com/simbo-actions/gitleaks-scan/blob/main/README.md)  • 
@@ -83,9 +83,9 @@ There are currently _**6**_ GitHub Actions in this organization.
   > A GitHub Action to create signed commits and tags via the GitHub API, shown
   > as verified.
 
-  ⚙️ **`simbo-actions/signed-commit@<SHA> # v1.0.1`**
+  ⚙️ **`simbo-actions/signed-commit@<SHA> # v1.0.2`**
 
-  Latest Version: `1.0.1`
+  Latest Version: `1.0.2`
 
   [Repository](https://github.com/simbo-actions/signed-commit)  • 
   [README.md](https://github.com/simbo-actions/signed-commit/blob/main/README.md)  • 
@@ -97,9 +97,9 @@ There are currently _**6**_ GitHub Actions in this organization.
   > A GitHub Action to create a complete GitHub release: draft, assets, then
   > publish. Works with immutable releases.
 
-  ⚙️ **`simbo-actions/staged-release@<SHA> # v1.0.1`**
+  ⚙️ **`simbo-actions/staged-release@<SHA> # v1.0.2`**
 
-  Latest Version: `1.0.1`
+  Latest Version: `1.0.2`
 
   [Repository](https://github.com/simbo-actions/staged-release)  • 
   [README.md](https://github.com/simbo-actions/staged-release/blob/main/README.md)  • 

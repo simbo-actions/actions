@@ -1,5 +1,14 @@
 # changelog
 
+## 0.2.2
+
+### Patch Changes
+
+- 8d2d45c: Describe the repository of the organization profile as a collection
+  published by an automated release process, as the new introduction does.
+- fd876e4: Rewrite the introductions of the organization profile and the README
+  with concrete statements about the standards and the release process.
+
 ## 0.2.1
 
 ### Patch Changes

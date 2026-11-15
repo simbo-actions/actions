@@ -1,5 +1,12 @@
 # staged-release
 
+## 1.0.2
+
+### Patch Changes
+
+- 8d2d45c: Call Simbo's Actions a collection in the section "About Simbo's
+  Actions".
+
 ## 1.0.1
 
 ### Patch Changes
