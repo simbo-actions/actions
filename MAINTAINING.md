@@ -49,7 +49,7 @@ The run appears as the workflow "Dependabot Updates" in Actions, with its log.
 3. Wait for `checks`.  
    If it fails, fix the cause on the branch or close the pull request with a
    reason.
-4. Merge with squash.
+4. Approve, then merge with squash.
 5. For npm updates, the job `dependency-changeset` adds the changesets after the
    merge: a patch for the actions whose bundled dependencies changed, and one
    for the package `changelog` for all other dependencies. Check that the

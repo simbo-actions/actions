@@ -419,7 +419,12 @@ Write tests of a pull request need approval as well: the code of the pull
 request runs with the sandbox key, so the maintainer reads its changes,
 especially workflows and scripts, before approving.  
 The rulesets apply to all automation; only the app and organization admins
-bypass them.
+bypass them.  
+In the monorepo, the ruleset "Main Branch" requires a pull request with one
+approval of the last push, dismisses stale approvals, and requires the checks.
+The app bypasses it always, for release commits and dependency changesets;
+organization admins only when merging a pull request, never by a direct push. A
+sole maintainer cannot approve their own pull request and merges it this way.
 
 The Actions policy of the organization allows only actions and reusable
 workflows owned by GitHub and these, pinned by SHA in every repository:
