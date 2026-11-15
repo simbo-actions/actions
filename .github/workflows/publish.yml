@@ -252,7 +252,7 @@ jobs:
           permission-administration: write
 
       - name: ⚙️ Apply Repository Settings
-        uses: simbo-actions/apply-repository-settings@fb62739c6d16e25265f532c2b528bdd576f7e63b # v1.0.0
+        uses: simbo-actions/apply-repository-settings@d890e541fdac9c43b8e0fb3309ac18c2d818e40b # v1.0.3
         with:
           token: ${{ steps.app-token-configure.outputs.token }}
           repository: ${{ needs.build.outputs.repository }}
