@@ -198,7 +198,7 @@ None of the outputs is secret.
 ## About Simbo's Actions
 
 This action is part of [Simbo's Actions](https://github.com/simbo-actions), a
-family of GitHub Actions that are developed in one monorepo and published to
+collection of GitHub Actions that are developed in one monorepo and published to
 their own repositories by an automated release process.
 
 - **Built from source in CI.** Every release is built in

@@ -39,7 +39,7 @@ run-name: >
 
 env:
   REPOSITORY: ${{ github.repository_owner }}/.github
-  DESCRIPTION: A family of GitHub Actions, each in its own repository, built and released automatically, signed and secure.
+  DESCRIPTION: A collection of GitHub Actions, each in its own repository and published from one monorepo by an automated release process.
 
 jobs:
   build:
