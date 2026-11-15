@@ -182,16 +182,21 @@ async function applyGroup(
  * @param actions - The configured Actions settings.
  */
 export async function applyActionsSettings(client: SettingsClient, actions: ActionsSettings): Promise<void> {
-  await applyGroup(
-    client,
-    '/repos/{owner}/{repo}/actions/permissions',
-    ['enabled', 'allowed_actions', 'sha_pinning_required'],
-    {
-      enabled: actions.enabled,
-      allowed_actions: actions.allowed_actions,
-      sha_pinning_required: actions.sha_pinning_required,
-    },
-  );
+  // With Actions off, GitHub rejects every other key of the group.
+  if (actions.enabled === false) {
+    await applyGroup(client, '/repos/{owner}/{repo}/actions/permissions', ['enabled'], { enabled: false });
+  } else {
+    await applyGroup(
+      client,
+      '/repos/{owner}/{repo}/actions/permissions',
+      ['enabled', 'allowed_actions', 'sha_pinning_required'],
+      {
+        enabled: actions.enabled,
+        allowed_actions: actions.allowed_actions,
+        sha_pinning_required: actions.sha_pinning_required,
+      },
+    );
+  }
   await applyGroup(
     client,
     '/repos/{owner}/{repo}/actions/permissions/workflow',

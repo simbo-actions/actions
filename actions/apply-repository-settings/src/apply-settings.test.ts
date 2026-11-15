@@ -188,6 +188,27 @@ describe('applySettings', () => {
     ]);
   });
 
+  it('sends only enabled when Actions is turned off', async () => {
+    const state = configuredState();
+    state.actions = { enabled: true, allowed_actions: 'selected', sha_pinning_required: true };
+    const { client, writes } = setup(state);
+    await applySettings(client, { actions: { enabled: false, sha_pinning_required: true } });
+    expect(writes).toEqual([
+      {
+        route: 'PUT /repos/{owner}/{repo}/actions/permissions',
+        parameters: { owner: 'o', repo: 'r', enabled: false },
+      },
+    ]);
+  });
+
+  it('writes nothing if Actions is already off', async () => {
+    const state = configuredState();
+    state.actions = { enabled: false, sha_pinning_required: false };
+    const { client, writes } = setup(state);
+    await applySettings(client, { actions: { enabled: false, sha_pinning_required: true } });
+    expect(writes).toEqual([]);
+  });
+
   it('updates a ruleset that differs', async () => {
     const state = configuredState();
     (state.rulesets as Ruleset[])[0].rules = [{ type: 'deletion' }];
