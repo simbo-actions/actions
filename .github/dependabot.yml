@@ -12,19 +12,21 @@ updates:
       default-days: 7
       exclude:
         - simbo-actions/*
-    # One pull request per update across all directories
     groups:
+      # Own actions in one pull request: a release often updates several, and
+      # they are pinned only in the workflows, in one directory
       simbo-actions:
-        group-by: dependency-name
         patterns:
           - simbo-actions/*
-      # Trusted publishers whose minor and patch updates are merged automatically
+      # Trusted publishers whose minor and patch updates are merged
+      # automatically; one pull request per update across all directories
       trusted-actions:
         group-by: dependency-name
         patterns:
           - actions/*
           - github/*
           - google/*
+      # One pull request per update across all directories
       third-party-actions:
         group-by: dependency-name
         patterns:
