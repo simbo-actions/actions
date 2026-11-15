@@ -107,7 +107,9 @@ Workspace scripts (run inside a workspace, or with
 
 ## Making a Change
 
-1. Create a branch.
+1. Create a branch named by the type of the change: `feat/`, `fix/`, `docs/`,
+   `ci/`, or `chore/`, for example `fix/renamed-files`. Nobody pushes to `main`
+   directly.
 2. Change the code, with tests and documentation.
 3. Add a changeset:
 
@@ -127,7 +129,11 @@ Workspace scripts (run inside a workspace, or with
    or `docs(repo): …`.  
    A Git hook checks the message.
 5. Run `pnpm run preflight`.
-6. Open a pull request.
+6. Open a pull request. Its title becomes the commit message of the squash
+   merge, so it follows Conventional Commits as well.  
+   The ruleset "Main Branch" requires one approval of the last push. A
+   maintainer cannot approve their own pull request and merges it with "Bypass
+   rules" once the checks pass.
 
 ## Writing Changesets
 

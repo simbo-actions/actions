@@ -12,6 +12,8 @@ asks for it; keep it to about one screen.
   not permission to start the work.
 - No staging, commits, pushes, tags, releases, or changes to GitHub settings
   without an explicit request.
+- Never push to `main`: changes go on a branch (`feat/`, `fix/`, `docs/`, `ci/`,
+  `chore/`) and into a pull request.
 - Never read, write, or output secrets, not even in part. Refer to them by name.
 - This repository is public. No internal details about other repositories,
   accounts, or their state.

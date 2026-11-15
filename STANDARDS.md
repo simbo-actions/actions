@@ -228,7 +228,7 @@ Required:
   | Update                                        | Handling                                                                                  |
   | --------------------------------------------- | ----------------------------------------------------------------------------------------- |
   | `simbo-actions/*`                             | reviewed and merged by a maintainer (they run with credentials in this repository)        |
-  | Trusted publishers (minor, patch)             | merged automatically after checks and 7 days cooldown                                     |
+  | Trusted publishers (minor, patch)             | approved and merged automatically after checks and 7 days cooldown                        |
   | Other actions, major updates of actions       | reviewed and merged by a maintainer                                                       |
   | npm minor and patch (weekly, 7 days cooldown) | reviewed and merged by a maintainer; the changeset is added automatically after the merge |
   | npm major updates                             | no Dependabot pull requests; planned and done by hand, monthly                            |

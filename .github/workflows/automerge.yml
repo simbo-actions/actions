@@ -3,9 +3,11 @@ name: Auto-merge 🤖
 #-------------------------------------------------------------------------------
 # "Auto-merge" Workflow
 #
-# Merges low-risk Dependabot pull requests once the required checks pass:
-# minor or patch updates of actions by trusted publishers (actions/*, github/*,
-# google/*), if only files under .github/ change.
+# Approves and merges low-risk Dependabot pull requests once the required
+# checks pass: minor or patch updates of actions by trusted publishers
+# (actions/*, github/*, google/*), if only files under .github/ change. The
+# ruleset requires an approval; the approval of this workflow needs the setting
+# "Allow GitHub Actions to approve pull requests".
 # Updates of simbo-actions/* are reviewed: the privileged jobs of this
 # repository run these actions with the app's credentials.
 # Assigns all other Dependabot pull requests to the owner for review.
@@ -92,6 +94,13 @@ jobs:
           fi
 
           echo "automerge=${result}" >> "$GITHUB_OUTPUT"
+
+      - name: ✅ Approve
+        if: steps.check.outputs.automerge == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: gh pr review "$PR" --approve --body 'Low-risk update of a trusted publisher, approved automatically.'
 
       - name: 🔀 Enable Auto-merge
         if: steps.check.outputs.automerge == 'true'
