@@ -1,5 +1,24 @@
 # changelog
 
+## 0.2.10
+
+### Patch Changes
+
+- 4f07bdb: Approve low-risk Dependabot updates before merging them
+  automatically.
+
+  - The workflow `automerge` approves minor and patch updates of trusted
+    publishers, since the ruleset "Main Branch" requires an approval.
+  - All other Dependabot pull requests still need the approval of a maintainer.
+
+- 4f07bdb: Make every change on a branch and merge it as a pull request.
+
+  - Branches are named by the type of the change: `feat/`, `fix/`, `docs/`,
+    `ci/`, or `chore/`; nobody pushes to `main` directly.
+  - The ruleset "Main Branch" requires one approval of the last push and
+    dismisses stale approvals; organization admins bypass it only when merging a
+    pull request.
+
 ## 0.2.9
 
 ### Patch Changes
