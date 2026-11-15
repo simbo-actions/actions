@@ -423,8 +423,8 @@ bypass them.
 
 The Actions policy of the organization allows only actions and reusable
 workflows owned by GitHub and these, pinned by SHA in every repository:
-`simbo-actions/*`, `pnpm/action-setup`, `dependabot/fetch-metadata`, and
-`google/osv-scanner-action/*`.  
+`simbo-actions/*`, `pnpm/action-setup`, `dependabot/fetch-metadata`,
+`google/osv-scanner-action/*`, and `ossf/scorecard-action`.  
 A new third-party action needs an entry in the policy before its first run.
 
 ## Tags and Versions
@@ -542,6 +542,16 @@ False positives go into `.gitleaksignore`.
 
 The allowed licenses appear in `package.json` and in the workflows;
 `pnpm run check:actions` checks that they match.
+
+[OpenSSF Scorecard](https://scorecard.dev/) rates the security practices of the
+monorepo in the workflow `scorecard`: weekly, on every push to `main`, and when
+a ruleset changes.  
+It uploads its results to code scanning and publishes the score on
+scorecard.dev.  
+Publishing requires a job without scripts and with no write permissions except
+`id-token` and `security-events`.  
+The action repositories are not rated: they have no workflows and only generated
+content.
 
 Accepted findings are listed in [`osv-scanner.toml`](osv-scanner.toml), each
 with a reason and an expiry date.  

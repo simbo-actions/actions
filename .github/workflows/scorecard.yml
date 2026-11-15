@@ -1,0 +1,64 @@
+name: Scorecard 📊
+
+#-------------------------------------------------------------------------------
+# "Scorecard" Workflow
+#
+# Rates the security practices of this repository with OpenSSF Scorecard
+# weekly, on every push to main, and when a ruleset changes. Uploads the
+# results to code scanning and publishes the score on scorecard.dev for the
+# badge in the README.
+#
+# Publishing restricts the job: no top-level env or defaults, no write
+# permissions except id-token and security-events, and only the steps of the
+# allowed actions, no scripts.
+#-------------------------------------------------------------------------------
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '43 6 * * 1'
+  branch_protection_rule:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}
+
+run-name: >
+  ${{
+    format(
+      '{0} ({1})',
+      github.workflow,
+      github.event_name == 'schedule' && 'weekly' || github.event_name
+    )
+  }}
+
+jobs:
+  scorecard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Publishes the results, signed with the identity of this workflow
+      id-token: write
+      security-events: write
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 📊 Run Scorecard
+        uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0
+        with:
+          results_file: scorecard.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: 📤 Upload to Code Scanning
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: scorecard.sarif

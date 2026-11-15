@@ -103,6 +103,8 @@ Required:
   convenience.
 - Immutable releases: a published version is final; corrections are new patch
   releases.
+- [OpenSSF Scorecard](https://scorecard.dev/) rates the monorepo weekly and on
+  every push to `main`, with a published score.
 
 ### Code and Tests
 
@@ -312,8 +314,6 @@ Required:
 
 Planned, not yet required:
 
-- [OpenSSF Scorecard](https://scorecard.dev/) on a schedule, with a published
-  score.
 - [OpenSSF Best Practices badge](https://www.bestpractices.dev/), level
   "passing".
 - A stated response time for security reports.
