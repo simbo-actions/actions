@@ -421,6 +421,12 @@ especially workflows and scripts, before approving.
 The rulesets apply to all automation; only the app and organization admins
 bypass them.
 
+The Actions policy of the organization allows only actions and reusable
+workflows owned by GitHub and these, pinned by SHA in every repository:
+`simbo-actions/*`, `pnpm/action-setup`, `dependabot/fetch-metadata`, and
+`google/osv-scanner-action/*`.  
+A new third-party action needs an entry in the policy before its first run.
+
 ## Tags and Versions
 
 | Where             | Tag                | Created by       |
