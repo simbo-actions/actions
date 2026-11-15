@@ -1,5 +1,32 @@
 # changelog
 
+## 0.2.3
+
+### Patch Changes
+
+- 9ac0cce: Document the Actions policy of the organization in the section "Trust
+  Boundaries".
+
+  - Only actions owned by GitHub and an allowlist of third-party actions can
+    run, pinned by SHA.
+  - A new third-party action needs an entry in the policy before its first run.
+
+- 618bd7f: Switch on immutable releases in the action repositories and in
+  `simbo-actions/.github`.
+
+  - A published release and its tag are final; corrections are new patch
+    versions.
+  - The runbook "Failed Release" removes only versions whose release is still a
+    draft.
+
+- a779d0b: Turn off Actions in the action repositories and in
+  `simbo-actions/.github`.
+
+  - The repositories have no workflows.
+  - The policy of the organization allows only selected actions, and GitHub
+    rejected the previous repository setting `allowed_actions: all` with a
+    conflict.
+
 ## 0.2.2
 
 ### Patch Changes

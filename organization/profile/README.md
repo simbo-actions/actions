@@ -27,9 +27,9 @@ There are currently _**6**_ GitHub Actions in this organization.
   > A GitHub Action to apply repository settings, rulesets, labels,
   > environments, and more from a YAML file, writing only what differs.
 
-  ⚙️ **`simbo-actions/apply-repository-settings@<SHA> # v1.0.2`**
+  ⚙️ **`simbo-actions/apply-repository-settings@<SHA> # v1.0.3`**
 
-  Latest Version: `1.0.2`
+  Latest Version: `1.0.3`
 
   [Repository](https://github.com/simbo-actions/apply-repository-settings)  • 
   [README.md](https://github.com/simbo-actions/apply-repository-settings/blob/main/README.md)  • 
