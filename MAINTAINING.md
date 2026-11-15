@@ -163,10 +163,18 @@ changes to code or configuration and are planned work.
 Not every version needs to be listed; list at least every new major version and
 new actions.
 
+Listing works for immutable releases as well.  
+Saving a release that is still mutable makes it immutable, because immutable
+releases are on in the action repositories; this concerns releases published
+before they were switched on.
+
 1. Open the release in the action repository, for example
    `https://github.com/simbo-actions/<action>/releases`.
-2. Edit the release and check "Publish this Action to the GitHub Marketplace".
-3. Choose the categories and save.
+2. Edit the release and check "Publish this Action to the GitHub Marketplace".  
+   The form checks `action.yml`: the description must have fewer than 125
+   characters, which `pnpm run check:actions` ensures.
+3. Choose the categories and save.  
+   If the form reports errors without showing any, save again.
 
 ## Broken Action in the Release Process
 
