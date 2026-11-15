@@ -1,5 +1,17 @@
 # changelog
 
+## 0.2.9
+
+### Patch Changes
+
+- bf99636: Rate the monorepo with OpenSSF Scorecard.
+
+  - The workflow `scorecard` runs weekly, on every push to `main`, and when a
+    ruleset changes.
+  - It uploads the results to code scanning and publishes the score on
+    scorecard.dev.
+  - The Actions policy of the organization allows `ossf/scorecard-action`.
+
 ## 0.2.8
 
 ### Patch Changes
