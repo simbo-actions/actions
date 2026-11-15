@@ -1,7 +1,7 @@
 # Apply Repository Settings _(GitHub Action)_
 
 A GitHub Action to apply repository settings, rulesets, labels, environments,
-and more from a YAML file, writing only what differs.
+and more from YAML, writing only what differs.
 
 Keep the settings of a repository as code: a YAML file describes the intended
 state, and the action compares it with the current state and changes only what
