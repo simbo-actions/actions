@@ -144,8 +144,11 @@ Keep the changelogs readable by writing changesets by topic:
   refactorings without a change for users.  
   Never add empty changesets.
 - **One topic per changeset.** If the summary needs an "and" to join two topics,
-  write two changesets. One changeset may cover several packages, with different
-  bump types, if the change is the same for all of them.
+  write two changesets.
+- **Every changelog speaks only about its own package.** One changeset may cover
+  several packages, with different bump types, only if its text is true and
+  complete for each of them on its own, without naming the others; otherwise
+  write one changeset per package, adapted to it.
 - **Start with a one-sentence summary in the imperative** that is readable on
   its own. List the details below it; every item belongs to that summary.
 - **End with a paragraph on migration or impact** for major changes and for

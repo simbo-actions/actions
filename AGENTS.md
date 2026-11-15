@@ -26,8 +26,8 @@ asks for it; keep it to about one screen.
 - Every change gets a changeset, as described in "Writing Changesets" in
   [DEVELOPMENT.md](DEVELOPMENT.md#writing-changesets): one for an action when
   its published content changes for its users, otherwise one for the private
-  `changelog` package; one topic each, a summary paragraph with the details as a
-  list, never empty.
+  `changelog` package; one topic each, about its own package only, a summary
+  paragraph with the details as a list, never empty.
 - Keep the workflow style: emoji names, header comment, `run-name`,
   `concurrency`, `set -euo pipefail`.
 - Maintenance tasks follow the runbooks in [MAINTAINING.md](MAINTAINING.md).
