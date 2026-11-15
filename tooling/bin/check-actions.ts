@@ -1,9 +1,12 @@
 //------------------------------------------------------------------------------
 // Check Actions
 //
-// Fails if an action has no LICENSE.md with a copyright year, if its README
-// links the license with another year, misses a required section, or has a
-// section about the organization that differs from tooling/about-section.md,
+// Fails if an action has no single-line description in action.yml of at most
+// 124 characters (the limit of the GitHub Marketplace), repeated in its
+// package.json and as the first paragraph of its README, if it has no
+// LICENSE.md with a copyright year, if its README links the license with
+// another year, misses a required section, or has a section about the
+// organization that differs from tooling/about-section.md,
 // if the copies of the Octokit client in the actions differ, if a workflow
 // scans with other allowed licenses than the script "check:vulnerabilities", or
 // if a job with an environment (and thereby secrets) runs npm code, or a job
@@ -15,6 +18,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { exit, stderr, stdout } from 'node:process';
 
+import { checkActionDescription } from '../src/action-descriptions.ts';
 import { checkActionLicenses } from '../src/action-licenses.ts';
 import { checkActionReadme } from '../src/action-readmes.ts';
 import { checkIdenticalCopies } from '../src/identical-copies.ts';
@@ -29,6 +33,10 @@ const directories = entries.filter(item => item.isDirectory());
 for (const entry of directories) {
   const readme = await readFile(join('actions', entry.name, 'README.md'), 'utf8').catch(() => '');
   problems.push(...checkActionReadme(entry.name, readme, aboutSection));
+  const actionYml = await readFile(join('actions', entry.name, 'action.yml'), 'utf8').catch(() => '');
+  const actionPackage = await readFile(join('actions', entry.name, 'package.json'), 'utf8').catch(() => '{}');
+  const { description } = JSON.parse(actionPackage) as { description?: string };
+  problems.push(...checkActionDescription(entry.name, actionYml, description, readme));
 }
 
 const octokitClients: Record<string, string> = {};
@@ -62,5 +70,5 @@ if (problems.length > 0) {
 }
 
 stdout.write(
-  '✔ All actions have a LICENSE.md, a matching license link, all README sections, and the section about the organization; all Octokit clients are identical; all workflows scan with the same allowed licenses; no job with an environment runs npm code, and the release runs only published actions.\n',
+  '✔ All actions have a description that fits the Marketplace and matches package.json and the README, a LICENSE.md, a matching license link, all README sections, and the section about the organization; all Octokit clients are identical; all workflows scan with the same allowed licenses; no job with an environment runs npm code, and the release runs only published actions.\n',
 );
