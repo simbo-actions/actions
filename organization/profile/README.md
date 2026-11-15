@@ -1,15 +1,20 @@
 # Simbo's Actions
 
-A family of GitHub Actions, each in its own repository, built and released
-automatically, signed and secure.
+A collection of GitHub Actions, each in its own repository and published from
+one monorepo by an automated release process.
 
-Built for production use in security-conscious organizations:
+Every action follows the same standards and the same release process:
 
-- least privilege
-- a pinned and verified supply chain
-- tested behavior
-- complete documentation
-- reproducible releases with build provenance
+- **Built from source in CI.** Every release is built in the monorepo, committed
+  as a verified commit, and published with checksums and build provenance.
+- **Tags that only move forward.** A version tag `vX.Y.Z` never changes; the
+  major tag `vX` is moved only by the release process.
+- **Least privilege.** Every token is limited to the repository and the
+  permissions that a step needs, and every action documents what it requires.
+- **Tested and checked.** Strict TypeScript, at least 90 % test coverage,
+  integration tests on GitHub, and scans for secrets and vulnerabilities.
+
+How this fits together: [How It Works](#how-it-works).
 
 ## Actions
 

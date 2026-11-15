@@ -1,15 +1,19 @@
 # 🔄 Simbo's Actions
 
-> The source of all actions: develops, tests, and publishes them to their own
-> repositories with signed commits, tags, and releases.
+The monorepo of [Simbo's Actions](https://github.com/simbo-actions): every
+action is developed, tested, and released here, and published to its own
+repository by the release process.
 
-Every action in this repository follows the same [standards](STANDARDS.md):
+This is the place for issues, questions, and contributions, and for the
+documentation of how the actions are built, released, and secured.
 
-- least privilege
-- a pinned and verified supply chain
-- tested behavior
-- complete documentation
-- reproducible releases with build provenance
+Every action follows the same [standards](STANDARDS.md):
+
+- strict TypeScript, at least 90 % test coverage, and integration tests on
+  GitHub;
+- tokens limited to the repository and the permissions of each step;
+- dependencies pinned and updated after a cooldown;
+- releases built in CI, with verified commits, checksums, and build provenance.
 
 ## How It Works
 
