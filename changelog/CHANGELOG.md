@@ -1,5 +1,25 @@
 # changelog
 
+## 0.2.6
+
+### Patch Changes
+
+- 6f53dba: Keep every changelog about its own package.
+
+  - "Writing Changesets" in DEVELOPMENT.md allows a changeset for several
+    packages only if its text is true for each of them on its own, without
+    naming the others.
+  - The entries of version 1.0.3 of `floating-version-tags`,
+    `github-app-bot-user`, and `staged-release` describe only their own change;
+    the corrected changelogs ship with their next release.
+
+- d50f842: Update all own actions in one Dependabot pull request.
+
+  - The group `simbo-actions` no longer splits by dependency; a release that
+    updates several actions brings one pull request instead of one per action.
+  - The own actions are pinned only in the workflows, in one directory, so the
+    group needs no split by directory.
+
 ## 0.2.5
 
 ### Patch Changes
