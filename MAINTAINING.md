@@ -196,11 +196,11 @@ If a new version breaks them, the fix cannot be released with that version.
 5. **After the tags were created, with a cause in the code:** a re-run fails
    again, because publish uses the actions and workflows at the release tag. Fix
    the cause on `main` and release a new patch version.
-6. **If a version must be withdrawn:** this is possible only while immutable
-   releases are off.  
-   Delete the release and the tags (`<action>/vX.Y.Z` in the monorepo, `vX.Y.Z`
-   in the action repository) as organization admin.  
-   With immutable releases on, publish a new patch version instead.
+6. **If a version must be withdrawn:** a published release is immutable, so
+   publish a new patch version instead.  
+   Only a version whose release is still a draft can be removed: delete the
+   draft and the tags (`<action>/vX.Y.Z` in the monorepo, `vX.Y.Z` in the action
+   repository) as organization admin.
 
 ## Settings of Action Repositories
 

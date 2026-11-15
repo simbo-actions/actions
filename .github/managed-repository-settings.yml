@@ -92,6 +92,6 @@ rulesets:
       - type: update
       - type: deletion
 
-# Switched on once the release process is established; a published version is
-# then final.
-immutable_releases: false
+# A published version is final: its release and tag cannot change; corrections
+# are new patch versions.
+immutable_releases: true

@@ -294,7 +294,7 @@ Settings applied to every action repository:
 | Ruleset "Main Branch"  | No deletion, no force push, linear history, signed commits, pull requests with squash only                                                                      |
 | Ruleset "Release Tags" | `v*` (release and floating tags): creating, updating, and deleting only via bypass                                                                              |
 | Bypass                 | The app `simbo-actions` and organization admins                                                                                                                 |
-| Releases               | Immutable releases (switched on once the process is established)                                                                                                |
+| Releases               | Immutable releases                                                                                                                                              |
 
 ## Organization Repository
 
