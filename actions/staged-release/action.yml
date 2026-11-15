@@ -1,6 +1,6 @@
 name: Staged Release
 
-description: A GitHub Action to create a complete GitHub release - draft, assets, then publish. Works with immutable releases.
+description: 'A GitHub Action to create a complete GitHub release: draft, assets, then publish. Works with immutable releases.'
 
 author: Simon Lepel <simbo@simbo.de> (https://simbo.de/)
 

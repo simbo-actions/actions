@@ -1,6 +1,6 @@
 name: Floating Version Tags
 
-description: A GitHub Action to move floating version tags like v1 forward to a release, safely - forward only, never to prereleases.
+description: 'A GitHub Action to move floating version tags like v1 forward to a release, safely: forward only, never to prereleases.'
 
 author: Simon Lepel <simbo@simbo.de> (https://simbo.de/)
 

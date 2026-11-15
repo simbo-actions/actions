@@ -52,8 +52,8 @@ There are currently _**6**_ GitHub Actions in this organization.
 
 - ### **GitHub App Bot User**
 
-  > A GitHub Action to get the bot user of a GitHub App: user ID, login, name,
-  > and email for Git.
+  > A GitHub Action to get the bot user of a GitHub App, with user ID, login,
+  > name, and email for Git.
 
   ⚙️ **`simbo-actions/github-app-bot-user@<SHA> # v1.0.2`**
 
