@@ -1,5 +1,25 @@
 # changelog
 
+## 0.2.5
+
+### Patch Changes
+
+- d24c36e: Check the descriptions of the actions in `check:actions`.
+
+  - The description in `action.yml` is a single line of at most 124 characters,
+    the limit of the GitHub Marketplace.
+  - `package.json` has the same description, and the README starts with it,
+    apart from links and code spans.
+
+- f717a9e: Describe the behavior of the Marketplace form in the runbook
+  "Marketplace Listing".
+
+  - Listing works for immutable releases; saving a release that is still mutable
+    makes it immutable.
+  - The form requires a description of fewer than 125 characters, which
+    `check:actions` ensures.
+  - If the form reports errors without showing any, save again.
+
 ## 0.2.4
 
 ### Patch Changes

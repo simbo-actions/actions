@@ -1,5 +1,15 @@
 # apply-repository-settings
 
+## 1.0.4
+
+### Patch Changes
+
+- cadcacf: Shorten the description to fit the GitHub Marketplace.
+
+  - The Marketplace allows fewer than 125 characters; the description had 131.
+  - "from a YAML file" becomes "from YAML" in `action.yml`, `package.json`, and
+    the README.
+
 ## 1.0.3
 
 ### Patch Changes
