@@ -12,7 +12,7 @@ Commands are run from the repository root unless noted otherwise.
 
 | Task                                                                          | When                                                                      |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [Dependabot pull requests](#dependabot-pull-requests)                         | weekly, or when assigned                                                  |
+| [Dependabot pull requests](#dependabot-pull-requests)                         | weekly, after a release, or when assigned                                 |
 | [Scanner findings](#scanner-findings)                                         | `checks` or `security` fails on osv-scanner                               |
 | [Secret found](#secret-found)                                                 | `checks`, `security`, or the pre-commit hook fails on Gitleaks            |
 | [Expiring accepted findings](#expiring-accepted-findings)                     | monthly                                                                   |
@@ -36,6 +36,11 @@ Commands are run from the repository root unless noted otherwise.
 
 Low-risk updates are merged automatically (see
 [STANDARDS.md](STANDARDS.md#maintenance)); all others are assigned to the owner.
+
+After a release of an action, request the updates instead of waiting for the
+daily run: in the repository, open Insights → Dependency graph → Dependabot, and
+choose "Check for updates" for the ecosystem `github-actions`.  
+The run appears as the workflow "Dependabot Updates" in Actions, with its log.
 
 1. Open the assigned pull requests.
 2. For every update, read the release notes or changelog of the new versions.
