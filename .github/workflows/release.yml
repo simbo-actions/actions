@@ -195,7 +195,7 @@ jobs:
           permission-contents: write
 
       - name: 💾 Commit Release and Create Tags
-        uses: simbo-actions/signed-commit@2182f3abcfb956e57d7505fda33c3c12c7eb4275 # v1.0.0
+        uses: simbo-actions/signed-commit@98f498eda4eb29a405322d694b4fa17bb42fc40b # v1.0.2
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: main
