@@ -301,7 +301,7 @@ jobs:
           sync: false
 
       - name: 🎁 Create GitHub Release
-        uses: simbo-actions/staged-release@14ef8417c7070425753198491a3406c0e0e6d23a # v1.0.0
+        uses: simbo-actions/staged-release@c3ab85d06bd855c8978a9dd6ff9ac9135982e51a # v1.0.2
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: ${{ needs.build.outputs.repository }}
