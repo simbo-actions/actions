@@ -1,5 +1,11 @@
 # changelog
 
+## 0.2.8
+
+### Patch Changes
+
+- 81ecb65: Update `@types/node` to ^24.19.2.
+
 ## 0.2.7
 
 ### Patch Changes
