@@ -257,8 +257,11 @@ jobs:
         run: |
           set -euo pipefail
 
+          # The names written by tooling/bin/create-dependency-changeset.ts
+          shopt -s nullglob
+          files=(.changeset/update-dependencies-*.md .changeset/update-development-dependencies-*.md)
           mkdir -p "${RUNNER_TEMP}/changeset"
-          cp .changeset/dependency-updates-*.md "${RUNNER_TEMP}/changeset/"
+          cp "${files[@]}" "${RUNNER_TEMP}/changeset/"
 
       - name: 📤 Upload Changeset
         if: steps.changeset.outputs.created == 'true'
@@ -295,14 +298,15 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Only the changeset of dependency updates is taken over.
+          # Only the changesets of dependency updates are taken over: one for
+          # the actions with changed bundled dependencies, one for all others.
           shopt -s nullglob
-          files=(changeset/dependency-updates-*.md)
-          if [[ ${#files[@]} -ne 1 ]]; then
-            echo "::error title=Unexpected Changeset::Expected one dependency changeset, found ${#files[@]}."
+          files=(changeset/update-dependencies-*.md changeset/update-development-dependencies-*.md)
+          if [[ ${#files[@]} -lt 1 || ${#files[@]} -gt 2 ]]; then
+            echo "::error title=Unexpected Changeset::Expected one or two dependency changesets, found ${#files[@]}."
             exit 1
           fi
-          cp "${files[0]}" monorepo/.changeset/
+          cp "${files[@]}" monorepo/.changeset/
 
       - name: 🔑 Get App Token
         id: app-token
