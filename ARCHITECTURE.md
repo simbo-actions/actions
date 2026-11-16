@@ -420,11 +420,16 @@ request runs with the sandbox key, so the maintainer reads its changes,
 especially workflows and scripts, before approving.  
 The rulesets apply to all automation; only the app and organization admins
 bypass them.  
-In the monorepo, the ruleset "Main Branch" requires a pull request with one
-approval of the last push, dismisses stale approvals, and requires the checks.
-The app bypasses it always, for release commits and dependency changesets;
-organization admins only when merging a pull request, never by a direct push. A
-sole maintainer cannot approve their own pull request and merges it this way.
+In the monorepo, the ruleset "Main Branch" requires a pull request and the
+checks.  
+It requires no approval while the project has one maintainer, who cannot approve
+their own pull requests; only maintainers can merge, so every pull request from
+someone else is read before the merge.  
+Once a second person gets write access, the ruleset requires one approval of the
+last push (see [GOVERNANCE.md](GOVERNANCE.md#granting-access)).  
+The app bypasses the ruleset always, for release commits and dependency
+changesets; organization admins only when merging a pull request, never by a
+direct push.
 
 The Actions policy of the organization allows only actions and reusable
 workflows owned by GitHub and these, pinned by SHA in every repository:

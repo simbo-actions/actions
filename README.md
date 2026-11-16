@@ -1,5 +1,10 @@
 # 🔄 Simbo's Actions
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16747/badge)](https://www.bestpractices.dev/projects/16747)
+[![OpenSSF Baseline](https://www.bestpractices.dev/projects/16747/baseline)](https://www.bestpractices.dev/projects/16747)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/simbo-actions/actions/badge)](https://scorecard.dev/viewer/?uri=github.com/simbo-actions/actions)
+[![Checks](https://github.com/simbo-actions/actions/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/simbo-actions/actions/actions/workflows/checks.yml)
+
 The monorepo of [Simbo's Actions](https://github.com/simbo-actions): every
 action is developed, tested, and released here, and published to its own
 repository by the release process.
@@ -47,25 +52,29 @@ The details are in the [architecture](ARCHITECTURE.md).
 The [organization profile](https://github.com/simbo-actions) lists all actions,
 each with a link to its repository and README.
 
-## Usage
+## Quick Start
 
-Every action is published to its own repository in the organization
-[`simbo-actions`](https://github.com/simbo-actions).  
-Pin an action by the commit SHA of a release tag, with the version as a comment:
+1. Pick an action from the
+   [organization profile](https://github.com/simbo-actions) and open its README
+   for inputs, outputs, and the permissions it needs.
+2. Look up the commit SHA of its latest release tag, for example on the releases
+   page of the action repository.
+3. Use the action pinned by that SHA, with the version as a comment:
 
-```yaml
-jobs:
-  example:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 💾 Commit Changes
-        uses: simbo-actions/signed-commit@<SHA> # vX.Y.Z
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          message: 'chore: update generated files'
-```
+   ```yaml
+   jobs:
+     example:
+       runs-on: ubuntu-latest
+       steps:
+         - name: 💾 Commit Changes
+           uses: simbo-actions/signed-commit@<SHA> # vX.Y.Z
+           with:
+             token: ${{ steps.app-token.outputs.token }}
+             message: 'chore: update generated files'
+   ```
 
-Dependabot keeps SHA pins up to date.
+4. Let Dependabot keep the SHA pins up to date, with the ecosystem
+   `github-actions` in `.github/dependabot.yml`.
 
 For convenience, every action also has a floating tag for its major version,
 like `@v1`.  
@@ -84,6 +93,8 @@ How to verify a release is described in
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report issues and contribute                   |
 | [DEVELOPMENT.md](DEVELOPMENT.md)   | Setup, scripts, tests, and adding an action           |
 | [SECURITY.md](SECURITY.md)         | Reporting vulnerabilities, supported versions         |
+| [GOVERNANCE.md](GOVERNANCE.md)     | Decisions, roles, and access                          |
+| [ROADMAP.md](ROADMAP.md)           | Plans for the next year                               |
 | [SUPPORT.md](SUPPORT.md)           | Getting help, support policy                          |
 | [MAINTAINING.md](MAINTAINING.md)   | Runbooks for maintainers                              |
 | [CHANGELOG.md](CHANGELOG.md)       | Where to find the changelogs                          |

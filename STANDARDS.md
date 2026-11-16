@@ -45,7 +45,6 @@ The standard follows established frameworks without claiming certification:
   - [Maintenance](#maintenance)
   - [Open Source](#open-source)
 - [Profile: GitHub Actions](#profile-github-actions)
-- [Targets](#targets)
 - [How the Standard Is Enforced](#how-the-standard-is-enforced)
 
 ## Core
@@ -258,6 +257,13 @@ Required:
   points to this repository.
 - [Conventional Commits](https://www.conventionalcommits.org/), checked by
   commitlint.
+- Security reports are acknowledged within 14 days and disclosed in a
+  coordinated way, as described in [SECURITY.md](SECURITY.md).
+- Decisions, roles, and access to sensitive resources are documented in
+  [GOVERNANCE.md](GOVERNANCE.md), the plans for the next year in
+  [ROADMAP.md](ROADMAP.md).
+- The [OpenSSF Best Practices](https://www.bestpractices.dev/projects/16747)
+  badges "passing" and "baseline-1" are kept.
 
 ## Profile: GitHub Actions
 
@@ -309,14 +315,6 @@ Required:
 - Release content: `action.yml`, `dist/` (if any), `README.md`, `CHANGELOG.md`,
   `LICENSE.md`, `package.json`.
 - Release order: build, attest, draft release, upload assets, publish.
-
-## Targets
-
-Planned, not yet required:
-
-- [OpenSSF Best Practices badge](https://www.bestpractices.dev/), level
-  "passing".
-- A stated response time for security reports.
 
 ## How the Standard Is Enforced
 
