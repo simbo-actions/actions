@@ -1,5 +1,31 @@
 # changelog
 
+## 0.2.11
+
+### Patch Changes
+
+- df7426f: Document governance, the roadmap, and the security response, and show
+  the OpenSSF badges.
+
+  - GOVERNANCE.md describes decisions, roles, access to sensitive resources, and
+    how access is granted; ROADMAP.md the plans until the end of 2027.
+  - SECURITY.md acknowledges reports within 14 days and describes the steps up
+    to a coordinated disclosure within 90 days.
+  - The README shows the badges of OpenSSF Best Practices, Baseline, Scorecard,
+    and the checks, and starts with a quick start.
+  - STANDARDS.md requires the response time and the badges; the section
+    "Targets" is gone.
+
+- df7426f: Require no approval on `main` while the project has one maintainer.
+
+  - The ruleset "Main Branch" still requires a pull request and the checks; only
+    maintainers can merge, so every pull request from someone else is read
+    before the merge.
+  - With a second person with write access, it requires one approval of the last
+    push again.
+  - The workflow `automerge` keeps approving low-risk updates, so that automatic
+    merges keep working then.
+
 ## 0.2.10
 
 ### Patch Changes
