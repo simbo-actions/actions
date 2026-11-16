@@ -43,4 +43,7 @@ person who has contributed over a longer time, after the maintainer has reviewed
 their contributions and their account, and only with two-factor
 authentication.  
 Access is granted with the least privilege the role needs, documented in this
-file, and removed when it is no longer needed.
+file, and removed when it is no longer needed.  
+With a second person with write access, the ruleset "Main Branch" requires one
+approval of the last push for every pull request, so that every change is
+reviewed by someone other than its author.

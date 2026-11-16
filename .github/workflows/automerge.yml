@@ -6,8 +6,8 @@ name: Auto-merge 🤖
 # Approves and merges low-risk Dependabot pull requests once the required
 # checks pass: minor or patch updates of actions by trusted publishers
 # (actions/*, github/*, google/*), if only files under .github/ change. The
-# ruleset requires an approval; the approval of this workflow needs the setting
-# "Allow GitHub Actions to approve pull requests".
+# approval keeps automatic merges working when the ruleset requires one; it
+# needs the setting "Allow GitHub Actions to approve pull requests".
 # Updates of simbo-actions/* are reviewed: the privileged jobs of this
 # repository run these actions with the app's credentials.
 # Assigns all other Dependabot pull requests to the owner for review.

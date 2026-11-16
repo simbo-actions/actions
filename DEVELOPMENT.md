@@ -131,9 +131,9 @@ Workspace scripts (run inside a workspace, or with
 5. Run `pnpm run preflight`.
 6. Open a pull request. Its title becomes the commit message of the squash
    merge, so it follows Conventional Commits as well.  
-   The ruleset "Main Branch" requires one approval of the last push. A
-   maintainer cannot approve their own pull request and merges it with "Bypass
-   rules" once the checks pass.
+   The ruleset "Main Branch" requires the checks, but no approval while the
+   project has one maintainer: only maintainers can merge, and they read every
+   pull request before merging it.
 
 ## Writing Changesets
 
