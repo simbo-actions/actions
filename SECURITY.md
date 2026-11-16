@@ -13,14 +13,23 @@ Include what you can:
 - steps to reproduce, or a proof of concept,
 - a suggested fix, if you have one.
 
-What to expect:
+## What to Expect
 
-- The maintainer aims to acknowledge a report within 7 days and keeps you
-  informed about the progress.
-- Fixes are released as new versions; a security advisory is published with the
-  fix.  
-  You are credited, unless you prefer not to be.
-- Please give a reasonable time to fix the issue before disclosing it.
+1. **Acknowledgement within 14 days.** The maintainer confirms the report and
+   keeps you informed about the progress.
+2. **Assessment.** The maintainer reproduces the issue, rates its severity, and
+   determines the affected actions and versions, in the private security
+   advisory of the report.
+3. **Fix.** The fix is developed in a temporary private fork of the advisory and
+   released as a new version of every affected action.
+4. **Disclosure.** The security advisory is published with the fix, with a CVE
+   if one applies.  
+   You are credited, unless you prefer not to be.
+
+This is coordinated disclosure: please do not disclose the issue until the
+advisory is published, or until 90 days after your report, whichever comes
+first. If a fix needs longer, the maintainer asks for an extension in the
+advisory.
 
 ## Supported Versions
 
