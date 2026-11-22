@@ -185,15 +185,17 @@ sequenceDiagram
   participant checks as Checks workflow
   participant release as Release workflow
   participant publish as Publish workflow
+  participant org as Publish Organization workflow
 
   dev->>main: merge pull request with changeset
   main->>checks: push event
   checks->>checks: build, test, lint, scan, smoke tests
-  checks->>release: dispatch (GITHUB_TOKEN, actions: write)
+  checks->>release: dispatch with the checked SHA (GITHUB_TOKEN, actions: write)
   release->>release: job build: changeset version, patch (no credentials)
   release->>release: job release: apply and check the patch
   release->>main: signed commit "ci(release): …"
   release->>main: tag ACTION/vX.Y.Z (one API call per tag)
+  release->>org: dispatch with the release commit SHA (GITHUB_TOKEN, actions: write)
   main->>publish: push event per tag
   publish->>publish: publish one action (see next section)
 ```
@@ -201,6 +203,10 @@ sequenceDiagram
 Only the dispatch by `checks` releases: the workflow skips runs whose actor is
 not `github-actions[bot]`, so a manual run cannot bypass failed checks. A re-run
 keeps the actor of the original run.  
+The release builds only the commit that `checks` tested: it checks out `main`
+and fails before running any code if `main` is no longer at that commit. The
+release of the later commit takes over. It never checks out a commit from an
+input, so only code from `main` runs with access to the cache of `main`.  
 The release commit and the tags are created via the GitHub API with
 [`signed-commit`](actions/signed-commit/README.md), so they are verified.  
 The tag `changelog/vX.Y.Z` of the monorepo changelog starts no publish run.
@@ -308,12 +314,15 @@ The repository
   `CODE_OF_CONDUCT.md`. They all point to this monorepo.
 
 The content lives in [`organization/`](organization/README.md).  
-The workflow `publish-organization` publishes it on every change on `main`, the
-same way as an action:
+The workflow `publish-organization` publishes it the same way as an action:
 
 - it creates the repository if missing,
 - applies the settings of `.github/managed-repository-settings.yml`,
 - and commits the content with `signed-commit`.
+
+The release dispatches it with the SHA of the release commit, so it publishes
+only checked content with the released versions. Every change on `main` has a
+changeset, so it reaches the organization with the next release.
 
 The list of actions in the profile is generated with `pnpm run actions-list`.  
 The release workflow updates it in every release commit, so the profile shows
@@ -367,6 +376,7 @@ permissions it needs.
 | -------------------------------- | -------------- | ----------------- | ------------------------------------------------------------------- |
 | Checks (all jobs except below)   | `GITHUB_TOKEN` | monorepo          | `contents: read`                                                    |
 | Dispatch release                 | `GITHUB_TOKEN` | monorepo          | `actions: write`                                                    |
+| Dispatch publish organization    | `GITHUB_TOKEN` | monorepo          | `actions: write`                                                    |
 | Release commit and tags          | app token      | monorepo          | `contents: write`                                                   |
 | Changeset for dependency updates | app token      | monorepo          | `contents: write`                                                   |
 | Create action repository         | app token      | monorepo (scope)  | `administration: write`, only if missing                            |

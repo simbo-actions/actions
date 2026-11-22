@@ -7,6 +7,9 @@ name: Publish Organization 🏢
 # the organization profile and the default community files. Creates and
 # configures the repository if necessary and commits the content as signed
 # commit.
+# Dispatched by the "Release" workflow for every release commit; manual runs
+# are skipped. Every change on main has a changeset, so every change reaches
+# the organization with the next release.
 #
 # Two jobs: "build" hands the content over as artifact, without any credentials.
 # "publish" runs no npm code; it uses the artifact and the published actions of
@@ -15,14 +18,20 @@ name: Publish Organization 🏢
 #-------------------------------------------------------------------------------
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - organization/**
-      - .github/managed-repository-settings.yml
-      - .github/workflows/publish-organization.yml
   workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Full SHA of the release commit (set by "Release")'
+        required: false
+        default: ''
+      commit:
+        description: 'Short SHA of the release commit (set by "Release")'
+        required: false
+        default: ''
+      subject:
+        description: 'Subject of the release commit (set by "Release")'
+        required: false
+        default: ''
 
 permissions: {}
 
@@ -32,8 +41,8 @@ concurrency:
 
 run-name: >
   ${{
-    github.event_name == 'push'
-      && format('{0} "{1}"', github.workflow, github.event.head_commit.message)
+    inputs.commit != ''
+      && format('{0} {1} "{2}"', github.workflow, inputs.commit, inputs.subject)
       || github.workflow
   }}
 
@@ -43,14 +52,29 @@ env:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/main'
+    # Only the dispatch by "Release" publishes; a manual run is skipped. A
+    # re-run keeps the actor of the original run.
+    if: github.ref == 'refs/heads/main' && github.actor == 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
+      # Publishes the release commit, not the current main: its parent passed
+      # "Checks", and "Release" only adds the released versions.
+      - name: 🔎 Check the Commit
+        env:
+          SHA: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error title=Invalid Commit::Expected the full SHA of the release commit."
+            exit 1
+          fi
+
       - name: 🛎️ Checkout Monorepo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha }}
           path: monorepo
           persist-credentials: false
 

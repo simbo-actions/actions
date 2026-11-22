@@ -233,9 +233,9 @@ If a new version breaks them, the fix cannot be released with that version.
    The list of actions in `organization/profile/README.md` is generated: run
    `pnpm run actions-list` after changing an action's title or description; the
    release commit updates the versions.
-2. Merge to `main`.  
-   The workflow `publish-organization` publishes the content to
-   `simbo-actions/.github`.
+2. Merge to `main` with a changeset.  
+   After the release, the workflow `publish-organization` publishes the content
+   of the release commit to `simbo-actions/.github`.
 3. Check the profile on
    [github.com/simbo-actions](https://github.com/simbo-actions).
 

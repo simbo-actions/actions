@@ -2,3 +2,6 @@
 
 # Exclude lock files
 /pnpm-lock.yaml
+
+# Exclude local worktrees of Claude Code
+/.claude/worktrees

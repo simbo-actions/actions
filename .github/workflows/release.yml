@@ -7,6 +7,8 @@ name: Release 📬
 # profile, creates a signed release commit on main, and tags every released
 # package with "<package>/v<version>".
 # Dispatched by the "Checks" workflow on main branch; manual runs are skipped.
+# Releases only the commit that "Checks" tested: main must still be at it.
+# Dispatches the "Publish Organization" workflow for the release commit.
 #
 # Two jobs: "build" integrates the changesets without any credentials and hands
 # the changes over as patch. "release" runs no npm code: it applies the patch,
@@ -18,6 +20,10 @@ name: Release 📬
 on:
   workflow_dispatch:
     inputs:
+      sha:
+        description: 'Full SHA of the checked commit (set by "Checks")'
+        required: false
+        default: ''
       commit:
         description: 'Short SHA of the checked commit (set by "Checks")'
         required: false
@@ -57,6 +63,24 @@ jobs:
         with:
           ref: main
           persist-credentials: false
+
+      # Runs only code from main, and only the commit that "Checks" tested. If
+      # main has moved on, the release fails here, and the run for the later
+      # commit takes over.
+      - name: 🔎 Check the Commit
+        env:
+          SHA: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error title=Invalid Commit::Expected the full SHA of the checked commit."
+            exit 1
+          fi
+          head="$(git rev-parse HEAD)"
+          if [[ "$head" != "$SHA" ]]; then
+            echo "::error title=Main Has Moved On::main is at ${head}, not at the checked commit ${SHA}."
+            exit 1
+          fi
 
       - name: 🚛 Install pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -151,6 +175,8 @@ jobs:
       deployment: false
     permissions:
       contents: read
+    outputs:
+      commit-sha: ${{ steps.commit.outputs.commit-sha }}
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -195,6 +221,7 @@ jobs:
           permission-contents: write
 
       - name: 💾 Commit Release and Create Tags
+        id: commit
         uses: simbo-actions/signed-commit@98f498eda4eb29a405322d694b4fa17bb42fc40b # v1.0.2
         with:
           token: ${{ steps.app-token.outputs.token }}
@@ -203,3 +230,25 @@ jobs:
           message: 'ci(release): ${{ needs.build.outputs.packages }}'
           tags: ${{ needs.build.outputs.packages }}
           sync: false
+
+  dispatch-publish-organization:
+    needs:
+      - build
+      - release
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: '🏢 Workflow: Publish Organization'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.release.outputs.commit-sha }}
+          PACKAGES: ${{ needs.build.outputs.packages }}
+        run: |
+          set -euo pipefail
+          # Passes the release commit, whose profile lists the released
+          # versions, and names the run after it: short SHA and subject.
+          gh workflow run publish-organization.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            --field sha="$SHA" \
+            --field commit="${SHA:0:7}" \
+            --field subject="ci(release): ${PACKAGES}"
