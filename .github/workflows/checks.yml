@@ -197,6 +197,7 @@ jobs:
       - smoke-tests
       - vulnerabilities
     if: >
+      github.repository_owner == 'simbo-actions' &&
       github.event_name == 'push' &&
       github.ref_name == 'main' &&
       needs.checks.outputs.has-changesets == 'true'
@@ -210,9 +211,10 @@ jobs:
           MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
-          # Names the release run after the checked commit: short SHA and the
-          # first line of its message.
+          # Passes the checked commit, which the release builds, and names the
+          # run after it: short SHA and the first line of its message.
           gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            --field sha="$GITHUB_SHA" \
             --field commit="${GITHUB_SHA:0:7}" \
             --field subject="${MESSAGE%%$'\n'*}"
 
