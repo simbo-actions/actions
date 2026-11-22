@@ -203,9 +203,10 @@ sequenceDiagram
 Only the dispatch by `checks` releases: the workflow skips runs whose actor is
 not `github-actions[bot]`, so a manual run cannot bypass failed checks. A re-run
 keeps the actor of the original run.  
-The release builds the commit that `checks` tested, not the current `main`. If
-`main` has moved on, the release commit fails, since `signed-commit` expects the
-branch at the checked commit, and the release of the later commit takes over.  
+The release builds only the commit that `checks` tested: it checks out `main`
+and fails before running any code if `main` is no longer at that commit. The
+release of the later commit takes over. It never checks out a commit from an
+input, so only code from `main` runs with access to the cache of `main`.  
 The release commit and the tags are created via the GitHub API with
 [`signed-commit`](actions/signed-commit/README.md), so they are verified.  
 The tag `changelog/vX.Y.Z` of the monorepo changelog starts no publish run.
