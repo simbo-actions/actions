@@ -49,6 +49,7 @@ describe('checkPrivilegedJobs', () => {
   it.each([
     ['uses: actions/setup-node@abc', 'uses: actions/setup-node@abc'],
     ['uses: pnpm/action-setup@abc', 'uses: pnpm/action-setup@abc'],
+    ['uses: pnpm/setup@abc', 'uses: pnpm/setup@abc'],
     ['run: pnpm install', 'run: pnpm install'],
     ['run: npx something', 'run: npx something'],
     ['run: node tooling/bin/x.ts', 'run: node tooling/bin/x.ts'],

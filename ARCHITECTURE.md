@@ -443,7 +443,7 @@ direct push.
 
 The Actions policy of the organization allows only actions and reusable
 workflows owned by GitHub and these, pinned by SHA in every repository:
-`simbo-actions/*`, `pnpm/action-setup`, `dependabot/fetch-metadata`,
+`simbo-actions/*`, `pnpm/setup`, `dependabot/fetch-metadata`,
 `google/osv-scanner-action/*`, and `ossf/scorecard-action`.  
 A new third-party action needs an entry in the policy before its first run.
 
