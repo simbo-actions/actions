@@ -4,15 +4,6 @@
 # effectiveUntil yet; switch to it when the workflows use 2.7.1 or later.
 
 [[IgnoredVulns]]
-id = "GHSA-gcqx-w48m-w2h4"
-ignoreUntil = 2027-02-13
-reason = """
-deepmerge (indirect, via @rollup/plugin-node-resolve) is only used at build time
-to merge Rollup options defined in this repository; no untrusted input reaches it.
-No fixed version exists yet.
-"""
-
-[[IgnoredVulns]]
 id = "GHSA-g3hv-75wg-m249"
 ignoreUntil = 2027-02-13
 reason = """

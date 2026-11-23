@@ -4,6 +4,7 @@
 const NPM_CODE = [
   /\buses:\s*actions\/setup-node@/,
   /\buses:\s*pnpm\/action-setup@/,
+  /\buses:\s*pnpm\/setup@/,
   /(?:^|[\s"'(;&|])(?:pnpm|npm|npx|node|yarn|corepack)(?:\s|$)/,
 ];
 
