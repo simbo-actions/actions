@@ -88,9 +88,6 @@ jobs:
           node-version-file: .nvmrc
           require-lockfile: true
 
-      - name: 👷 Build Signed Commit Action
-        run: pnpm exec turbo run build --filter=signed-commit
-
       - name: 📝 Integrate Changesets
         run: |
           set -euo pipefail

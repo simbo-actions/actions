@@ -131,7 +131,8 @@ updates them.
 
 4. Update the version and the checksums where the tool is pinned.
 5. For Gitleaks, add a patch changeset for `gitleaks-scan`.  
-   The new version reaches all repositories with the next release of the action.
+   The new version reaches all repositories with the next release of the action,
+   the secret scans of this monorepo with the Dependabot update of its pin.
 6. Update the local installations
    (`brew upgrade actionlint gitleaks osv-scanner shellcheck`).
 

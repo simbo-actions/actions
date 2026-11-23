@@ -61,6 +61,14 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # The commits of the pull request or push; "security" scans the whole
+      # history weekly. The published action, so that a pull request cannot
+      # change the scanner that checks it; before any npm code runs.
+      - name: 🔐 Scan for Secrets
+        uses: simbo-actions/gitleaks-scan@340bdabc63869a5ba357b5af3e6d501ffafd9a55 # v1.0.2
+        with:
+          scope: auto
+
       - name: 📦 Install pnpm, Node.js, and Dependencies
         uses: pnpm/setup@731dfb6463bbd11c11fd0ee11fe00ed0e36d48a1 # v3.2.0
         with:
@@ -73,13 +81,6 @@ jobs:
 
       - name: 🎁 Bundle
         run: pnpm run each:bundle
-
-      # The commits of the pull request or push; "security" scans the whole
-      # history weekly.
-      - name: 🔐 Scan for Secrets
-        uses: ./actions/gitleaks-scan
-        with:
-          scope: auto
 
       - name: 🔎 Lint Workflows
         env:
