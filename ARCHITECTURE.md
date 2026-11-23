@@ -556,6 +556,8 @@ digest. It is accepted because the job cannot write code or reach secrets (see
 `gitleaks-scan` runs in the job `checks` on the commits of the pull request or
 push, and weekly in `security` on the whole history, so that new rules of a
 newer Gitleaks version also check old commits.  
+Both use the published action, pinned by SHA, so that a pull request cannot
+change the scanner that checks it.  
 It reports findings as annotations and in the job summary, with secrets
 redacted.  
 False positives go into `.gitleaksignore`.

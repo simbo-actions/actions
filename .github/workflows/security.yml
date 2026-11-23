@@ -6,8 +6,8 @@ name: Security 🛡️
 # Scans all dependencies weekly with Google's osv-scanner workflow for known
 # vulnerabilities, malicious packages, and licenses, so that newly published
 # vulnerabilities in unchanged dependencies are found. Uploads the results to
-# code scanning. Scans the whole Git history for secrets with gitleaks-scan,
-# so that new rules also check old commits. Pull requests and pushes to main
+# code scanning. Scans the whole Git history for secrets with the published
+# gitleaks-scan action, pinned by SHA, so that new rules also check old commits. Pull requests and pushes to main
 # are scanned by the "Checks" workflow, which scans only their commits for
 # secrets.
 #-------------------------------------------------------------------------------
@@ -57,17 +57,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: 📦 Install pnpm, Node.js, and Dependencies
-        uses: pnpm/setup@731dfb6463bbd11c11fd0ee11fe00ed0e36d48a1 # v3.2.0
-        with:
-          node-version-file: .nvmrc
-          require-lockfile: true
-          cache: true
-
-      - name: 👷‍♂️ Build
-        run: pnpm exec turbo run build --filter=gitleaks-scan
-
       - name: 🔐 Scan the Whole History for Secrets
-        uses: ./actions/gitleaks-scan
+        uses: simbo-actions/gitleaks-scan@340bdabc63869a5ba357b5af3e6d501ffafd9a55 # v1.0.2
         with:
           scope: history

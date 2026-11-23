@@ -90,8 +90,8 @@ Required:
 - Every release has assets with a `SHA256SUMS` file and **build provenance**
   (artifact attestation, SLSA Build Level 2).
 - Third-party actions are pinned by full commit SHA, with the version as a
-  comment. Own actions are pinned the same way in jobs with credentials; jobs
-  without credentials use them via `./actions/<name>`.
+  comment. Own actions are pinned the same way; only the smoke tests use the
+  actions built in the same run, because they test them.
 - Tools downloaded in workflows or actions are pinned by version and verified by
   checksum. In read-only jobs without secrets, an action of a trusted publisher
   may download its tool itself.
