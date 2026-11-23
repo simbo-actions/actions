@@ -575,8 +575,17 @@ Publishing requires a job without scripts and with no write permissions except
 The action repositories are not rated: they have no workflows and only generated
 content.
 
-Accepted findings are listed in [`osv-scanner.toml`](osv-scanner.toml), each
-with a reason and an expiry date.  
+Accepted findings of Scorecard are dismissed in code scanning as "won't fix",
+with the reason as comment:
+
+| Check             | Reason                                                                                                                                                                                                               | Revisit when                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Code-Review       | The only maintainer cannot approve their own pull requests; every pull request is read before the merge.                                                                                                             | a second maintainer joins                                                     |
+| Branch-Protection | Required approvals or code owner reviews would block every merge and the Dependabot auto-merge; the next tier of the check requires at least one required reviewer.                                                  | a second maintainer joins                                                     |
+| Fuzzing           | The actions parse only inputs from the calling workflow, Git, the GitHub API, and Gitleaks; whoever controls them already controls the workflow. The parsers are small and covered by tests, so fuzzing adds little. | an action parses third-party content, such as pull request bodies or comments |
+
+Accepted findings of osv-scanner are listed in
+[`osv-scanner.toml`](osv-scanner.toml), each with a reason and an expiry date.  
 Security fixes of indirect dependencies are set as `overrides` in
 [`pnpm-workspace.yaml`](pnpm-workspace.yaml).
 
