@@ -36,7 +36,7 @@
     "@simbo/rollup-github-actions-config": "^2.0.0",
     "@simbo/tsconfig": "^2.0.0",
     "@vitest/coverage-v8": "^5.0.5",
-    "eslint": "^10.11.0",
+    "eslint": "^10.15.0",
     "rollup": "^4.68.2",
     "typescript": "^6.0.3",
     "vitest": "^5.0.5"

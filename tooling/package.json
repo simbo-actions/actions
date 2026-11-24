@@ -25,7 +25,7 @@
     "@simbo/eslint-config": "^3.0.0",
     "@simbo/tsconfig": "^2.0.0",
     "@vitest/coverage-v8": "^5.0.5",
-    "eslint": "^10.11.0",
+    "eslint": "^10.15.0",
     "typescript": "^6.0.3",
     "vitest": "^5.0.5"
   }
