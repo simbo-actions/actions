@@ -225,6 +225,7 @@ The token must have access to that repository:
     working-directory: target
     message: 'ci(release): v1.0.0'
     tags: v1.0.0
+    tag-message: Release {tag}
 ```
 
 ### Allow Empty Runs

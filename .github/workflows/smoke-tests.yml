@@ -604,7 +604,7 @@ jobs:
           echo 'committed' > "sandbox/${BRANCH}/a.txt"
           echo 'not committed' > sandbox/ignored.txt
 
-      # A new branch from main, only the files that match, and a tag.
+      # A new branch from main, only the files that match, and an annotated tag.
       - name: ✍️ Commit to a New Branch
         id: first
         uses: ./smoke/actions/signed-commit
@@ -618,6 +618,7 @@ jobs:
           file-pattern: smoke/**
           message: 'test: first commit of the smoke tests'
           tags: ${{ env.BRANCH }}/first
+          tag-message: Smoke test {tag}
 
       - name: 🧪 Change a File
         run: echo 'changed' > "sandbox/${BRANCH}/a.txt"
@@ -634,6 +635,7 @@ jobs:
           file-pattern: smoke/**
           message: 'test: second commit of the smoke tests'
 
+      # A lightweight tag on the head, without a commit.
       - name: 🏷️ Tag the Head Without Changes
         id: tag-only
         uses: ./smoke/actions/signed-commit
@@ -646,6 +648,7 @@ jobs:
           message: 'test: nothing to commit'
           if-no-changes: ignore
           tags: ${{ env.BRANCH }}/second
+          tag-type: lightweight
 
       - name: 🔍 Verify Commits and Tags
         env:
@@ -673,9 +676,12 @@ jobs:
           expect 'first commit verified' "$(gh api "repos/${SANDBOX}/commits/${FIRST}" --jq '.commit.verification.verified')" 'true'
           expect 'second commit on the first' "$(gh api "repos/${SANDBOX}/commits/${SECOND}" --jq '.parents[0].sha')" "$FIRST"
           expect 'branch head' "$(gh api "repos/${SANDBOX}/git/ref/heads/${BRANCH}" --jq '.object.sha')" "$SECOND"
-          expect 'tag on the first commit' "$(gh api "repos/${SANDBOX}/git/ref/tags/${BRANCH}/first" --jq '.object.sha')" "$FIRST"
+          first_tag="$(gh api "repos/${SANDBOX}/git/ref/tags/${BRANCH}/first" --jq '.object.type + " " + .object.sha')"
+          expect 'first tag annotated' "${first_tag%% *}" 'tag'
+          expect 'annotated tag on the first commit' "$(gh api "repos/${SANDBOX}/git/tags/${first_tag#* }" --jq '.object.sha')" "$FIRST"
+          expect 'annotated tag message' "$(gh api "repos/${SANDBOX}/git/tags/${first_tag#* }" --jq '.message')" "Smoke test ${BRANCH}/first"
           expect 'nothing to commit' "$TAG_ONLY" 'false'
-          expect 'tag on the head' "$(gh api "repos/${SANDBOX}/git/ref/tags/${BRANCH}/second" --jq '.object.sha')" "$SECOND"
+          expect 'lightweight tag on the head' "$(gh api "repos/${SANDBOX}/git/ref/tags/${BRANCH}/second" --jq '.object.type + " " + .object.sha')" "commit ${SECOND}"
           if gh api "repos/${SANDBOX}/contents/ignored.txt?ref=${SECOND}" --silent 2>/dev/null; then
             expect 'ignored file not committed' 'committed' 'missing'
           else
