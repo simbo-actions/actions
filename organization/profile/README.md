@@ -83,9 +83,9 @@ There are currently _**6**_ GitHub Actions in this organization.
   > A GitHub Action to create signed commits and tags via the GitHub API, shown
   > as verified.
 
-  ⚙️ **`simbo-actions/signed-commit@<SHA> # v1.0.2`**
+  ⚙️ **`simbo-actions/signed-commit@<SHA> # v2.0.0`**
 
-  Latest Version: `1.0.2`
+  Latest Version: `2.0.0`
 
   [Repository](https://github.com/simbo-actions/signed-commit)  • 
   [README.md](https://github.com/simbo-actions/signed-commit/blob/main/README.md)  • 
