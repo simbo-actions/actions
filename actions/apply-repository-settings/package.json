@@ -36,7 +36,7 @@
     "@simbo/tsconfig": "^2.0.0",
     "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.11.0",
-    "rollup": "^4.68.2",
+    "rollup": "^4.68.4",
     "typescript": "^6.0.3",
     "vitest": "^5.0.5"
   }
