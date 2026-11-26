@@ -19,16 +19,30 @@ const sha = 'a'.repeat(40);
  * @param overrides.graphql - The GraphQL method.
  * @param overrides.createRef - The REST method to create a reference.
  * @param overrides.getRef - The REST method to get a reference.
+ * @param overrides.createTag - The REST method to create a tag object.
+ * @param overrides.getTag - The REST method to get a tag object.
  * @param overrides.getRepo - The REST method to get a repository.
  * @returns The fake client.
  */
 function fakeOctokit(
-  overrides: { graphql?: unknown; createRef?: unknown; getRef?: unknown; getRepo?: unknown } = {},
+  overrides: {
+    graphql?: unknown;
+    createRef?: unknown;
+    getRef?: unknown;
+    createTag?: unknown;
+    getTag?: unknown;
+    getRepo?: unknown;
+  } = {},
 ): Octokit & { graphql: ReturnType<typeof vi.fn> } {
   return {
     graphql: overrides.graphql ?? vi.fn(),
     rest: {
-      git: { createRef: overrides.createRef ?? vi.fn(), getRef: overrides.getRef ?? vi.fn() },
+      git: {
+        createRef: overrides.createRef ?? vi.fn(),
+        getRef: overrides.getRef ?? vi.fn(),
+        createTag: overrides.createTag ?? vi.fn(),
+        getTag: overrides.getTag ?? vi.fn(),
+      },
       repos: { get: overrides.getRepo ?? vi.fn() },
     },
   } as unknown as Octokit & { graphql: ReturnType<typeof vi.fn> };
@@ -123,40 +137,141 @@ describe('createBranch', () => {
   });
 });
 
+const tagSha = 'd'.repeat(40);
+const otherSha = 'c'.repeat(40);
+const annotated = { type: 'annotated', message: 'Release pkg/v1.0.0' } as const;
+const lightweight = { type: 'lightweight', message: 'pkg/v1.0.0' } as const;
+
+/**
+ * Fakes `getRef` for a lightweight tag.
+ *
+ * @param target - The commit the tag points to.
+ * @returns The fake method.
+ */
+function lightweightRef(target: string): ReturnType<typeof vi.fn> {
+  return vi.fn().mockResolvedValue({ data: { object: { sha: target, type: 'commit' } } });
+}
+
+/**
+ * Fakes `getRef` and `getTag` for an annotated tag.
+ *
+ * @param target - The commit the tag object points to.
+ * @returns The fake methods.
+ */
+function annotatedRef(target: string): { getRef: ReturnType<typeof vi.fn>; getTag: ReturnType<typeof vi.fn> } {
+  return {
+    getRef: vi.fn().mockResolvedValue({ data: { object: { sha: tagSha, type: 'tag' } } }),
+    getTag: vi.fn().mockResolvedValue({ data: { object: { sha: target, type: 'commit' } } }),
+  };
+}
+
+const missingRef = (): ReturnType<typeof vi.fn> => vi.fn().mockRejectedValue(httpError(404));
+
 describe('createTag', () => {
-  it('creates a lightweight tag', async () => {
+  it('creates an annotated tag object and a reference to it', async () => {
+    const createTagObject = vi.fn().mockResolvedValue({ data: { sha: tagSha } });
     const createRef = vi.fn().mockResolvedValue({});
-    const octokit = fakeOctokit({ createRef });
-    expect(await createTag(octokit, repository, 'pkg/v1.0.0', sha)).toBe(true);
-    expect(createRef).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo', ref: 'refs/tags/pkg/v1.0.0', sha });
-  });
+    const octokit = fakeOctokit({ getRef: missingRef(), createTag: createTagObject, createRef });
 
-  it('accepts an existing tag on the same commit', async () => {
-    const octokit = fakeOctokit({
-      createRef: vi.fn().mockRejectedValue(httpError(422)),
-      getRef: vi.fn().mockResolvedValue({ data: { object: { sha } } }),
+    expect(await createTag(octokit, repository, 'pkg/v1.0.0', sha, annotated)).toBe(true);
+    expect(createTagObject).toHaveBeenCalledWith({
+      ...repository,
+      tag: 'pkg/v1.0.0',
+      message: 'Release pkg/v1.0.0',
+      object: sha,
+      type: 'commit',
     });
-    expect(await createTag(octokit, repository, 'v1.0.0', sha)).toBe(false);
+    expect(createRef).toHaveBeenCalledWith({ ...repository, ref: 'refs/tags/pkg/v1.0.0', sha: tagSha });
   });
 
-  it('rejects an existing tag on another commit', async () => {
+  it('creates a lightweight tag', async () => {
+    const createTagObject = vi.fn();
+    const createRef = vi.fn().mockResolvedValue({});
+    const octokit = fakeOctokit({ getRef: missingRef(), createTag: createTagObject, createRef });
+
+    expect(await createTag(octokit, repository, 'pkg/v1.0.0', sha, lightweight)).toBe(true);
+    expect(createTagObject).not.toHaveBeenCalled();
+    expect(createRef).toHaveBeenCalledWith({ ...repository, ref: 'refs/tags/pkg/v1.0.0', sha });
+  });
+
+  it.each([
+    ['annotated', annotated, annotatedRef(sha)],
+    ['lightweight', lightweight, { getRef: lightweightRef(sha) }],
+  ] as const)('accepts an existing %s tag on the same commit without creating objects', async (_, options, fakes) => {
+    const createTagObject = vi.fn();
+    const createRef = vi.fn();
+    const octokit = fakeOctokit({ ...fakes, createTag: createTagObject, createRef });
+
+    expect(await createTag(octokit, repository, 'pkg/v1.0.0', sha, options)).toBe(false);
+    expect(createTagObject).not.toHaveBeenCalled();
+    expect(createRef).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['annotated', annotated, annotatedRef(otherSha)],
+    ['lightweight', lightweight, { getRef: lightweightRef(otherSha) }],
+  ] as const)('rejects an existing %s tag on another commit', async (_, options, fakes) => {
+    const octokit = fakeOctokit(fakes);
+    await expect(createTag(octokit, repository, 'v1.0.0', sha, options)).rejects.toThrow(
+      `Failed to create tag "v1.0.0": it already exists on ${otherSha}, not on ${sha}.`,
+    );
+  });
+
+  it('rejects an existing lightweight tag where an annotated tag is requested', async () => {
+    const createTagObject = vi.fn();
+    const octokit = fakeOctokit({ getRef: lightweightRef(sha), createTag: createTagObject });
+    await expect(createTag(octokit, repository, 'v1.0.0', sha, annotated)).rejects.toThrow(
+      `Failed to create tag "v1.0.0": it already exists on ${sha} as lightweight tag, not as annotated tag.`,
+    );
+    expect(createTagObject).not.toHaveBeenCalled();
+  });
+
+  it('rejects an existing annotated tag where a lightweight tag is requested', async () => {
+    const octokit = fakeOctokit(annotatedRef(sha));
+    await expect(createTag(octokit, repository, 'v1.0.0', sha, lightweight)).rejects.toThrow(
+      'as annotated tag, not as lightweight tag.',
+    );
+  });
+
+  it('accepts a tag created meanwhile by a concurrent run', async () => {
+    const getRef = vi
+      .fn()
+      .mockRejectedValueOnce(httpError(404))
+      .mockResolvedValueOnce({ data: { object: { sha: tagSha, type: 'tag' } } });
     const octokit = fakeOctokit({
+      getRef,
+      getTag: vi.fn().mockResolvedValue({ data: { object: { sha, type: 'commit' } } }),
+      createTag: vi.fn().mockResolvedValue({ data: { sha: 'e'.repeat(40) } }),
       createRef: vi.fn().mockRejectedValue(httpError(422)),
-      getRef: vi.fn().mockResolvedValue({ data: { object: { sha: 'c'.repeat(40) } } }),
     });
-    await expect(createTag(octokit, repository, 'v1.0.0', sha)).rejects.toThrow('Failed to create tag "v1.0.0"');
+    expect(await createTag(octokit, repository, 'v1.0.0', sha, annotated)).toBe(false);
   });
 
-  it('rejects a tag that cannot be read', async () => {
-    const octokit = fakeOctokit({
-      createRef: vi.fn().mockRejectedValue(httpError(422)),
-      getRef: vi.fn().mockRejectedValue(httpError(404)),
-    });
-    await expect(createTag(octokit, repository, 'v1.0.0', sha)).rejects.toThrow('Failed to create tag');
+  it('rejects a tag created meanwhile on another commit', async () => {
+    const getRef = vi
+      .fn()
+      .mockRejectedValueOnce(httpError(404))
+      .mockResolvedValueOnce({ data: { object: { sha: otherSha, type: 'commit' } } });
+    const octokit = fakeOctokit({ getRef, createRef: vi.fn().mockRejectedValue(httpError(422)) });
+    await expect(createTag(octokit, repository, 'v1.0.0', sha, lightweight)).rejects.toThrow(
+      `it already exists on ${otherSha}`,
+    );
   });
 
-  it('passes other errors through', async () => {
-    const octokit = fakeOctokit({ createRef: vi.fn().mockRejectedValue(httpError(403)) });
-    await expect(createTag(octokit, repository, 'v1.0.0', sha)).rejects.toThrow('HTTP 403');
+  it('explains a reference that cannot be created', async () => {
+    const octokit = fakeOctokit({ getRef: missingRef(), createRef: vi.fn().mockRejectedValue(httpError(422)) });
+    await expect(createTag(octokit, repository, 'v1.0.0', sha, lightweight)).rejects.toThrow(
+      'Failed to create tag "v1.0.0": it already exists or is not allowed.',
+    );
+  });
+
+  it('passes other errors of reading the tag through', async () => {
+    const octokit = fakeOctokit({ getRef: vi.fn().mockRejectedValue(httpError(403)) });
+    await expect(createTag(octokit, repository, 'v1.0.0', sha, annotated)).rejects.toThrow('HTTP 403');
+  });
+
+  it('passes other errors of creating the reference through', async () => {
+    const octokit = fakeOctokit({ getRef: missingRef(), createRef: vi.fn().mockRejectedValue(httpError(403)) });
+    await expect(createTag(octokit, repository, 'v1.0.0', sha, lightweight)).rejects.toThrow('HTTP 403');
   });
 });

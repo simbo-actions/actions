@@ -1,6 +1,6 @@
 import { summary } from '@actions/core';
 
-import type { BranchHead, CommitMessage, FileChanges } from './signed-commit.types.js';
+import type { BranchHead, CommitMessage, FileChanges, TagType } from './signed-commit.types.js';
 
 /**
  * Length of an abbreviated commit SHA in the job summary.
@@ -59,6 +59,7 @@ function filesDetails(fileChanges: FileChanges): string {
  * @param params.commitOid - The new commit, or `undefined` if there was nothing to commit.
  * @param params.commitUrl - The URL of the new commit.
  * @param params.tags - The tags, and whether each was created or already existed.
+ * @param params.tagType - The type of the tags.
  * @param params.fileChanges - The committed files.
  */
 export async function writeSummary(params: {
@@ -69,6 +70,7 @@ export async function writeSummary(params: {
   commitOid?: string;
   commitUrl: string;
   tags: { name: string; created: boolean }[];
+  tagType: TagType;
   fileChanges: FileChanges;
 }): Promise<void> {
   const target = `<code>${escapeHtml(params.repository)}@${escapeHtml(params.branch)}</code>`;
@@ -93,7 +95,7 @@ export async function writeSummary(params: {
     const tags = params.tags.map(
       ({ name, created }) => `<code>${escapeHtml(name)}</code>${created ? '' : ' (existed)'}`,
     );
-    summary.addRaw(`🏷️ Tags: ${tags.join(', ')}`, true);
+    summary.addRaw(`🏷️ ${params.tagType === 'annotated' ? 'Annotated' : 'Lightweight'} tags: ${tags.join(', ')}`, true);
   }
   if (params.commitOid) {
     summary.addRaw(filesDetails(params.fileChanges), true);

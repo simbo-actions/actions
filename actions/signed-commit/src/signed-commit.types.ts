@@ -1,4 +1,4 @@
-import type { DETECT_CHANGES_OPTIONS, IF_NO_CHANGES_OPTIONS } from './signed-commit-constants.js';
+import type { DETECT_CHANGES_OPTIONS, IF_NO_CHANGES_OPTIONS, TAG_TYPE_OPTIONS } from './signed-commit-constants.js';
 
 /**
  * An option for detecting file changes.
@@ -9,6 +9,23 @@ export type DetectChangesOption = (typeof DETECT_CHANGES_OPTIONS)[number];
  * An option for handling a commit without changes.
  */
 export type IfNoChangesOption = (typeof IF_NO_CHANGES_OPTIONS)[number];
+
+/**
+ * The type of the created tags.
+ */
+export type TagType = (typeof TAG_TYPE_OPTIONS)[number];
+
+/**
+ * A tag to create.
+ */
+export interface TagOptions {
+  type: TagType;
+
+  /**
+   * The message of an annotated tag; ignored for a lightweight tag.
+   */
+  message: string;
+}
 
 /**
  * A file addition for a commit, with base64-encoded contents.
@@ -53,6 +70,8 @@ export interface ParsedActionInputs {
   deletionsList: string[];
   detectChanges: DetectChangesOption;
   tags: string[];
+  tagType: TagType;
+  tagMessage: string;
   ifNoChanges: IfNoChangesOption;
   sync: boolean;
   expectedHeadOid: string;

@@ -3,8 +3,13 @@ import { env } from 'node:process';
 import { getInput } from '@actions/core';
 
 import { parseCommitMessage } from './parse-commit-message.js';
-import { DETECT_CHANGES_OPTIONS, IF_NO_CHANGES_OPTIONS } from './signed-commit-constants.js';
-import type { DetectChangesOption, IfNoChangesOption, ParsedActionInputs } from './signed-commit.types.js';
+import {
+  DETECT_CHANGES_OPTIONS,
+  IF_NO_CHANGES_OPTIONS,
+  TAG_MESSAGE_PLACEHOLDER,
+  TAG_TYPE_OPTIONS,
+} from './signed-commit-constants.js';
+import type { DetectChangesOption, IfNoChangesOption, ParsedActionInputs, TagType } from './signed-commit.types.js';
 
 /**
  * Splits a multi-line input into a list of trimmed, non-empty lines.
@@ -112,6 +117,26 @@ function parseBranch(): string {
 }
 
 /**
+ * Parses the tag inputs.
+ *
+ * @returns The tag names, their type, and the message template of annotated tags.
+ * @throws {Error} if a tag name or the tag type is invalid, or a message is set for lightweight tags.
+ */
+function parseTagInputs(): Pick<ParsedActionInputs, 'tags' | 'tagType' | 'tagMessage'> {
+  const tags = getInput('tags').split(/\s+/).filter(Boolean);
+  const invalidTag = tags.find(tag => !isValidRefName(tag));
+  if (invalidTag !== undefined) {
+    throw new Error(`Invalid input "tags": "${invalidTag}" is not a valid tag name.`);
+  }
+  const tagType = parseOption<TagType>('tag-type', TAG_TYPE_OPTIONS, 'annotated');
+  const tagMessage = getInput('tag-message');
+  if (tagMessage && tagType === 'lightweight') {
+    throw new Error('Invalid input "tag-message": a lightweight tag has no message; use "tag-type: annotated".');
+  }
+  return { tags, tagType, tagMessage: tagMessage || TAG_MESSAGE_PLACEHOLDER };
+}
+
+/**
  * Parses the action inputs from GitHub Actions.
  *
  * @returns The parsed action inputs.
@@ -126,11 +151,7 @@ export function parseActionInputs(): ParsedActionInputs {
   const additionsList = parseLines(getInput('additions'));
   const deletionsList = parseLines(getInput('deletions'));
   const detectChanges = parseOption<DetectChangesOption>('detect-changes', DETECT_CHANGES_OPTIONS, 'all');
-  const tags = getInput('tags').split(/\s+/).filter(Boolean);
-  const invalidTag = tags.find(tag => !isValidRefName(tag));
-  if (invalidTag !== undefined) {
-    throw new Error(`Invalid input "tags": "${invalidTag}" is not a valid tag name.`);
-  }
+  const { tags, tagType, tagMessage } = parseTagInputs();
   const ifNoChanges = parseOption<IfNoChangesOption>('if-no-changes', IF_NO_CHANGES_OPTIONS, 'error');
   const sync = parseBoolean('sync', true);
   const expectedHeadOid = getInput('expected-head-oid').toLowerCase();
@@ -162,6 +183,8 @@ export function parseActionInputs(): ParsedActionInputs {
     deletionsList,
     detectChanges,
     tags,
+    tagType,
+    tagMessage,
     ifNoChanges,
     sync,
     expectedHeadOid,

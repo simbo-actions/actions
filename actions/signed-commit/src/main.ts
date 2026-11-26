@@ -15,7 +15,11 @@ import {
   type Octokit,
   type RepositoryRef,
 } from './github-api.js';
-import { EXPECTED_HEAD_OID_REMOTE, TAGS_RATE_LIMIT_WARNING_THRESHOLD } from './signed-commit-constants.js';
+import {
+  CONTENT_CREATION_REQUESTS_PER_MINUTE,
+  EXPECTED_HEAD_OID_REMOTE,
+  TAG_MESSAGE_PLACEHOLDER,
+} from './signed-commit-constants.js';
 import type { BranchHead, FileChanges, ParsedActionInputs } from './signed-commit.types.js';
 import { writeSummary } from './summary.js';
 import { syncLocal } from './sync-local.js';
@@ -118,32 +122,36 @@ function logFileChanges(fileChanges: FileChanges): void {
 }
 
 /**
- * Creates the tags on a commit, one API call per tag, so that every tag
+ * Creates the tags on a commit, one reference per tag, so that every tag
  * triggers its own push event.
  *
  * @param octokit - The Octokit client.
  * @param repository - The repository.
- * @param tags - The tags to create.
+ * @param inputs - The parsed action inputs with the tags, their type, and the message template.
  * @param sha - The commit object ID.
  * @returns Every tag, and whether it was created or already pointed to the commit.
- * @throws {Error} if a tag exists on another commit or cannot be created.
+ * @throws {Error} if a tag exists with another type or on another commit, or cannot be created.
  */
 async function createTags(
   octokit: Octokit,
   repository: RepositoryRef,
-  tags: string[],
+  inputs: Pick<ParsedActionInputs, 'tags' | 'tagType' | 'tagMessage'>,
   sha: string,
 ): Promise<{ name: string; created: boolean }[]> {
-  if (tags.length > TAGS_RATE_LIMIT_WARNING_THRESHOLD) {
+  const { tags, tagType, tagMessage } = inputs;
+  // An annotated tag needs a tag object and a reference, a lightweight tag only the reference.
+  const requests = tags.length * (tagType === 'annotated' ? 2 : 1);
+  if (requests > CONTENT_CREATION_REQUESTS_PER_MINUTE) {
     warning(
-      `Creating ${tags.length} tags: GitHub limits content creation to 80 requests per minute, ` +
-        'so the action may wait for the rate limit.',
+      `Creating ${tags.length} ${tagType} tags takes ${requests} requests: GitHub limits content creation ` +
+        `to ${CONTENT_CREATION_REQUESTS_PER_MINUTE} requests per minute, so the action may wait for the rate limit.`,
     );
   }
   const results: { name: string; created: boolean }[] = [];
   for (const tag of tags) {
-    const created = await createTag(octokit, repository, tag, sha);
-    info(created ? `Created tag ${tag}.` : `Tag ${tag} already points to ${sha}.`);
+    const message = tagMessage.replaceAll(TAG_MESSAGE_PLACEHOLDER, () => tag);
+    const created = await createTag(octokit, repository, tag, sha, { type: tagType, message });
+    info(created ? `Created ${tagType} tag ${tag}.` : `The ${tagType} tag ${tag} already points to ${sha}.`);
     results.push({ name: tag, created });
   }
   return results;
@@ -196,8 +204,17 @@ export async function main(): Promise<void> {
     if (tags.length > 0) {
       info(`Tagging the current head ${expectedHeadOid} of ${branch}.`);
     }
-    const headTags = await createTags(octokit, repository, tags, expectedHeadOid);
-    await writeSummary({ repository: fullName, branch, head, message, commitUrl: '', tags: headTags, fileChanges });
+    const headTags = await createTags(octokit, repository, inputs, expectedHeadOid);
+    await writeSummary({
+      repository: fullName,
+      branch,
+      head,
+      message,
+      commitUrl: '',
+      tags: headTags,
+      tagType: inputs.tagType,
+      fileChanges,
+    });
     return;
   }
 
@@ -216,7 +233,7 @@ export async function main(): Promise<void> {
   setOutput('commit-url', commitUrl);
   info(`Created verified commit ${commitOid} on ${fullName}@${branch}.`);
 
-  const tagResults = await createTags(octokit, repository, tags, commitOid);
+  const tagResults = await createTags(octokit, repository, inputs, commitOid);
 
   if (inputs.sync) {
     await syncLocal({
@@ -225,6 +242,7 @@ export async function main(): Promise<void> {
       parentOid: expectedHeadOid,
       commitOid,
       tags,
+      tagType: inputs.tagType,
       switchBranch: head.createdFrom !== undefined,
     });
   }
@@ -237,6 +255,7 @@ export async function main(): Promise<void> {
     commitOid,
     commitUrl,
     tags: tagResults,
+    tagType: inputs.tagType,
     fileChanges,
   });
 }
