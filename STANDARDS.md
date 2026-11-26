@@ -84,8 +84,12 @@ Required:
 
 Required:
 
-- All commits and tags on `main` and in action repositories are verified.
-  Automation creates them via the GitHub API.
+- All commits on `main` and in action repositories are verified. Automation
+  creates them via the GitHub API.
+- Release tags are annotated tags with the message `Release <tag>`, for example
+  `Release signed-commit/v2.0.0`. They are not signed: GitHub does not sign tag
+  objects created via the API. Older release tags in action repositories stay
+  lightweight, because their releases are immutable.
 - Releases are created only by CI, from a release tag, never by hand.
 - Every release has assets with a `SHA256SUMS` file and **build provenance**
   (artifact attestation, SLSA Build Level 2).
