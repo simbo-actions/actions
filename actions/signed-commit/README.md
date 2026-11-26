@@ -12,7 +12,7 @@ It supports:
 
 - added, changed, and deleted files;
 - detecting changes from Git;
-- creating tags;
+- creating annotated or lightweight tags;
 - updating the local checkout afterwards.
 
 ## Contents
@@ -44,9 +44,10 @@ It supports:
 4. Creates the commit with `createCommitOnBranch`.  
    The author is the identity of the token, for example `my-app[bot]`; GitHub
    signs the commit.
-5. Creates the `tags` on the new commit, one API call per tag.
+5. Creates the `tags` on the new commit, one reference per tag: annotated tags
+   by default, with the identity of the token as tagger.
 6. Updates the local checkout (`sync`): fetches the branch and moves `HEAD` to
-   the new commit, without touching any files.
+   the new commit, without touching any files, and adds the tags.
 7. Writes the commit, the tags, and the files to the job summary.
 
 Why: commits signed locally with a signing key of a bot are only verified if the
@@ -100,9 +101,9 @@ checked out branch.
 
 ### Release Commit with Tags
 
-Commit version bumps and create one tag per released package.  
-Every tag is created with its own API call and triggers its own `push` event, so
-a workflow on `push: tags` runs once per tag:
+Commit version bumps and create one annotated tag per released package.  
+Every tag gets its own reference and triggers its own `push` event, so a
+workflow on `push: tags` runs once per tag:
 
 ```yaml
 - name: 💾 Commit Release and Create Tags
@@ -113,6 +114,7 @@ a workflow on `push: tags` runs once per tag:
     branch: main
     message: 'ci(release): pkg-a/v1.2.0 pkg-b/v2.0.1'
     tags: pkg-a/v1.2.0 pkg-b/v2.0.1
+    tag-message: Release {tag}
 
 - name: 📣 Show Commit
   env:
@@ -223,6 +225,7 @@ The token must have access to that repository:
     working-directory: target
     message: 'ci(release): v1.0.0'
     tags: v1.0.0
+    tag-message: Release {tag}
 ```
 
 ### Allow Empty Runs
@@ -258,7 +261,9 @@ Do not fail a scheduled job when nothing changed:
 | `deletions`         | Files to delete, one path per line, relative to `working-directory`                              | false    |                            |
 | `detect-changes`    | `all` (working tree), `staged` (index), or `none`, see [Detecting Changes](#detecting-changes)   | false    | `all`                      |
 | `file-pattern`      | Globs that filter the detected changes, one per line; `!` excludes                               | false    |                            |
-| `tags`              | Tags to create on the new commit, separated by whitespace                                        | false    |                            |
+| `tags`              | Tags to create on the new commit, separated by whitespace, see [Tags](#tags)                     | false    |                            |
+| `tag-type`          | `annotated` or `lightweight`, see [Tags](#tags)                                                  | false    | `annotated`                |
+| `tag-message`       | The message of annotated tags; `{tag}` is replaced with the tag name                             | false    | `{tag}`                    |
 | `if-no-changes`     | `error`, `warn`, or `ignore` when there is nothing to commit                                     | false    | `error`                    |
 | `sync`              | Whether to update the local checkout after the commit                                            | false    | `true`                     |
 | `expected-head-oid` | The SHA the branch must point to, or `remote`, see [Protection](#protection-against-overwriting) | false    | local `HEAD`               |
@@ -354,18 +359,48 @@ newer changes on the branch.
 
 ## Tags
 
-- Tags are lightweight and point to the new commit.  
-  A tag created by the API as annotated tag object would itself be unsigned; a
-  lightweight tag shows the verified commit.
-- Every tag is created with its own API call, in the given order, so every tag
-  triggers its own `push` event.  
+- Tags are annotated by default: a tag object with a message, pointing to the
+  new commit.  
+  The tagger is the identity of the token, for example `my-app[bot]`; the
+  message is `tag-message`, by default the tag name.  
+  `{tag}` in `tag-message` is replaced with the name of each tag, for example
+  `Release {tag}`.
+- With `tag-type: lightweight`, a tag is only a reference to the commit, without
+  tagger and message; `tag-message` is not allowed then.
+- Every tag gets its own reference, in the given order, so every tag triggers
+  its own `push` event.  
   Pushing more than three tags at once with Git creates no events for them.
-- An existing tag that already points to the new commit is accepted.  
-  An existing tag on another commit fails the action.
+- An existing tag is accepted if it points to the same commit and has the
+  requested type; its tagger and message are not compared.  
+  An existing tag on another commit or of the other type fails the action.  
+  To change the type of existing tags, delete and recreate them.
 - Without a commit (nothing to commit, with `if-no-changes: warn` or `ignore`),
   the tags are created on the current head of the branch.  
   So a re-run completes the tags of a run that created the commit but failed
   while tagging.
+- An annotated tag takes two requests: the tag object, then the reference.  
+  If a run stops between them, the tag object stays without reference.  
+  It is invisible, harmless, and removed by GitHub's garbage collection; a
+  re-run creates a new one.
+
+### Signed Tags
+
+Tags are not signed, and GitHub shows no "Verified" badge for them; the commit
+they point to is verified.
+
+- GitHub does not sign tag objects created via the API, unlike commits: a tag
+  object created with `POST /git/tags` is `unsigned`, both with an installation
+  token and with a user token.  
+  The API accepts no signature for tag objects, and GraphQL has no mutation to
+  create them.
+- A tag signed locally with a key of the action's own is shown as
+  **"Unverified"**: GitHub verifies a signature only against the keys of the
+  user account matching the tagger's email, and a bot account of a GitHub App
+  cannot have keys.
+- A "Verified" tag needs a user account with a registered key as tagger, for
+  example a machine user, with its key as secret.  
+  The tagger is then that user, not the token's identity; the action does not
+  support this.
 
 ## Syncing the Local Checkout
 
@@ -376,7 +411,9 @@ following steps see the new commit:
 1. `git fetch origin <branch>`
 2. `git reset --mixed <new commit>`: moves `HEAD` and the index; files in the
    working tree stay unchanged, including files that were not committed.
-3. Creates the tags locally, unless they already exist.
+3. Adds the tags locally, unless they already exist: annotated tags are fetched
+   from `origin`, so the local tag objects are the ones on GitHub; lightweight
+   tags are created on the new commit.
 
 The sync is skipped if the working directory is not a Git repository or its
 `HEAD` is not the parent of the new commit, for example with
@@ -392,11 +429,12 @@ the same token identity, for example all repositories using the same GitHub App:
 - **Primary rate limit:** 5,000 requests per hour for an installation token
   (more for large organizations), 1,000 per hour per repository for
   `GITHUB_TOKEN`.  
-  A run needs one request to read the branch, one for the commit, and one per
-  tag.
+  A run needs one request to read the branch, one for the commit, and per tag
+  one to read it and one (lightweight) or two (annotated) to create it.
 - **Secondary rate limit for creating content:** at most 80 requests per minute
   and 500 per hour.  
-  Every commit and every tag counts.
+  Every commit counts, and every tag once (lightweight) or twice (annotated: the
+  tag object and the reference).
 
 When GitHub reports a rate limit, the action waits as long as GitHub asks for
 and retries the request, up to 4 times, with a warning in the log.  
@@ -405,9 +443,10 @@ This is done by the official Octokit plugin
 which also queues requests as GitHub recommends.  
 Requests run one after another, never in parallel.
 
-With more than 80 tags in one run, the action warns before creating them: the
-run may slow down, but every tag is still created with its own request and
-triggers its own `push` event.
+With more than 80 requests for tags in one run, that is more than 40 annotated
+or 80 lightweight tags, the action warns before creating them: the run may slow
+down, but every tag still gets its own reference and triggers its own `push`
+event.
 
 Many parallel runs, for example one publish run per tag of a large release,
 share the same limits; spread them, for example with a matrix and

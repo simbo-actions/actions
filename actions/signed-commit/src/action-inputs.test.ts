@@ -36,6 +36,8 @@ describe('parseActionInputs', () => {
       deletionsList: [],
       detectChanges: 'all',
       tags: [],
+      tagType: 'annotated',
+      tagMessage: '{tag}',
       ifNoChanges: 'error',
       sync: true,
       expectedHeadOid: '',
@@ -54,6 +56,7 @@ describe('parseActionInputs', () => {
     setInput('deletions', 'old.txt');
     setInput('detect-changes', 'STAGED');
     setInput('tags', 'pkg-a/v1.0.0  pkg-b/v2.0.0\nv3.0.0');
+    setInput('tag-message', 'Release {tag}');
     setInput('if-no-changes', 'warn');
     setInput('sync', 'false');
     setInput('expected-head-oid', 'REMOTE');
@@ -72,6 +75,8 @@ describe('parseActionInputs', () => {
       deletionsList: ['old.txt'],
       detectChanges: 'staged',
       tags: ['pkg-a/v1.0.0', 'pkg-b/v2.0.0', 'v3.0.0'],
+      tagType: 'annotated',
+      tagMessage: 'Release {tag}',
       ifNoChanges: 'warn',
       sync: false,
       expectedHeadOid: 'remote',
@@ -93,6 +98,7 @@ describe('parseActionInputs', () => {
     ['repository', 'no-slash', 'Invalid input "repository"'],
     ['detect-changes', 'some', 'Invalid input "detect-changes"'],
     ['if-no-changes', 'fail', 'Invalid input "if-no-changes"'],
+    ['tag-type', 'signed', 'Invalid input "tag-type"'],
     ['sync', 'yes', 'Invalid input "sync"'],
     ['branch', 'main:other', 'Invalid input "branch": "main:other" is not a valid branch name.'],
     ['branch', '-d', 'Invalid input "branch"'],
@@ -101,6 +107,17 @@ describe('parseActionInputs', () => {
   ])('rejects invalid %s', (name, value, error) => {
     setInput(name, value);
     expect(() => parseActionInputs()).toThrow(error);
+  });
+
+  it('accepts lightweight tags', () => {
+    setInput('tag-type', 'Lightweight');
+    expect(parseActionInputs().tagType).toBe('lightweight');
+  });
+
+  it('rejects a tag message for lightweight tags', () => {
+    setInput('tag-type', 'lightweight');
+    setInput('tag-message', 'Release {tag}');
+    expect(() => parseActionInputs()).toThrow('Invalid input "tag-message": a lightweight tag has no message');
   });
 
   it('accepts a commit SHA as base', () => {

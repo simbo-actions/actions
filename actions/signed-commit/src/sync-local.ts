@@ -1,12 +1,15 @@
 import { info, warning } from '@actions/core';
 
 import { getHeadOid, getRepositoryRoot, git, gitSucceeds } from './git.js';
+import type { TagType } from './signed-commit.types.js';
 
 /**
  * Brings a local checkout up to date with a commit created via the API.
  *
  * Fetches the branch from `origin`, moves `HEAD` to the commit with a mixed
- * reset, and creates the tags locally. For a new branch, the checkout first
+ * reset, and creates the tags locally: annotated tags are fetched from
+ * `origin`, so that the local tag objects are the remote ones; lightweight
+ * tags are created on the commit. Existing local tags are kept. For a new branch, the checkout first
  * switches to a local branch of that name at its current commit. Files in the
  * working tree are never changed. Skips if the working directory is not a Git
  * repository or if its `HEAD` is not the parent of the commit.
@@ -17,6 +20,7 @@ import { getHeadOid, getRepositoryRoot, git, gitSucceeds } from './git.js';
  * @param params.parentOid - The object ID of the parent of the commit.
  * @param params.commitOid - The object ID of the created commit.
  * @param params.tags - The tags created on the commit.
+ * @param params.tagType - The type of the tags.
  * @param params.switchBranch - Whether to switch to the branch first, because it was created.
  * @returns `true` if the checkout was updated.
  */
@@ -26,9 +30,10 @@ export async function syncLocal(params: {
   parentOid: string;
   commitOid: string;
   tags: string[];
+  tagType: TagType;
   switchBranch?: boolean;
 }): Promise<boolean> {
-  const { workingDirectory, branch, parentOid, commitOid, tags } = params;
+  const { workingDirectory, branch, parentOid, commitOid, tags, tagType } = params;
 
   const root = await getRepositoryRoot(workingDirectory);
   if (!root) {
@@ -51,8 +56,16 @@ export async function syncLocal(params: {
       await git(root, ['switch', '--quiet', '--force-create', branch]);
     }
     await git(root, ['reset', '--mixed', '--quiet', commitOid]);
+    const missingTags: string[] = [];
     for (const tag of tags) {
       if (!(await gitSucceeds(root, ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}`]))) {
+        missingTags.push(tag);
+      }
+    }
+    if (tagType === 'annotated' && missingTags.length > 0) {
+      await git(root, ['fetch', '--no-tags', 'origin', ...missingTags.map(tag => `refs/tags/${tag}:refs/tags/${tag}`)]);
+    } else {
+      for (const tag of missingTags) {
         await git(root, ['tag', tag, commitOid]);
       }
     }

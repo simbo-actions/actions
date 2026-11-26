@@ -20,6 +20,7 @@ const params = {
   message: { headline: 'feat: <new> & shiny' },
   commitUrl: `https://github.com/owner/repo/commit/${commitOid}`,
   tags: [],
+  tagType: 'annotated' as const,
   fileChanges: { additions: [{ path: 'a.txt', contents: '' }], deletions: [{ path: 'b.txt' }] },
 };
 
@@ -49,12 +50,20 @@ describe('writeSummary', () => {
       true,
     );
     expect(summary.addRaw).toHaveBeenCalledWith('<blockquote>feat: &lt;new&gt; &amp; shiny</blockquote>', true);
-    expect(summary.addRaw).toHaveBeenCalledWith('🏷️ Tags: <code>v1.0.0</code>, <code>v1</code> (existed)', true);
+    expect(summary.addRaw).toHaveBeenCalledWith(
+      '🏷️ Annotated tags: <code>v1.0.0</code>, <code>v1</code> (existed)',
+      true,
+    );
     expect(summary.addRaw).toHaveBeenCalledWith(
       '<details><summary>Files: 1 added or changed, 1 deleted</summary><pre>+ a.txt\n- b.txt</pre></details>',
       true,
     );
     expect(summary.write).toHaveBeenCalled();
+  });
+
+  it('names lightweight tags', async () => {
+    await writeSummary({ ...params, commitOid, tagType: 'lightweight', tags: [{ name: 'v1.0.0', created: true }] });
+    expect(summary.addRaw).toHaveBeenCalledWith('🏷️ Lightweight tags: <code>v1.0.0</code>', true);
   });
 
   it('names the base of a new branch', async () => {

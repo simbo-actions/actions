@@ -46,6 +46,8 @@ const defaultInputs: ParsedActionInputs = {
   deletionsList: [],
   detectChanges: 'all',
   tags: [],
+  tagType: 'annotated',
+  tagMessage: '{tag}',
   ifNoChanges: 'error',
   sync: true,
   expectedHeadOid: '',
@@ -107,6 +109,7 @@ describe('main', () => {
       parentOid: remoteHead,
       commitOid,
       tags: [],
+      tagType: 'annotated',
       switchBranch: false,
     });
     expect(writeSummary).toHaveBeenCalledWith({
@@ -117,6 +120,7 @@ describe('main', () => {
       commitOid,
       commitUrl: `https://github.com/owner/repo/commit/${commitOid}`,
       tags: [],
+      tagType: 'annotated',
       fileChanges: someChanges,
     });
     expect(createBranch).not.toHaveBeenCalled();
@@ -136,19 +140,55 @@ describe('main', () => {
     await main();
 
     expect(vi.mocked(createTag).mock.calls.map(call => call[2])).toEqual(['a/v1.0.0', 'b/v2.0.0']);
-    expect(info).toHaveBeenCalledWith('Created tag a/v1.0.0.');
-    expect(info).toHaveBeenCalledWith(`Tag b/v2.0.0 already points to ${commitOid}.`);
+    expect(info).toHaveBeenCalledWith('Created annotated tag a/v1.0.0.');
+    expect(info).toHaveBeenCalledWith(`The annotated tag b/v2.0.0 already points to ${commitOid}.`);
   });
 
-  it('warns before creating many tags', async () => {
-    setup({ tags: Array.from({ length: 81 }, (_, index) => `pkg-${index}/v1.0.0`) });
+  it('fills the tag name into the message of every tag', async () => {
+    setup({ tags: ['a/v1.0.0', 'b/v2.0.0'], tagMessage: 'Release {tag}\n\nSee {tag}.' });
     await main();
-    expect(warning).toHaveBeenCalledWith(expect.stringContaining('Creating 81 tags'));
-    expect(createTag).toHaveBeenCalledTimes(81);
+
+    expect(vi.mocked(createTag).mock.calls.map(call => call[4])).toEqual([
+      { type: 'annotated', message: 'Release a/v1.0.0\n\nSee a/v1.0.0.' },
+      { type: 'annotated', message: 'Release b/v2.0.0\n\nSee b/v2.0.0.' },
+    ]);
   });
 
-  it('does not warn for up to 80 tags', async () => {
-    setup({ tags: Array.from({ length: 80 }, (_, index) => `pkg-${index}/v1.0.0`) });
+  it('keeps replacement patterns in tag names literal', async () => {
+    setup({ tags: ['v$&1'], tagMessage: 'Release {tag}' });
+    await main();
+    expect(vi.mocked(createTag).mock.calls[0][4]).toEqual({ type: 'annotated', message: 'Release v$&1' });
+  });
+
+  it('creates lightweight tags', async () => {
+    setup({ tags: ['v1.0.0'], tagType: 'lightweight' });
+    await main();
+
+    expect(createTag).toHaveBeenCalledWith({}, { owner: 'owner', repo: 'repo' }, 'v1.0.0', commitOid, {
+      type: 'lightweight',
+      message: 'v1.0.0',
+    });
+    expect(info).toHaveBeenCalledWith('Created lightweight tag v1.0.0.');
+    expect(vi.mocked(syncLocal).mock.calls[0][0].tagType).toBe('lightweight');
+  });
+
+  it.each([
+    ['annotated', 41, 82],
+    ['lightweight', 81, 81],
+  ] as const)('warns before creating many %s tags', async (tagType, count, requests) => {
+    setup({ tagType, tags: Array.from({ length: count }, (_, index) => `pkg-${index}/v1.0.0`) });
+    await main();
+    expect(warning).toHaveBeenCalledWith(
+      expect.stringContaining(`Creating ${count} ${tagType} tags takes ${requests} requests`),
+    );
+    expect(createTag).toHaveBeenCalledTimes(count);
+  });
+
+  it.each([
+    [40, 'annotated'],
+    [80, 'lightweight'],
+  ] as const)('does not warn for up to %i %s tags', async (count, tagType) => {
+    setup({ tagType, tags: Array.from({ length: count }, (_, index) => `pkg-${index}/v1.0.0`) });
     await main();
     expect(warning).not.toHaveBeenCalled();
   });
@@ -242,7 +282,13 @@ describe('main', () => {
       mockBranches();
       await main();
       expect(createBranch).toHaveBeenCalled();
-      expect(createTag).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'v1.0.0', baseHead);
+      expect(createTag).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        'v1.0.0',
+        baseHead,
+        expect.anything(),
+      );
     });
   });
 
@@ -313,7 +359,10 @@ describe('main', () => {
       expect(warning).toHaveBeenCalledWith('There are no changes to commit.');
       expect(setOutput).toHaveBeenCalledWith('commit-sha', '');
       expect(createCommitOnBranch).not.toHaveBeenCalled();
-      expect(createTag).toHaveBeenCalledWith({}, { owner: 'owner', repo: 'repo' }, 'v1.0.0', remoteHead);
+      expect(createTag).toHaveBeenCalledWith({}, { owner: 'owner', repo: 'repo' }, 'v1.0.0', remoteHead, {
+        type: 'annotated',
+        message: 'v1.0.0',
+      });
       expect(info).toHaveBeenCalledWith(`Tagging the current head ${remoteHead} of main.`);
       expect(writeSummary).toHaveBeenCalledWith(
         expect.objectContaining({ commitUrl: '', tags: [{ name: 'v1.0.0', created: true }] }),
