@@ -471,6 +471,12 @@ A new third-party action needs an entry in the policy before its first run.
   `git show v1` shows it.  
   GitHub does not sign tag objects created via the API; the commit it points to
   is verified.
+- Version tags are annotated tags with the message `Release <tag>`, for example
+  `Release signed-commit/v2.0.0`, created by
+  [`signed-commit`](actions/signed-commit/README.md) with the app as tagger.  
+  Like the floating tag, they are not signed.  
+  Older version tags in the action repositories stay lightweight, because their
+  releases are immutable.
 - There are no `vX.Y` or `latest` tags.
 - Release and floating tags are protected by the ruleset "Release Tags"
   (`v*`).  

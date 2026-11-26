@@ -281,7 +281,7 @@ jobs:
           cp -R "${FROM}/." "${TO}/"
 
       - name: 💾 Commit and Tag
-        uses: simbo-actions/signed-commit@98f498eda4eb29a405322d694b4fa17bb42fc40b # v1.0.2
+        uses: simbo-actions/signed-commit@b849fbd0c14db4ccfa873320255ecf4a56f53f88 # v2.0.0
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: ${{ needs.build.outputs.repository }}
@@ -289,6 +289,7 @@ jobs:
           working-directory: action-repo
           message: 'ci(release): ${{ needs.build.outputs.tag }}'
           tags: ${{ needs.build.outputs.tag }}
+          tag-message: Release {tag}
           # A re-run after the commit only completes the tag.
           if-no-changes: ignore
           sync: false
