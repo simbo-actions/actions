@@ -43,7 +43,7 @@ export async function parseActionInputs(): Promise<ParsedActionInputs> {
   }
 
   const dryRun = getInput('dry-run').toLowerCase();
-  if (dryRun !== '' && dryRun !== 'true' && dryRun !== 'false') {
+  if (!['', 'true', 'false'].includes(dryRun)) {
     throw new Error(`Invalid input "dry-run": "${dryRun}" (expected "true" or "false").`);
   }
 
