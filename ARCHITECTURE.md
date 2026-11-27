@@ -676,6 +676,14 @@ major version; see [MAINTAINING.md](MAINTAINING.md).
   tags, so that every value is what the file shows; JSON stays valid YAML.  
   Configurations of tools that require JSON stay JSON, for example
   `.changeset/config.json`.
+- **Bundles without source maps.** Why: a map would roughly double what every
+  job downloads for an action, about 165 to 255 kB compressed on top of a bundle
+  of 155 to 215 kB, for stack traces that only matter when a run fails; the
+  error message usually suffices.  
+  The runner starts `dist/index.js` without `--enable-source-maps`, and enabling
+  maps inside the bundle has no effect on the bundle itself, so it would also
+  need a separate loader as entry. Building with `minify: false` is the cheaper
+  option if readable stack traces become necessary.
 - **Octokit client copied into every action.** Why: an unpublished shared
   package has no version, changelog, or release of its own.  
   The copies are identical, checked by `pnpm run check:actions`, until the
