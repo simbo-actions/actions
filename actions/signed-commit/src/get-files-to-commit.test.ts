@@ -89,7 +89,7 @@ describe('getFilesToCommit', () => {
     it('detects added, modified, and deleted files', async () => {
       await fixture.write('new.txt', 'new');
       await fixture.write('modify.txt', 'new');
-      fixture.git('rm', '--quiet', 'delete.txt');
+      await fixture.git('rm', '--quiet', 'delete.txt');
       await fixture.write('nested/file.txt', 'changed');
 
       expect(await collect(fixture, 'all')).toEqual({
@@ -122,7 +122,7 @@ describe('getFilesToCommit', () => {
     });
 
     it('resolves staged renames to an addition and a deletion', async () => {
-      fixture.git('mv', 'rename-old.txt', 'rename-new.txt');
+      await fixture.git('mv', 'rename-old.txt', 'rename-new.txt');
 
       expect(await collect(fixture, 'all')).toEqual({
         additions: { 'rename-new.txt': 'rename' },
@@ -132,14 +132,14 @@ describe('getFilesToCommit', () => {
 
     it('keeps the source of a copy', async () => {
       await fixture.write('copy-target.txt', 'copy');
-      fixture.git('add', 'copy-target.txt');
+      await fixture.git('add', 'copy-target.txt');
 
       expect(await collect(fixture, 'all')).toEqual({ additions: { 'copy-target.txt': 'copy' }, deletions: [] });
     });
 
     it('uses the working tree contents of partially staged files', async () => {
       await fixture.write('modify.txt', 'staged');
-      fixture.git('add', 'modify.txt');
+      await fixture.git('add', 'modify.txt');
       await fixture.write('modify.txt', 'working tree');
 
       expect(await collect(fixture, 'all')).toEqual({ additions: { 'modify.txt': 'working tree' }, deletions: [] });
@@ -147,9 +147,9 @@ describe('getFilesToCommit', () => {
 
     it('skips files that were added and removed again', async () => {
       await fixture.write('temp.txt', 'temp');
-      fixture.git('add', 'temp.txt');
-      fixture.git('rm', '--quiet', '--cached', 'temp.txt');
-      fixture.git('clean', '--quiet', '--force', 'temp.txt');
+      await fixture.git('add', 'temp.txt');
+      await fixture.git('rm', '--quiet', '--cached', 'temp.txt');
+      await fixture.git('clean', '--quiet', '--force', 'temp.txt');
 
       expect(await collect(fixture, 'all')).toEqual({ additions: {}, deletions: [] });
     });
@@ -188,14 +188,14 @@ describe('getFilesToCommit', () => {
     });
 
     it('rejects paths with merge conflicts', async () => {
-      fixture.git('checkout', '--quiet', '-b', 'other');
+      await fixture.git('checkout', '--quiet', '-b', 'other');
       await fixture.write('modify.txt', 'other');
-      fixture.git('commit', '--quiet', '-am', 'other');
-      fixture.git('checkout', '--quiet', 'main');
+      await fixture.git('commit', '--quiet', '-am', 'other');
+      await fixture.git('checkout', '--quiet', 'main');
       await fixture.write('modify.txt', 'main');
-      fixture.git('commit', '--quiet', '-am', 'main');
+      await fixture.git('commit', '--quiet', '-am', 'main');
       try {
-        fixture.git('merge', '--quiet', 'other');
+        await fixture.git('merge', '--quiet', 'other');
       } catch {
         // expected merge conflict
       }
@@ -217,10 +217,10 @@ describe('getFilesToCommit', () => {
   describe('detect-changes: staged', () => {
     it('detects only staged changes', async () => {
       await fixture.write('staged.txt', 'staged');
-      fixture.git('add', 'staged.txt');
+      await fixture.git('add', 'staged.txt');
       await fixture.write('unstaged.txt', 'unstaged');
       await fixture.write('modify.txt', 'unstaged change');
-      fixture.git('rm', '--quiet', 'delete.txt');
+      await fixture.git('rm', '--quiet', 'delete.txt');
 
       expect(await collect(fixture, 'staged')).toEqual({
         additions: { 'staged.txt': 'staged' },
@@ -230,16 +230,16 @@ describe('getFilesToCommit', () => {
 
     it('uses the index contents of partially staged files', async () => {
       await fixture.write('modify.txt', 'staged');
-      fixture.git('add', 'modify.txt');
+      await fixture.git('add', 'modify.txt');
       await fixture.write('modify.txt', 'working tree');
 
       expect(await collect(fixture, 'staged')).toEqual({ additions: { 'modify.txt': 'staged' }, deletions: [] });
     });
 
     it('resolves renames and keeps the source of copies', async () => {
-      fixture.git('mv', 'rename-old.txt', 'rename-new.txt');
+      await fixture.git('mv', 'rename-old.txt', 'rename-new.txt');
       await fixture.write('copy-target.txt', 'copy');
-      fixture.git('add', 'copy-target.txt');
+      await fixture.git('add', 'copy-target.txt');
 
       expect(await collect(fixture, 'staged')).toEqual({
         additions: { 'copy-target.txt': 'copy', 'rename-new.txt': 'rename' },
@@ -250,7 +250,7 @@ describe('getFilesToCommit', () => {
     it('includes all files staged in new directories', async () => {
       await fixture.write('dist/index.js', 'index');
       await fixture.write('dist/sub/chunk.js', 'chunk');
-      fixture.git('add', '--all');
+      await fixture.git('add', '--all');
 
       expect(await collect(fixture, 'staged')).toEqual({
         additions: { 'dist/index.js': 'index', 'dist/sub/chunk.js': 'chunk' },
@@ -261,7 +261,7 @@ describe('getFilesToCommit', () => {
     it('warns about executable files', async () => {
       await fixture.write('script.sh', '#!/bin/sh');
       await chmod(join(fixture.dir, 'script.sh'), 0o755);
-      fixture.git('add', 'script.sh');
+      await fixture.git('add', 'script.sh');
 
       await collect(fixture, 'staged');
       expect(warning).toHaveBeenCalledWith('The executable bit is not preserved: script.sh');
@@ -269,14 +269,14 @@ describe('getFilesToCommit', () => {
 
     it('rejects symbolic links', async () => {
       await symlink('keep.txt', join(fixture.dir, 'link.txt'));
-      fixture.git('add', 'link.txt');
+      await fixture.git('add', 'link.txt');
       await expect(collect(fixture, 'staged')).rejects.toThrow('Symbolic links are not supported: link.txt');
     });
 
     it('rejects submodules', async () => {
       const sub = await createGitFixture({ 'sub.txt': 'sub' });
       try {
-        fixture.git('-c', 'protocol.file.allow=always', 'submodule', '--quiet', 'add', sub.dir, 'sub');
+        await fixture.git('-c', 'protocol.file.allow=always', 'submodule', '--quiet', 'add', sub.dir, 'sub');
         await expect(collect(fixture, 'staged')).rejects.toThrow('submodules are not supported: sub');
       } finally {
         await sub.cleanup();
@@ -311,7 +311,7 @@ describe('getFilesToCommit', () => {
 
     it('takes precedence over detected changes', async () => {
       await fixture.write('modify.txt', 'new');
-      fixture.git('rm', '--quiet', 'delete.txt');
+      await fixture.git('rm', '--quiet', 'delete.txt');
       await fixture.write('delete.txt', 'restored');
 
       expect(await collect(fixture, 'all', { deletionsList: ['modify.txt'] })).toEqual({
@@ -351,7 +351,7 @@ describe('getFilesToCommit', () => {
       await fixture.write('dist/index.js', 'index');
       await fixture.write('dist/index.js.map', 'map');
       await fixture.write('modify.txt', 'new');
-      fixture.git('rm', '--quiet', 'delete.txt');
+      await fixture.git('rm', '--quiet', 'delete.txt');
 
       expect(await collect(fixture, 'all', { filePatterns: ['dist/**', '*.txt', '!**/*.map'] })).toEqual({
         additions: { 'dist/index.js': 'index', 'modify.txt': 'new' },

@@ -24,12 +24,12 @@ describe('syncLocal', () => {
     await seed.cleanup();
 
     local = await cloneGitFixture(origin.dir);
-    parentOid = local.git('rev-parse', 'HEAD');
+    parentOid = await local.git('rev-parse', 'HEAD');
 
     other = await cloneGitFixture(origin.dir);
-    other.git('commit', '--quiet', '--allow-empty', '-m', 'api commit');
-    other.git('push', '--quiet', 'origin', 'HEAD:main');
-    commitOid = other.git('rev-parse', 'HEAD');
+    await other.git('commit', '--quiet', '--allow-empty', '-m', 'api commit');
+    await other.git('push', '--quiet', 'origin', 'HEAD:main');
+    commitOid = await other.git('rev-parse', 'HEAD');
 
     vi.mocked(warning).mockClear();
   });
@@ -40,7 +40,7 @@ describe('syncLocal', () => {
 
   it('moves HEAD to the new commit and keeps the working tree', async () => {
     await local.write('file.txt', 'local change');
-    local.git('add', 'file.txt');
+    await local.git('add', 'file.txt');
 
     expect(
       await syncLocal({
@@ -53,15 +53,15 @@ describe('syncLocal', () => {
       }),
     ).toBe(true);
 
-    expect(local.git('rev-parse', 'HEAD')).toBe(commitOid);
-    expect(local.git('rev-parse', 'refs/remotes/origin/main')).toBe(commitOid);
-    expect(local.git('rev-parse', 'refs/tags/v1.0.0')).toBe(commitOid);
+    expect(await local.git('rev-parse', 'HEAD')).toBe(commitOid);
+    expect(await local.git('rev-parse', 'refs/remotes/origin/main')).toBe(commitOid);
+    expect(await local.git('rev-parse', 'refs/tags/v1.0.0')).toBe(commitOid);
     expect(await readFile(join(local.dir, 'file.txt'), 'utf8')).toBe('local change');
-    expect(local.git('diff', '--cached', '--name-only')).toBe('');
+    expect(await local.git('diff', '--cached', '--name-only')).toBe('');
   });
 
   it('switches to a new branch without moving the local base branch', async () => {
-    other.git('push', '--quiet', 'origin', 'HEAD:feature');
+    await other.git('push', '--quiet', 'origin', 'HEAD:feature');
     await local.write('file.txt', 'local change');
 
     expect(
@@ -76,14 +76,14 @@ describe('syncLocal', () => {
       }),
     ).toBe(true);
 
-    expect(local.git('symbolic-ref', '--short', 'HEAD')).toBe('feature');
-    expect(local.git('rev-parse', 'HEAD')).toBe(commitOid);
-    expect(local.git('rev-parse', 'refs/heads/main')).toBe(parentOid);
+    expect(await local.git('symbolic-ref', '--short', 'HEAD')).toBe('feature');
+    expect(await local.git('rev-parse', 'HEAD')).toBe(commitOid);
+    expect(await local.git('rev-parse', 'refs/heads/main')).toBe(parentOid);
     expect(await readFile(join(local.dir, 'file.txt'), 'utf8')).toBe('local change');
   });
 
   it('keeps existing local tags', async () => {
-    local.git('tag', 'v1.0.0', parentOid);
+    await local.git('tag', 'v1.0.0', parentOid);
     await syncLocal({
       workingDirectory: local.dir,
       branch: 'main',
@@ -92,13 +92,13 @@ describe('syncLocal', () => {
       tags: ['v1.0.0'],
       tagType: 'lightweight',
     });
-    expect(local.git('rev-parse', 'refs/tags/v1.0.0')).toBe(parentOid);
+    expect(await local.git('rev-parse', 'refs/tags/v1.0.0')).toBe(parentOid);
   });
 
   it('fetches annotated tags from origin', async () => {
-    other.git('tag', '--annotate', '--message', 'Release v1.0.0', 'v1.0.0', commitOid);
-    other.git('tag', '--annotate', '--message', 'Release pkg/v2.0.0', 'pkg/v2.0.0', commitOid);
-    other.git('push', '--quiet', 'origin', 'v1.0.0', 'pkg/v2.0.0');
+    await other.git('tag', '--annotate', '--message', 'Release v1.0.0', 'v1.0.0', commitOid);
+    await other.git('tag', '--annotate', '--message', 'Release pkg/v2.0.0', 'pkg/v2.0.0', commitOid);
+    await other.git('push', '--quiet', 'origin', 'v1.0.0', 'pkg/v2.0.0');
 
     expect(
       await syncLocal({
@@ -112,16 +112,16 @@ describe('syncLocal', () => {
     ).toBe(true);
 
     for (const tag of ['v1.0.0', 'pkg/v2.0.0']) {
-      expect(local.git('cat-file', '-t', `refs/tags/${tag}`)).toBe('tag');
-      expect(local.git('rev-parse', `refs/tags/${tag}`)).toBe(other.git('rev-parse', `refs/tags/${tag}`));
-      expect(local.git('rev-parse', `refs/tags/${tag}^0`)).toBe(commitOid);
+      expect(await local.git('cat-file', '-t', `refs/tags/${tag}`)).toBe('tag');
+      expect(await local.git('rev-parse', `refs/tags/${tag}`)).toBe(await other.git('rev-parse', `refs/tags/${tag}`));
+      expect(await local.git('rev-parse', `refs/tags/${tag}^0`)).toBe(commitOid);
     }
   });
 
   it('keeps existing local tags instead of fetching annotated tags', async () => {
-    other.git('tag', '--annotate', '--message', 'v1.0.0', 'v1.0.0', commitOid);
-    other.git('push', '--quiet', 'origin', 'v1.0.0');
-    local.git('tag', 'v1.0.0', parentOid);
+    await other.git('tag', '--annotate', '--message', 'v1.0.0', 'v1.0.0', commitOid);
+    await other.git('push', '--quiet', 'origin', 'v1.0.0');
+    await local.git('tag', 'v1.0.0', parentOid);
 
     expect(
       await syncLocal({
@@ -133,7 +133,7 @@ describe('syncLocal', () => {
         tagType: 'annotated',
       }),
     ).toBe(true);
-    expect(local.git('rev-parse', 'refs/tags/v1.0.0')).toBe(parentOid);
+    expect(await local.git('rev-parse', 'refs/tags/v1.0.0')).toBe(parentOid);
   });
 
   it('skips outside of a Git repository', async () => {
@@ -161,7 +161,7 @@ describe('syncLocal', () => {
         tagType: 'lightweight',
       }),
     ).toBe(false);
-    expect(local.git('rev-parse', 'HEAD')).toBe(parentOid);
+    expect(await local.git('rev-parse', 'HEAD')).toBe(parentOid);
   });
 
   it('warns if the commit cannot be fetched', async () => {
@@ -176,11 +176,11 @@ describe('syncLocal', () => {
       }),
     ).toBe(false);
     expect(warning).toHaveBeenCalledWith(expect.stringContaining('Failed to sync the local checkout'));
-    expect(local.git('rev-parse', 'HEAD')).toBe(parentOid);
+    expect(await local.git('rev-parse', 'HEAD')).toBe(parentOid);
   });
 
   it('warns if fetching fails', async () => {
-    local.git('remote', 'remove', 'origin');
+    await local.git('remote', 'remove', 'origin');
     expect(
       await syncLocal({
         workingDirectory: local.dir,

@@ -32,7 +32,7 @@
     "@simbo/stringify-error": "^2.0.0"
   },
   "devDependencies": {
-    "@simbo/eslint-config": "^3.0.0",
+    "@simbo/eslint-config": "^4.0.0",
     "@simbo/rollup-github-actions-config": "^2.0.0",
     "@simbo/tsconfig": "^2.0.0",
     "@vitest/coverage-v8": "^5.0.5",

@@ -10,11 +10,12 @@
 // Usage: node tooling/bin/create-dependency-changeset.ts <commit sha>
 //------------------------------------------------------------------------------
 
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { appendFile, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { argv, env, stdout } from 'node:process';
+import { promisify } from 'node:util';
 
 import {
   diffDependencies,
@@ -29,28 +30,24 @@ import {
 
 const SHORT_SHA_LENGTH = 7;
 
+const execFileAsync = promisify(execFile);
+
 /**
- * Lists the production packages of every action from the lockfile.
+ * Lists the production packages of an action from the lockfile.
  *
  * @param directory - The root of a checkout.
- * @param names - The action folder names, which are also the package names.
- * @returns The packages of every action, by name.
+ * @param name - The action folder name, which is also the package name.
+ * @returns The packages; undefined if the lockfile does not contain the action.
  */
-function listProductionPackages(directory: string, names: string[]): Record<string, string[]> {
-  const result: Record<string, string[]> = {};
-  for (const name of names) {
-    const output = execFileSync(
-      'pnpm',
-      ['list', '--filter', name, '--lockfile-only', '--prod', '--json', '--depth', 'Infinity'],
-      { cwd: directory, encoding: 'utf8' },
-    );
-    const projects = JSON.parse(output) as { name: string; dependencies?: DependencyTree }[];
-    const project = projects.find(item => item.name === name);
-    if (project) {
-      result[name] = flattenDependencies(project.dependencies);
-    }
-  }
-  return result;
+async function listProductionPackages(directory: string, name: string): Promise<string[] | undefined> {
+  const { stdout: output } = await execFileAsync(
+    'pnpm',
+    ['list', '--filter', name, '--lockfile-only', '--prod', '--json', '--depth', 'Infinity'],
+    { cwd: directory, encoding: 'utf8' },
+  );
+  const projects = JSON.parse(output) as { name: string; dependencies?: DependencyTree }[];
+  const project = projects.find(item => item.name === name);
+  return project ? flattenDependencies(project.dependencies) : undefined;
 }
 
 /**
@@ -76,8 +73,22 @@ let affected: string[];
 const bundledUpdates: Record<string, DependencyUpdate[]> = {};
 const otherUpdates: DependencyUpdate[][] = [];
 try {
-  execFileSync('git', ['worktree', 'add', '--detach', previous, `${sha}~1`], { stdio: 'ignore' });
-  affected = getAffectedActions(listProductionPackages(previous, actions), listProductionPackages('.', actions));
+  await execFileAsync('git', ['worktree', 'add', '--detach', previous, `${sha}~1`]);
+  const packagesBefore: Record<string, string[]> = {};
+  const packagesAfter: Record<string, string[]> = {};
+  for (const name of actions) {
+    const [before, after] = await Promise.all([
+      listProductionPackages(previous, name),
+      listProductionPackages('.', name),
+    ]);
+    if (before) {
+      packagesBefore[name] = before;
+    }
+    if (after) {
+      packagesAfter[name] = after;
+    }
+  }
+  affected = getAffectedActions(packagesBefore, packagesAfter);
   for (const workspace of workspaces) {
     const before = await readDependencies(previous, workspace);
     const after = await readDependencies('.', workspace);
@@ -90,7 +101,7 @@ try {
     otherUpdates.push(diffDependencies(before.devDependencies, after.devDependencies));
   }
 } finally {
-  execFileSync('git', ['worktree', 'remove', '--force', previous], { stdio: 'ignore' });
+  await execFileAsync('git', ['worktree', 'remove', '--force', previous]);
   await rm(previous, { recursive: true, force: true });
 }
 

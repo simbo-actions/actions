@@ -1,14 +1,17 @@
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 /**
  * A temporary Git repository for tests.
  */
 export interface GitFixture {
   dir: string;
-  git: (...args: string[]) => string;
+  git: (...args: string[]) => Promise<string>;
   write: (path: string, contents: string) => Promise<void>;
   cleanup: () => Promise<void>;
 }
@@ -20,8 +23,8 @@ export interface GitFixture {
  * @param args - The Git arguments.
  * @returns The trimmed standard output.
  */
-export function runGit(cwd: string, ...args: string[]): string {
-  return execFileSync(
+export async function runGit(cwd: string, ...args: string[]): Promise<string> {
+  const { stdout } = await execFileAsync(
     'git',
     [
       '-c',
@@ -35,7 +38,8 @@ export function runGit(cwd: string, ...args: string[]): string {
       ...args,
     ],
     { cwd, encoding: 'utf8' },
-  ).trim();
+  );
+  return stdout.trim();
 }
 
 /**
@@ -56,7 +60,7 @@ export async function createTempDir(): Promise<string> {
 function toFixture(dir: string): GitFixture {
   return {
     dir,
-    git: (...args: string[]): string => runGit(dir, ...args),
+    git: async (...args: string[]): Promise<string> => runGit(dir, ...args),
     write: async (path: string, contents: string): Promise<void> => {
       await mkdir(dirname(join(dir, path)), { recursive: true });
       await writeFile(join(dir, path), contents);
@@ -75,14 +79,14 @@ export async function createGitFixture(files?: Record<string, string>): Promise<
   const fixture = toFixture(await createTempDir());
   const { git, write } = fixture;
 
-  git('init', '--quiet', '--initial-branch=main');
+  await git('init', '--quiet', '--initial-branch=main');
 
   if (files) {
     for (const [path, contents] of Object.entries(files)) {
       await write(path, contents);
     }
-    git('add', '--all');
-    git('commit', '--quiet', '--allow-empty', '-m', 'initial');
+    await git('add', '--all');
+    await git('commit', '--quiet', '--allow-empty', '-m', 'initial');
   }
 
   return fixture;
@@ -97,6 +101,6 @@ export async function createGitFixture(files?: Record<string, string>): Promise<
  */
 export async function cloneGitFixture(source: string, ...options: string[]): Promise<GitFixture> {
   const fixture = toFixture(await createTempDir());
-  fixture.git('clone', '--quiet', ...options, source, '.');
+  await fixture.git('clone', '--quiet', ...options, source, '.');
   return fixture;
 }
