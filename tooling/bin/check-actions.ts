@@ -30,21 +30,27 @@ const problems = await checkActionLicenses('actions');
 const aboutSection = await readFile(join('tooling', 'about-section.md'), 'utf8');
 const entries = await readdir('actions', { withFileTypes: true });
 const directories = entries.filter(item => item.isDirectory());
-for (const entry of directories) {
-  const readme = await readFile(join('actions', entry.name, 'README.md'), 'utf8').catch(() => '');
-  problems.push(...checkActionReadme(entry.name, readme, aboutSection));
-  const actionYml = await readFile(join('actions', entry.name, 'action.yml'), 'utf8').catch(() => '');
-  const actionPackage = await readFile(join('actions', entry.name, 'package.json'), 'utf8').catch(() => '{}');
+const actionFiles = await Promise.all(
+  directories.map(async ({ name }) => {
+    const [readme, actionYml, actionPackage, octokitClient] = await Promise.all([
+      readFile(join('actions', name, 'README.md'), 'utf8').catch(() => ''),
+      readFile(join('actions', name, 'action.yml'), 'utf8').catch(() => ''),
+      readFile(join('actions', name, 'package.json'), 'utf8').catch(() => '{}'),
+      readFile(join('actions', name, 'src', 'create-octokit.ts'), 'utf8').catch(() => ''),
+    ]);
+    return { name, readme, actionYml, actionPackage, octokitClient };
+  }),
+);
+for (const { name, readme, actionYml, actionPackage } of actionFiles) {
+  problems.push(...checkActionReadme(name, readme, aboutSection));
   const { description } = JSON.parse(actionPackage) as { description?: string };
-  problems.push(...checkActionDescription(entry.name, actionYml, description, readme));
+  problems.push(...checkActionDescription(name, actionYml, description, readme));
 }
 
 const octokitClients: Record<string, string> = {};
-for (const entry of directories) {
-  const path = join('actions', entry.name, 'src', 'create-octokit.ts');
-  const content = await readFile(path, 'utf8').catch(() => '');
-  if (content !== '') {
-    octokitClients[path] = content;
+for (const { name, octokitClient } of actionFiles) {
+  if (octokitClient !== '') {
+    octokitClients[join('actions', name, 'src', 'create-octokit.ts')] = octokitClient;
   }
 }
 problems.push(...checkIdenticalCopies('create-octokit.ts', octokitClients));
@@ -53,10 +59,14 @@ const packageJson = await readFile('package.json', 'utf8');
 const { scripts } = JSON.parse(packageJson) as { scripts: Record<string, string | undefined> };
 const workflowDirectory = join('.github', 'workflows');
 const workflowNames = await readdir(workflowDirectory);
-const workflows: Record<string, string> = {};
-for (const name of workflowNames) {
-  workflows[join(workflowDirectory, name)] = await readFile(join(workflowDirectory, name), 'utf8');
-}
+const workflows: Record<string, string> = Object.fromEntries(
+  await Promise.all(
+    workflowNames.map(async name => {
+      const path = join(workflowDirectory, name);
+      return [path, await readFile(path, 'utf8')] as const;
+    }),
+  ),
+);
 problems.push(...checkVulnerabilityLicenses(scripts['check:vulnerabilities'] ?? '', workflows));
 for (const [path, content] of Object.entries(workflows)) {
   problems.push(...checkPrivilegedJobs(path, content));
