@@ -1,5 +1,16 @@
 # changelog
 
+## 0.2.19
+
+### Patch Changes
+
+- d9eb516: Document the decision against source maps for the logs of the
+  actions.
+
+  - The entry moves from the roadmap to the design decisions in
+    `ARCHITECTURE.md`.
+  - A map would roughly double the download of every action for little gain.
+
 ## 0.2.18
 
 ### Patch Changes
