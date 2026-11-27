@@ -6,7 +6,9 @@
 'staged-release': patch
 ---
 
-Require Node.js 24.15.0 or later, like the bundled `@simbo` packages.
+Require Node.js 24.15.0 or a later 24.x release.
 
-- `engines.node` in `package.json` is `>=24.15.0`.
-- GitHub-hosted runners provide it; the action still runs with `node24`.
+- `engines.node` in `package.json` is `^24.15.0`.
+- The bundled `@simbo` packages need Node.js 24.15.0 or later; the upper bound
+  follows the runtime `node24` the action runs with.
+- GitHub-hosted runners provide it.
