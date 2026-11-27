@@ -19,13 +19,6 @@ other document (see [GOVERNANCE.md](GOVERNANCE.md)).
 
 - **Shared GitHub API client:** the identical copies of the Octokit client in
   the actions move to a published package.
-- **Source maps in action logs:** stack traces in the logs point to the
-  TypeScript sources. The bundles have no source maps today: the runner starts
-  `dist/index.js` without `--enable-source-maps`, so a map would only grow the
-  published files. It needs an option for source maps in
-  `@simbo/rollup-github-actions-config` and `process.setSourceMapsEnabled(true)`
-  at the entry of each action; weigh the size of maps with inlined sources of
-  all bundled dependencies.
 - **Developer Certificate of Origin:** every commit carries a sign-off, checked
   in CI.
 - **OpenSSF Best Practices "silver":** the remaining criteria, among them a plan
