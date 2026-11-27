@@ -28,7 +28,7 @@
     "check:secrets": "gitleaks git --redact --no-banner .",
     "check:workflows": "actionlint",
     "check:spelling": "cspell",
-    "check:vulnerabilities": "osv-scanner scan source --lockfile pnpm-lock.yaml --config osv-scanner.toml --licenses=\"0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC-BY-3.0,CC-BY-4.0,CC-BY-SA-4.0,CC0-1.0,ISC,MIT,MPL-2.0,Python-2.0,WTFPL\"",
+    "check:vulnerabilities": "osv-scanner scan source --lockfile pnpm-lock.yaml --config osv-scanner.toml --licenses=\"0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC-BY-3.0,CC-BY-4.0,CC-BY-SA-4.0,CC0-1.0,ISC,MIT,MPL-2.0,PSF-2.0,Python-2.0,WTFPL\"",
     "clean": "pnpm run clean:turbo && pnpm run clean:node_modules",
     "clean:node_modules": "rm -rf node_modules",
     "clean:turbo": "rm -rf .turbo",

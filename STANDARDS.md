@@ -197,10 +197,10 @@ Required:
   reasonable effort, or that must not be built by ourselves (cryptography).
 - **License:** two lists apply, both checked in CI.
 
-  | Dependencies                      | Allowed licenses                                                                                                    | Checked by                       |
-  | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-  | Bundled (production dependencies) | `0BSD`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `MIT`                                                  | `pnpm run check:licenses`        |
-  | All, including development tools  | additionally `BlueOak-1.0.0`, `CC0-1.0`, `CC-BY-3.0`, `CC-BY-4.0`, `CC-BY-SA-4.0`, `MPL-2.0`, `Python-2.0`, `WTFPL` | `pnpm run check:vulnerabilities` |
+  | Dependencies                      | Allowed licenses                                                                                                               | Checked by                       |
+  | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
+  | Bundled (production dependencies) | `0BSD`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `MIT`                                                             | `pnpm run check:licenses`        |
+  | All, including development tools  | additionally `BlueOak-1.0.0`, `CC0-1.0`, `CC-BY-3.0`, `CC-BY-4.0`, `CC-BY-SA-4.0`, `MPL-2.0`, `PSF-2.0`, `Python-2.0`, `WTFPL` | `pnpm run check:vulnerabilities` |
 
   Strong copyleft (GPL, AGPL, LGPL) is not allowed anywhere.
 
