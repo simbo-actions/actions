@@ -181,7 +181,7 @@ importers:
         version: 21.2.4(conventional-commits-parser@7.1.2)(typescript@6.0.3)
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.7.1
-        version: 4.7.1(prettier@3.9.10)(supports-color@7.2.0)
+        version: 4.7.1(prettier@3.10.1)(supports-color@7.2.0)
       '@simbo/commitlint-config':
         specifier: ^2.0.1
         version: 2.0.1(@commitlint/cli@21.2.4(conventional-commits-parser@7.1.2)(typescript@6.0.3))
@@ -193,7 +193,7 @@ importers:
         version: 2.0.1(@types/node@24.19.2)(typescript@6.0.3)(zod-validation-error@5.0.0(zod@4.6.7))
       '@simbo/prettier-config':
         specifier: ^3.0.1
-        version: 3.0.1(@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.9.10)(supports-color@7.2.0))(prettier@3.9.10)
+        version: 3.0.1(@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.10.1)(supports-color@7.2.0))(prettier@3.10.1)
       '@types/node':
         specifier: ^24.19.2
         version: 24.19.2
@@ -210,11 +210,11 @@ importers:
         specifier: ^23.1.1
         version: 23.1.1
       prettier:
-        specifier: ^3.9.10
-        version: 3.9.10
+        specifier: ^3.10.1
+        version: 3.10.1
       prettier-plugin-organize-attributes:
         specifier: ^1.0.0
-        version: 1.0.0(prettier@3.9.10)
+        version: 1.0.0(prettier@3.10.1)
       turbo:
         specifier: ^2.11.10
         version: 2.11.10
@@ -3070,8 +3070,8 @@ packages:
     peerDependencies:
       prettier: ^3.0.0
 
-  prettier@3.9.10:
-    resolution: {integrity: sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==}
+  prettier@3.10.1:
+    resolution: {integrity: sha512-70vp3ZUYoPlFbF9uiTdXHUUCGEIp7d4+6p+8DYbkm2jP7x/3i/paXVF6dopSI3zd/CEitrZN1rc4i85xWmmXlg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -4263,13 +4263,13 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.9.10)(supports-color@7.2.0)':
+  '@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.10.1)(supports-color@7.2.0)':
     dependencies:
       '@babel/generator': 7.28.5
       '@babel/parser': 7.28.5
       '@babel/traverse': 7.28.5(supports-color@7.2.0)
       '@babel/types': 7.28.5
-      prettier: 3.9.10
+      prettier: 3.10.1
       semver: 7.7.3
     transitivePeerDependencies:
       - supports-color
@@ -4878,10 +4878,10 @@ snapshots:
 
   '@simbo/plural@2.0.0': {}
 
-  '@simbo/prettier-config@3.0.1(@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.9.10)(supports-color@7.2.0))(prettier@3.9.10)':
+  '@simbo/prettier-config@3.0.1(@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.10.1)(supports-color@7.2.0))(prettier@3.10.1)':
     dependencies:
-      '@ianvs/prettier-plugin-sort-imports': 4.7.1(prettier@3.9.10)(supports-color@7.2.0)
-      prettier: 3.9.10
+      '@ianvs/prettier-plugin-sort-imports': 4.7.1(prettier@3.10.1)(supports-color@7.2.0)
+      prettier: 3.10.1
 
   '@simbo/rollup-github-actions-config@2.0.0(rollup@4.68.2)(typescript@6.0.3)':
     dependencies:
@@ -6286,11 +6286,11 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-organize-attributes@1.0.0(prettier@3.9.10):
+  prettier-plugin-organize-attributes@1.0.0(prettier@3.10.1):
     dependencies:
-      prettier: 3.9.10
+      prettier: 3.10.1
 
-  prettier@3.9.10: {}
+  prettier@3.10.1: {}
 
   pretty-ms@9.3.1:
     dependencies:
