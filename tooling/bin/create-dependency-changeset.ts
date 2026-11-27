@@ -14,7 +14,7 @@ import { execFile } from 'node:child_process';
 import { appendFile, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { argv, env, stdout } from 'node:process';
+import { argv, env, stderr, stdout } from 'node:process';
 import { promisify } from 'node:util';
 
 import {
@@ -62,6 +62,29 @@ async function readDependencies(directory: string, workspace: string): Promise<P
   return JSON.parse(content) as PackageDependencies;
 }
 
+/**
+ * Removes the temporary worktree of the parent commit. A failed removal only
+ * warns, so it does not hide an earlier error; the folder is then deleted and
+ * the worktree pruned instead.
+ *
+ * @param path - The folder of the worktree.
+ */
+async function removeWorktree(path: string): Promise<void> {
+  try {
+    await execFileAsync('git', ['worktree', 'remove', '--force', path]);
+  } catch (error) {
+    stderr.write(
+      `⚠ Could not remove the worktree ${path}: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    await rm(path, { recursive: true, force: true });
+    try {
+      await execFileAsync('git', ['worktree', 'prune']);
+    } catch {
+      // A failed prune leaves only a stale worktree entry behind.
+    }
+  }
+}
+
 const sha = argv[2] ?? 'HEAD';
 const short = sha.slice(0, SHORT_SHA_LENGTH);
 const entries = await readdir('actions', { withFileTypes: true });
@@ -74,13 +97,29 @@ const bundledUpdates: Record<string, DependencyUpdate[]> = {};
 const otherUpdates: DependencyUpdate[][] = [];
 try {
   await execFileAsync('git', ['worktree', 'add', '--detach', previous, `${sha}~1`]);
+  const [listed, dependencies] = await Promise.all([
+    Promise.all(
+      actions.map(async name => {
+        const [before, after] = await Promise.all([
+          listProductionPackages(previous, name),
+          listProductionPackages('.', name),
+        ]);
+        return { name, before, after };
+      }),
+    ),
+    Promise.all(
+      workspaces.map(async workspace => {
+        const [before, after] = await Promise.all([
+          readDependencies(previous, workspace),
+          readDependencies('.', workspace),
+        ]);
+        return { workspace, before, after };
+      }),
+    ),
+  ]);
   const packagesBefore: Record<string, string[]> = {};
   const packagesAfter: Record<string, string[]> = {};
-  for (const name of actions) {
-    const [before, after] = await Promise.all([
-      listProductionPackages(previous, name),
-      listProductionPackages('.', name),
-    ]);
+  for (const { name, before, after } of listed) {
     if (before) {
       packagesBefore[name] = before;
     }
@@ -89,9 +128,7 @@ try {
     }
   }
   affected = getAffectedActions(packagesBefore, packagesAfter);
-  for (const workspace of workspaces) {
-    const before = await readDependencies(previous, workspace);
-    const after = await readDependencies('.', workspace);
+  for (const { workspace, before, after } of dependencies) {
     const production = diffDependencies(before.dependencies, after.dependencies);
     if (workspace.startsWith('actions/')) {
       bundledUpdates[workspace.slice('actions/'.length)] = production;
@@ -101,8 +138,7 @@ try {
     otherUpdates.push(diffDependencies(before.devDependencies, after.devDependencies));
   }
 } finally {
-  await execFileAsync('git', ['worktree', 'remove', '--force', previous]);
-  await rm(previous, { recursive: true, force: true });
+  await removeWorktree(previous);
 }
 
 const files: string[] = [];
