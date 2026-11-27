@@ -208,7 +208,8 @@ and fails before running any code if `main` is no longer at that commit. The
 release of the later commit takes over. It never checks out a commit from an
 input, so only code from `main` runs with access to the cache of `main`.  
 The release commit and the tags are created via the GitHub API with
-[`signed-commit`](actions/signed-commit/README.md), so they are verified.  
+[`signed-commit`](actions/signed-commit/README.md): the commit is verified, the
+annotated tags point to it without a signature of their own.  
 The tag `changelog/vX.Y.Z` of the monorepo changelog starts no publish run.
 
 ## Publishing an Action
@@ -642,6 +643,12 @@ major version; see [MAINTAINING.md](MAINTAINING.md).
 - **Commits and tags via the API.** Why: commits by a GitHub App are verified
   only when GitHub creates them; tags created one by one each trigger their own
   event.
+- **Unsigned tag objects.** Why: GitHub creates no signed tag objects, neither
+  for a GitHub App nor with a token; this was tested. Signed tags would have to
+  be created locally with a key bound to a user, including its verification,
+  which is too much for the release process.  
+  The tags point to verified commits, are protected by rulesets, and users pin
+  by commit SHA; checksums and build provenance verify the release assets.
 - **Repositories created with `auto_init`.** Why: the initial commit is created
   by GitHub and verified.  
   Creating repositories from a template repository is an option if they should

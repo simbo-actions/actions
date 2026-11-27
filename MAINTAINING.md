@@ -55,8 +55,10 @@ The run appears as the workflow "Dependabot Updates" in Actions, with its log.
    for the package `changelog` for all other dependencies. Check that the
    release starts.
 6. For `simbo-actions/*` updates, check that the new version was released by the
-   release process of this repository: a verified tag and a release with build
-   provenance (see [SECURITY.md](SECURITY.md#verifying-a-release)).  
+   release process of this repository: a tag on a verified commit and a release
+   with build provenance (see [SECURITY.md](SECURITY.md#verifying-a-release)).
+   The tag objects themselves are not signed (see
+   [ARCHITECTURE.md](ARCHITECTURE.md#design-decisions)).  
    The release and publish workflows run the new version with the app
    credentials from the next release on; read its changelog like that of any
    other action.
@@ -190,7 +192,8 @@ If a new version breaks them, the fix cannot be released with that version.
 2. Fix the action on `main` with a patch changeset; the release now runs with
    the old version and publishes the fix.
 3. Merge the Dependabot pull request for the fixed version, after checking that
-   its release is complete (verified tag, release with build provenance).
+   its release is complete (tag on a verified commit, release with build
+   provenance).
 
 ## Failed Release
 
