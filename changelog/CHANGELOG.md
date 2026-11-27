@@ -1,5 +1,36 @@
 # changelog
 
+## 0.2.22
+
+### Patch Changes
+
+- 268663f: Leave source maps and declarations to the shared Rollup
+  configuration.
+
+  - The `tsconfig.build.json` of every action no longer sets `declaration`,
+    `sourceMap`, and `inlineSources` to `false`.
+  - `@simbo/rollup-github-actions-config` 3.0.1 disables them for the TypeScript
+    plugin itself; the bundles stay the same.
+
+- 268663f: Require Node.js 24.15.0 or a later 24.x release for development.
+
+  - `engines.node` is `^24.15.0` in the root, `changelog`, and `tooling`.
+  - The shared `@simbo` packages need Node.js 24.15.0 or later; the upper bound
+    keeps development on the major version the actions run with.
+  - `.nvmrc` stays at 24.21.0, which meets it.
+
+- 268663f: Update development dependencies.
+
+  - `@simbo/commitlint-config` to ^3.0.0
+  - `@simbo/cspell-config` to ^3.0.0
+  - `@simbo/eslint-config` to ^5.0.0
+  - `@simbo/monorepo-packages-list-cli` to ^3.0.1
+  - `@simbo/prettier-config` to ^4.0.0
+  - `@simbo/rollup-github-actions-config` to ^3.0.1
+  - `@simbo/tsconfig` to ^3.0.1
+  - `@vitest/coverage-v8` to ^5.1.2
+  - `vitest` to ^5.1.2
+
 ## 0.2.21
 
 ### Patch Changes
