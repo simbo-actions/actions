@@ -1,5 +1,26 @@
 # changelog
 
+## 0.2.21
+
+### Patch Changes
+
+- 4437c69: Keep the original error when `create-dependency-changeset` cannot
+  remove its worktree.
+
+  - A failed `git worktree remove` only warns; the script then deletes the
+    folder and prunes the worktree.
+  - Before, the failed removal replaced the original error, for example of
+    `git worktree add`, and left the folder behind.
+
+- 4437c69: Run the independent steps of the tooling scripts in parallel.
+
+  - `create-dependency-changeset` lists the production packages of all actions
+    and reads the dependencies of all workspaces at the same time, in the commit
+    and in its parent.
+  - `check-actions` reads the files of all actions and all workflows at the same
+    time; the license check does the same per action. The problems keep their
+    order.
+
 ## 0.2.20
 
 ### Patch Changes
