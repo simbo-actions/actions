@@ -1,5 +1,11 @@
 # apply-repository-settings
 
+## 1.0.5
+
+### Patch Changes
+
+- 4e0746b: Update `@simbo/stringify-error` to ^2.0.1.
+
 ## 1.0.4
 
 ### Patch Changes

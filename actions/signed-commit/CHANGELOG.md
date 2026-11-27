@@ -1,5 +1,15 @@
 # signed-commit
 
+## 2.0.1
+
+### Patch Changes
+
+- 4e0746b: Update dependencies.
+
+  - `@simbo/accessible` to ^2.0.1
+  - `@simbo/git-changes` to ^3.0.1
+  - `@simbo/stringify-error` to ^2.0.1
+
 ## 2.0.0
 
 ### Major Changes

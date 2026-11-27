@@ -1,5 +1,45 @@
 # changelog
 
+## 0.2.18
+
+### Patch Changes
+
+- 4e0746b: Allow the license `PSF-2.0` for development tools.
+
+  - `argparse` 3, which `js-yaml` 5 pulls in for ESLint and the actions list,
+    uses it; `argparse` 2 used `Python-2.0`.
+  - The scanner calls in `check:vulnerabilities`, `checks` and `security` and
+    the table in `STANDARDS.md` list it.
+
+- 4e0746b: Plan source maps for the logs of the actions in the roadmap.
+- 4e0746b: Update development dependencies.
+
+  - `@simbo/commitlint-config` to ^2.0.2
+  - `@simbo/cspell-config` to ^2.2.0
+  - `@simbo/monorepo-packages-list-cli` to ^2.0.3
+  - `@simbo/prettier-config` to ^3.0.2
+  - `@simbo/rollup-github-actions-config` to ^2.0.1
+  - `@simbo/tsconfig` to ^2.1.0
+  - `@vitest/coverage-v8` to ^5.1.1
+  - `cspell` to ^10.5.2
+  - `eslint` to ^10.15.0
+  - `prettier` to ^3.10.1
+  - `rollup` to ^4.68.8
+  - `turbo` to ^2.11.13
+  - `vitest` to ^5.1.1
+
+- 4e0746b: Update `@simbo/eslint-config` to ^4.0.0 in all actions and `tooling`.
+
+  - Its Node.js preset reports synchronous APIs with `n/no-sync`; the Git
+    helpers of the tests in `gitleaks-scan` and `signed-commit` and the script
+    `create-dependency-changeset` use `promisify(execFile)` instead of
+    `execFileSync`.
+  - `create-dependency-changeset` lists the production packages per action, the
+    lockfiles of both commits in parallel.
+  - Its Unicorn rules since 3.3.0 replace repeated comparisons in the `dry-run`
+    validation of `apply-repository-settings` with `includes`, without a change
+    in behavior.
+
 ## 0.2.17
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # gitleaks-scan
 
+## 1.0.3
+
+### Patch Changes
+
+- 4e0746b: Update `@simbo/stringify-error` to ^2.0.1.
+
 ## 1.0.2
 
 ### Patch Changes
