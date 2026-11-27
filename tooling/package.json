@@ -9,7 +9,7 @@
   "bugs": "https://github.com/simbo-actions/actions/issues",
   "repository": "github:simbo-actions/actions",
   "engines": {
-    "node": ">=24"
+    "node": ">=24.15.0"
   },
   "type": "module",
   "scripts": {
@@ -22,11 +22,11 @@
     "test:watch": "vitest dev --coverage"
   },
   "devDependencies": {
-    "@simbo/eslint-config": "^4.0.0",
-    "@simbo/tsconfig": "^2.1.0",
-    "@vitest/coverage-v8": "^5.1.1",
+    "@simbo/eslint-config": "^5.0.0",
+    "@simbo/tsconfig": "^3.0.1",
+    "@vitest/coverage-v8": "^5.1.2",
     "eslint": "^10.15.0",
     "typescript": "^6.0.3",
-    "vitest": "^5.1.1"
+    "vitest": "^5.1.2"
   }
 }

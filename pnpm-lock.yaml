@@ -183,17 +183,17 @@ importers:
         specifier: ^4.7.1
         version: 4.7.1(prettier@3.10.1)(supports-color@7.2.0)
       '@simbo/commitlint-config':
-        specifier: ^2.0.2
-        version: 2.0.2(@commitlint/cli@21.2.4(conventional-commits-parser@7.1.4)(typescript@6.0.3))
+        specifier: ^3.0.0
+        version: 3.0.0(@commitlint/cli@21.2.4(conventional-commits-parser@7.1.4)(typescript@6.0.3))
       '@simbo/cspell-config':
-        specifier: ^2.2.0
-        version: 2.2.0(cspell@10.5.2)
+        specifier: ^3.0.0
+        version: 3.0.0(cspell@10.5.2)
       '@simbo/monorepo-packages-list-cli':
-        specifier: ^2.0.3
-        version: 2.0.3(@types/node@24.19.2)(typescript@6.0.3)(zod-validation-error@5.0.0(zod@4.6.7))
+        specifier: ^3.0.1
+        version: 3.0.1(@types/node@24.19.2)(typescript@6.0.3)(zod-validation-error@5.0.0(zod@4.6.7))
       '@simbo/prettier-config':
-        specifier: ^3.0.2
-        version: 3.0.2(@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.10.1)(supports-color@7.2.0))(prettier@3.10.1)
+        specifier: ^4.0.0
+        version: 4.0.0(@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.10.1)(supports-color@7.2.0))(prettier@3.10.1)
       '@types/node':
         specifier: ^24.19.2
         version: 24.19.2
@@ -231,24 +231,24 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5(@octokit/core@7.0.8)
       '@simbo/stringify-error':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: ^3.0.0
+        version: 3.0.0
       yaml:
         specifier: ^2.9.1
         version: 2.9.1
     devDependencies:
       '@simbo/eslint-config':
-        specifier: ^4.0.0
-        version: 4.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@simbo/rollup-github-actions-config':
-        specifier: ^2.0.1
-        version: 2.0.1(rollup@4.68.8)(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(rollup@4.68.8)(typescript@6.0.3)
       '@simbo/tsconfig':
-        specifier: ^2.1.0
-        version: 2.1.0(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(typescript@6.0.3)
       '@vitest/coverage-v8':
-        specifier: ^5.1.1
-        version: 5.1.1(vitest@5.1.1)
+        specifier: ^5.1.2
+        version: 5.1.2(vitest@5.1.2)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.6.1)(supports-color@7.2.0)
@@ -259,8 +259,8 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       vitest:
-        specifier: ^5.1.1
-        version: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
+        specifier: ^5.1.2
+        version: 5.1.2(@types/node@24.19.2)(@vitest/coverage-v8@5.1.2)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
 
   actions/floating-version-tags:
     dependencies:
@@ -274,21 +274,21 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5(@octokit/core@7.0.8)
       '@simbo/stringify-error':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: ^3.0.0
+        version: 3.0.0
     devDependencies:
       '@simbo/eslint-config':
-        specifier: ^4.0.0
-        version: 4.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@simbo/rollup-github-actions-config':
-        specifier: ^2.0.1
-        version: 2.0.1(rollup@4.68.8)(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(rollup@4.68.8)(typescript@6.0.3)
       '@simbo/tsconfig':
-        specifier: ^2.1.0
-        version: 2.1.0(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(typescript@6.0.3)
       '@vitest/coverage-v8':
-        specifier: ^5.1.1
-        version: 5.1.1(vitest@5.1.1)
+        specifier: ^5.1.2
+        version: 5.1.2(vitest@5.1.2)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.6.1)(supports-color@7.2.0)
@@ -299,8 +299,8 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       vitest:
-        specifier: ^5.1.1
-        version: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
+        specifier: ^5.1.2
+        version: 5.1.2(@types/node@24.19.2)(@vitest/coverage-v8@5.1.2)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
 
   actions/github-app-bot-user:
     dependencies:
@@ -314,21 +314,21 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5(@octokit/core@7.0.8)
       '@simbo/stringify-error':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: ^3.0.0
+        version: 3.0.0
     devDependencies:
       '@simbo/eslint-config':
-        specifier: ^4.0.0
-        version: 4.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@simbo/rollup-github-actions-config':
-        specifier: ^2.0.1
-        version: 2.0.1(rollup@4.68.8)(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(rollup@4.68.8)(typescript@6.0.3)
       '@simbo/tsconfig':
-        specifier: ^2.1.0
-        version: 2.1.0(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(typescript@6.0.3)
       '@vitest/coverage-v8':
-        specifier: ^5.1.1
-        version: 5.1.1(vitest@5.1.1)
+        specifier: ^5.1.2
+        version: 5.1.2(vitest@5.1.2)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.6.1)(supports-color@7.2.0)
@@ -339,8 +339,8 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       vitest:
-        specifier: ^5.1.1
-        version: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
+        specifier: ^5.1.2
+        version: 5.1.2(@types/node@24.19.2)(@vitest/coverage-v8@5.1.2)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
 
   actions/gitleaks-scan:
     dependencies:
@@ -354,21 +354,21 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       '@simbo/stringify-error':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: ^3.0.0
+        version: 3.0.0
     devDependencies:
       '@simbo/eslint-config':
-        specifier: ^4.0.0
-        version: 4.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@simbo/rollup-github-actions-config':
-        specifier: ^2.0.1
-        version: 2.0.1(rollup@4.68.8)(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(rollup@4.68.8)(typescript@6.0.3)
       '@simbo/tsconfig':
-        specifier: ^2.1.0
-        version: 2.1.0(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(typescript@6.0.3)
       '@vitest/coverage-v8':
-        specifier: ^5.1.1
-        version: 5.1.1(vitest@5.1.1)
+        specifier: ^5.1.2
+        version: 5.1.2(vitest@5.1.2)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.6.1)(supports-color@7.2.0)
@@ -379,8 +379,8 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       vitest:
-        specifier: ^5.1.1
-        version: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
+        specifier: ^5.1.2
+        version: 5.1.2(@types/node@24.19.2)(@vitest/coverage-v8@5.1.2)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
 
   actions/signed-commit:
     dependencies:
@@ -394,27 +394,27 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5(@octokit/core@7.0.8)
       '@simbo/accessible':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: ^3.0.0
+        version: 3.0.0
       '@simbo/git-changes':
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^4.0.0
+        version: 4.0.0
       '@simbo/stringify-error':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: ^3.0.0
+        version: 3.0.0
     devDependencies:
       '@simbo/eslint-config':
-        specifier: ^4.0.0
-        version: 4.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@simbo/rollup-github-actions-config':
-        specifier: ^2.0.1
-        version: 2.0.1(rollup@4.68.8)(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(rollup@4.68.8)(typescript@6.0.3)
       '@simbo/tsconfig':
-        specifier: ^2.1.0
-        version: 2.1.0(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(typescript@6.0.3)
       '@vitest/coverage-v8':
-        specifier: ^5.1.1
-        version: 5.1.1(vitest@5.1.1)
+        specifier: ^5.1.2
+        version: 5.1.2(vitest@5.1.2)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.6.1)(supports-color@7.2.0)
@@ -425,8 +425,8 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       vitest:
-        specifier: ^5.1.1
-        version: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
+        specifier: ^5.1.2
+        version: 5.1.2(@types/node@24.19.2)(@vitest/coverage-v8@5.1.2)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
 
   actions/staged-release:
     dependencies:
@@ -440,21 +440,21 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5(@octokit/core@7.0.8)
       '@simbo/stringify-error':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: ^3.0.0
+        version: 3.0.0
     devDependencies:
       '@simbo/eslint-config':
-        specifier: ^4.0.0
-        version: 4.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@simbo/rollup-github-actions-config':
-        specifier: ^2.0.1
-        version: 2.0.1(rollup@4.68.8)(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(rollup@4.68.8)(typescript@6.0.3)
       '@simbo/tsconfig':
-        specifier: ^2.1.0
-        version: 2.1.0(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(typescript@6.0.3)
       '@vitest/coverage-v8':
-        specifier: ^5.1.1
-        version: 5.1.1(vitest@5.1.1)
+        specifier: ^5.1.2
+        version: 5.1.2(vitest@5.1.2)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.6.1)(supports-color@7.2.0)
@@ -465,22 +465,22 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       vitest:
-        specifier: ^5.1.1
-        version: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
+        specifier: ^5.1.2
+        version: 5.1.2(@types/node@24.19.2)(@vitest/coverage-v8@5.1.2)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
 
   changelog: {}
 
   tooling:
     devDependencies:
       '@simbo/eslint-config':
-        specifier: ^4.0.0
-        version: 4.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@simbo/tsconfig':
-        specifier: ^2.1.0
-        version: 2.1.0(typescript@6.0.3)
+        specifier: ^3.0.1
+        version: 3.0.1(typescript@6.0.3)
       '@vitest/coverage-v8':
-        specifier: ^5.1.1
-        version: 5.1.1(vitest@5.1.1)
+        specifier: ^5.1.2
+        version: 5.1.2(vitest@5.1.2)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.6.1)(supports-color@7.2.0)
@@ -488,8 +488,8 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       vitest:
-        specifier: ^5.1.1
-        version: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
+        specifier: ^5.1.2
+        version: 5.1.2(@types/node@24.19.2)(@vitest/coverage-v8@5.1.2)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
 
 packages:
 
@@ -1587,123 +1587,123 @@ packages:
     resolution: {integrity: sha512-qv7+G3J2cc6wwFj3yKvXOamzqhMwSk1ogPGmhpS8iXllcPrJaIIBA+4HbttlHVu1pqWTdmaCH/WE7UOC51kdoA==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  '@simbo/accessible@2.0.1':
-    resolution: {integrity: sha512-Xpa8xeQHmf9MklpEzJbiDcghAjg1A+tqcKPaydHfDGqH3Ut50NSYF/7T7GuyNBxtOTRqpe5D8ft9LyDTG8V1GA==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/accessible@3.0.0':
+    resolution: {integrity: sha512-ZvwJ7p1QdyUt26Hhs5eqe0EyUr88hqdxEsBk14aPrPmK498nvTQB7Fs+wyj2L58LBBzgqOsp+6X3VHMcSCjFDg==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/call-prettier@2.0.2':
-    resolution: {integrity: sha512-KXMPI8JFVyDteRMsehTlNlclYoRH7jV2AqDc6vL4QNlkSkh495Fc++WOcZg2pwH+KRPpW8d89+uuv8rDJvEySw==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/call-prettier@3.0.0':
+    resolution: {integrity: sha512-Tf2NTVa2/irmztQ3aNjiBYQBWeMOI2+ERlPye/MTGxx0jJoplrzRcgMn21CElMgEqj/HhggEflnU2CmxrChmmg==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/cli-output@2.0.1':
-    resolution: {integrity: sha512-Jx7iuLh8zARiE5hv8Y8IvfWLFigDlFa0E5yay0++WmigsQBlTywQGs6jIsVE32DNVZ09DhT8DD9IMpe/OuYLTQ==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/cli-output@3.0.0':
+    resolution: {integrity: sha512-RlcfDNdBSboi8RHxQXGRHeC7/pvOtfhTYRv5YpZuAvjkaf8vHPdTfCnEWTzsIqgOC2Rk6TTDdVZXr7DCvJZ+RQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/clirk@2.0.2':
-    resolution: {integrity: sha512-+3hVxs5pf2DUstGXe4L4LHiLX/ZPfbhf8KWBXxf/dNKCMu3uosaXv4r3CJuVgo1GN8MjIB+tCUVzup0it1GOhA==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/clirk@3.0.0':
+    resolution: {integrity: sha512-57TkIr6qLKRXvuKeU7ZKR9yXSVsHxouraS+HjyR2U6Ono15AnA8Iy+UtdOYRt+Znn3G389Q71d0pEB3TkJBovQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/commitlint-config@2.0.2':
-    resolution: {integrity: sha512-khK68S8wu+lNoOHm7M6Uafh5ajjp9iRc1slpJPY5Zn+KoOJ+07J+KAEEh2rTwTSYOLQ/FLxp+6CNO8I8HUxzPQ==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/commitlint-config@3.0.0':
+    resolution: {integrity: sha512-wUH0hWS2qsPeHe99DKk5PatCfw6d8ef2Kw+10Vyyrs5W8wC8fvjkCbr5+/14Cv4Y+usIqlgDMuxMX06/Pyo+QQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
     peerDependencies:
       '@commitlint/cli': ^21.2.3
 
-  '@simbo/cspell-config@2.2.0':
-    resolution: {integrity: sha512-g+yFj8YwF+Ynw/vHIBqtTAOQqOXL5qCvjqwPL4AM8uxEqebkAaYmQni4l3qxz5boOB1ypgWPbv2Lmpa2WT88Mw==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/cspell-config@3.0.0':
+    resolution: {integrity: sha512-dUneSPKia1ZRAaJ6JPYixzaX4UQmJuj4BABUOFoNQa7Z9h2byt3ucWJOqoxS2Tx2+7t/45EPHp1ORHTrekPxmQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
     peerDependencies:
       cspell: ^9 || ^10
 
-  '@simbo/eslint-config@4.0.0':
-    resolution: {integrity: sha512-LbjymBSMB3dIKXcIhMDF1byxAEy8gmGfKc38NA/hfnyRCJ9n7DCSiR1hIfHX0ptKnpTLpU7xZb4Y6tba/JyKAA==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/eslint-config@5.0.0':
+    resolution: {integrity: sha512-F5NT4N4G/9oN+V7G5zk2QcdLp0nCtPIt8o4huUCtNj4nYQfe16CausQOWh9NX/OoB1ytsQ44JT8AfynrXFn8Rg==}
+    engines: {node: ^24.15.0 || >=26.0.0}
     peerDependencies:
       eslint: ^10.4.0
 
-  '@simbo/find-bin@2.0.2':
-    resolution: {integrity: sha512-ZIosART2Mc9CEiRAwSgO5ID1cH7lJ0OmJk/CBfiaW7SbpHc9FulOicE5NBNduVTUHm1tvP/ubJFO4W+Z74/aUQ==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/find-bin@3.0.0':
+    resolution: {integrity: sha512-LfgWP0qadh+1rXfPsQcscoGSNQgAAUALjkFs10SqaWd2iuXnWwa3lp78fACoxyuBx2yNRHyNwFMUHGy+IIOfUQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/find-git-repository-root@2.0.1':
-    resolution: {integrity: sha512-07RMf+F1E4TqFXyynwtbGl4Ugs17kREr/97xFrreyEWjxBbaoJ2CNvkbefEnsULn9LCO1viy2r4o2q+m+66Irw==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/find-git-repository-root@3.0.0':
+    resolution: {integrity: sha512-SNzm16shwQqosLcu0jrEJp8Hy8j4/fH1PZwGXyBaXsNyncw7VsjXNVIDD018K4z9H7c39Lr1WuhFqpjUp1iiYg==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/find-up-package@2.0.1':
-    resolution: {integrity: sha512-i6mZzYLunS5e3oWChY4QKCVg4hIRj+bEtk8ZdMZLiCOKmotaO+0ej3uTloKxcczPE4Vr5UxoYN8Trh5S67inUA==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/find-up-package@3.0.0':
+    resolution: {integrity: sha512-ocVXdAzyw7WmWai1uJzcBgS7Av6WqeYKM5SMqON6C6ZQdOYtIroqBZyQbTtNBWs3uLW4gi1gD2CCHScQ8sYgEg==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/git-changes@3.0.1':
-    resolution: {integrity: sha512-SUsoLxJBUmddC5ZgTIR7/akuKDuNfZpscbYj2KfcnzVl3n1D1kPzfW56PnYA0e/vNt+qKkTlsOcgeNpkfMiE3g==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/git-changes@4.0.0':
+    resolution: {integrity: sha512-acePlLb2//MKM7VgNs0LQ0JzddjBXiSZmE9EqsIwhbmqHZClrijWu15RYq/DId1s8t28i3GTgtbXNDkxPhn5eg==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/git-constants@2.0.1':
-    resolution: {integrity: sha512-MmsLPBHJqU6/oeNMFWqTcsGLuU785ITG4q1ZYJi+dS71tniA+/5pAJTrs6IrGs0GhO97pzu5glDmAq4/6jtTlg==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/git-constants@3.0.0':
+    resolution: {integrity: sha512-JpemyT+d8sKGsEiIe3usK5q7KVV3G+ylSanA/q8TFppgWarGLzgD7EFcey8xlCIPw60e6xUA39xfAfSe9gE+6w==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/graceful-exit@2.0.1':
-    resolution: {integrity: sha512-KfwOyunV6G7u9VlIhThvkOYWCVuN5fc8T8eO3dGTEPGSTHcscQdlYA1jCMMtq7KdcFxWarpDM6iYPqdACLkFFA==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/graceful-exit@3.0.0':
+    resolution: {integrity: sha512-D+61kxgqgcQN8gtYyVUYV9JMbmT4m9GX8AJok0UF0uIBnVqYwb0EwkuJAAJSTnLi2FCVPFg1J5zHJuHjwTbnAQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/inject-between-html-comments@2.0.1':
-    resolution: {integrity: sha512-mB4h3BbtO5cWLEj/CylLGKF1dj+FCWtu2+4oUo4QV2W4ISBH8qgWlZVvpEXBmKSEgCOfCoZZW1nqxdT4ehG5TQ==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/inject-between-html-comments@3.0.0':
+    resolution: {integrity: sha512-yfeLX8fjwLhcPeO16iwVSbogeRXdRL1xRERZYvXt4C26R1JRM7so/bEUI1RUPo8/ZAxiEm0ZseWWkMN1SYY1Xw==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/is-git-repository-root@2.0.1':
-    resolution: {integrity: sha512-ntklEQ49rxTCOiPuITYl6zs+cd3jtS+s5MA5iEdRTnv1owI3PYRaPhYLbUwDfC207Ruzr2aWeoV1vJOgwRSc6g==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/is-git-repository-root@3.0.0':
+    resolution: {integrity: sha512-0PmhS0oW5SiHz9Yw8FceoUp2uvYJ3eQVgTU5h9T86r9DcQeyavjvTehRkVdysg9EMAamnvbGw0YGJv5rdL82XQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/monorepo-packages-list-cli@2.0.3':
-    resolution: {integrity: sha512-BchmE7iWN/KlAdeCLsd9wPEuL8l9zi56emA1txVfnzrboyDQvd6A9b7wb1FDcXirc2HcvaA7yBc3A2yvGYDSOQ==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/monorepo-packages-list-cli@3.0.1':
+    resolution: {integrity: sha512-qKOjBxTMloPHE9GAsgHohySdq63VkaUXENgswl9xH3Lj5f9FkjRVKltzHNYAHzuJ5HdrFFmusu4z0G3P8tnQkA==}
+    engines: {node: ^24.15.0 || >=26.0.0}
     hasBin: true
 
-  '@simbo/monorepo-packages-list@2.0.3':
-    resolution: {integrity: sha512-q6ALctGqeCNE3v0gvZAS++cy2WQ8/UyxBzhsHwTL/zQVMSLo1wxXIseorv1VfGBIEJJnWiaNBo2HcYCFaukngg==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/monorepo-packages-list@3.0.1':
+    resolution: {integrity: sha512-y3OnAvz1TRqvtSJxNkHPNjsDHC8LCSF53d4WVRtNuQSXpq7EOix3w72bUF6cVt9EBURpj92wPD1zpbTIMx+MVA==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/monorepo-utils@2.0.3':
-    resolution: {integrity: sha512-kAvfIoeVRuyFREqavGLWnbt216/f83VPr1w0RkVkyAWvOaizsysqGxq2hZaofIhz4pUv4lA46jXcMnaBly1BGQ==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/monorepo-utils@3.0.1':
+    resolution: {integrity: sha512-fGCUj6cQU+gfBmwIkE4wflkdO9S1adXneBlAmRg9HwugTedumCJLBlTz7u8uVrO7oS2t3Xuw+nz0SiUpLq1vaQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/package-json@1.0.1':
-    resolution: {integrity: sha512-j4nJdLqMsmOq+7av/0a+0CBKFnAj1y+XDuYlh+0KSQgJMR4GGbcahD2ijxa5TSjTzlJqw8l1zUSwg7yEoc9ONg==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/package-json@2.0.0':
+    resolution: {integrity: sha512-Sn+s6tzPJ6hQkPR9JyP15TSqKcH9ZccAsdhIrr+PZwJdM3gYdpXA3ToeKnVz6H1pBFuiS1Epu3seM0bVSWGYMQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/plural@2.0.1':
-    resolution: {integrity: sha512-Yiyp6o0fUJF7Sl2O16XjUnHBwc1lJZYZbXnWMzact4Sm9FXmVd8wHPe8Ha20BvCijuXs8HDyQ819+HLVvClGNA==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/plural@3.0.0':
+    resolution: {integrity: sha512-72Snvzy5IFmm5DrwaYZnBaXy7Q0/+aP2k24bS4iDxX89yXlz0VwTelJOswkf7dcirGR969B5npq7EXeRM9VTiw==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/prettier-config@3.0.2':
-    resolution: {integrity: sha512-KV11lv43QVLz3IYzXtjmfVNSzxHOwEbrAs2oCrPUmsozVjrr6Rub2+f3xF45Rp3I74gTMY5hKS5qUKerAvJzsQ==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/prettier-config@4.0.0':
+    resolution: {integrity: sha512-QrBAn6U6fLX3iX0+iDn6y2lSvLiyaBmbJv+8qU0JsYcn6TORXpnZYFbY9CxFLuLNTD0yuiYZQvnnFEFoA8aiqQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
     peerDependencies:
       '@ianvs/prettier-plugin-sort-imports': ^4
       prettier: ^3
 
-  '@simbo/rollup-github-actions-config@2.0.1':
-    resolution: {integrity: sha512-cJ1XYasBt14pypJoG2mE9/cIVpLBahlhnTNqZkl222ES8dI/iQa2hahdVlEaw7Pa7XyVNBBlGemXfkYPymzW3w==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/rollup-github-actions-config@3.0.1':
+    resolution: {integrity: sha512-qiEFuFhmpWvSQlrc7sH6OHumabl3x36S0H/qDVuRHw26kPmS1GMQ9uC7+3PgFqvmeOO8OaSdVa3AP/xnutCI4Q==}
+    engines: {node: ^24.15.0 || >=26.0.0}
     peerDependencies:
       rollup: ^4
 
-  '@simbo/stringify-error@2.0.1':
-    resolution: {integrity: sha512-2u56f8d/NFPuYdiQccTJ7Znk7sLZbuCAZDR1EGl/xz8GCeB4TW1s6MxvETeB1ZZo9B9fvOBIX7RQ+va3opmFUw==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/stringify-error@3.0.0':
+    resolution: {integrity: sha512-8UPeUvGdvGeWaYcZANDD3VCJ75jZnPcz3dt55CZaTBPFhXCh51p8ZNl36JFyP9NpCl8M1O1lECJqcqKmctQ6PA==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/tsconfig@2.1.0':
-    resolution: {integrity: sha512-vAjM9SqF6XzTASYmc4DhOXfZIqcrElPyeyZntu/fDBUNF68GM7GIVxgN1uIO+xO8qXKE27duyL4FM8mKK0TUaQ==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/tsconfig@3.0.1':
+    resolution: {integrity: sha512-XIRW0VrRAZGNaNpIEyEm+ucRqe4GtsY1CfShA4hGqGHWe+W1LP6/yUcCkz/QUlgVgRHxeNTSTIy6tueyornzqQ==}
+    engines: {node: ^24.15.0 || >=26.0.0}
     peerDependencies:
-      typescript: ^5 || ^6
+      typescript: ^6
 
-  '@simbo/user-facing-error@2.0.1':
-    resolution: {integrity: sha512-sswZ5oiUwWK4/ChtlWT6AC4ebm4LYIPck7upGmi+8j8eKXoj4yCvSRXcRFk+qD/0nijhbyxg/hIKh6LawCHVRA==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/user-facing-error@3.0.0':
+    resolution: {integrity: sha512-3t9HAXwgm7zuw6qD6lk+MwLChh5BONz5VlnKB6RE5zYUgalu96d8FKdtc5tQYpWjcOnHsm8YfGAWDt+lZ8t/jw==}
+    engines: {node: ^24.15.0 || >=26.0.0}
 
-  '@simbo/zodpak@1.0.1':
-    resolution: {integrity: sha512-oabSwSCVOarCf0mxg9JCxHHlfVXDSv3giQg5hkwQsFKptT7Ee2tYOfei8lMcZyZ703ZSWPGt5nIWB0PvFZ8VWQ==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+  '@simbo/zodpak@2.0.0':
+    resolution: {integrity: sha512-EWyovaMXwg5kAY+Ppjd2LuxzQS2cM971PSZ6M53+g/k8U7DZLO4M6DX2c+e6JOEm7m10CpCksx5AXbbFst8u7w==}
+    engines: {node: ^24.15.0 || >=26.0.0}
     peerDependencies:
       zod: ^4
       zod-validation-error: ^5
@@ -1896,11 +1896,11 @@ packages:
     resolution: {integrity: sha512-XSZmOtMUbWCBIM+2BK134FyMFxmll1mW2mPLk/PSwYQYzGIPMgJAqL929U4qXVizLv7Xq5b7r41/o7Ombuwk0g==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@vitest/coverage-v8@5.1.1':
-    resolution: {integrity: sha512-xL4NkbVx/UqqDHaXSOyvB8qsSoLQ+dVNGR9H2Bh/4ggQtmaPFNPUC9gZQwKZePLOQ6WDcgwXVnPulFW9eCHt0w==}
+  '@vitest/coverage-v8@5.1.2':
+    resolution: {integrity: sha512-VG0JLv0T4kr1fR6QAfe8PTou+Frc4t0u4j+oKgDH3djJpFawzBfGyX14/z56NXoCTNem3OEphzCJhc4DkE62xQ==}
     peerDependencies:
-      '@vitest/browser': 5.1.1
-      vitest: 5.1.1
+      '@vitest/browser': 5.1.2
+      vitest: 5.1.2
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -1913,8 +1913,8 @@ packages:
     resolution: {integrity: sha512-Qba+8OpQQAbWrmq3u1olh6jqE/vyW4OYJe6TLrrTBpXhjJhbY7Os69wyVvMQmNA64KJhGd5nQ/c7l4io8tPCHQ==}
     engines: {node: '>=22'}
 
-  '@vitest/mocker@5.1.1':
-    resolution: {integrity: sha512-b2OgTB4+3ImWIVafXKazJXwLKwQxUNnix6b3xUvUTMh7RyXlrtzoxfZr8aEz9zkHOMAS4K5lu3TvFWoiVeVTQg==}
+  '@vitest/mocker@5.1.2':
+    resolution: {integrity: sha512-UGc97wUIy0Ji2+9GxzHEJiOhiwkaukgE7VYcUNnjpX3sWnwQ8XogmNXX4WyOukxYgKb8Nh2XFa7KId0ZjpmVhQ==}
     peerDependencies:
       msw: ^2.4.9 || ^3.0.0
       vite: ^6.0.0 || ^7.0.0 || ^8.0.0
@@ -1924,8 +1924,8 @@ packages:
       vite:
         optional: true
 
-  '@vitest/spy@5.1.1':
-    resolution: {integrity: sha512-6K8C6alQG1/Yc8/ZI22iJS7JEsxPdVzqtqDq+/xM4Z0mGVykemMVjLhqMy/q6/IHYG3kKD8hKSwRen/ZdyI9vQ==}
+  '@vitest/spy@5.1.2':
+    resolution: {integrity: sha512-PQl0/3+p9GaY71+MHywN6oyHfLhVDD5kcbm7oNRldA2F0ExMU3S8RQdnpteJ9gFAdK5P6KCgE6LqCpUgy57KzA==}
 
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
@@ -3609,20 +3609,20 @@ packages:
       yaml:
         optional: true
 
-  vitest@5.1.1:
-    resolution: {integrity: sha512-trVmzUFOSraCZcI3uZIMD5FqBh4atFkC/XuJP/IU7qtyQay0FCs3Ia+0QiQ2JJwGyWG/xrcBoJNel2+O7kEZ0g==}
+  vitest@5.1.2:
+    resolution: {integrity: sha512-VIa2wXV208WraXUbzH+dQUrGcFpPuaiRA8HlhXS8R6/sy9cynw6OMqGj8fmAlH1hot7huTCtWUE14+FdXU3eLw==}
     engines: {node: ^22.12.0 || ^24.0.0 || >=26.0.0}
     hasBin: true
     peerDependencies:
       '@edge-runtime/vm': '*'
       '@opentelemetry/api': ^1.9.0
       '@types/node': ^22.0.0 || >=24.0.0
-      '@vitest/browser-playwright': 5.1.1
-      '@vitest/browser-preview': 5.1.1
+      '@vitest/browser-playwright': 5.1.2
+      '@vitest/browser-preview': 5.1.2
       '@vitest/browser-webdriverio': ^5.0.0-beta.5 || >=5.0.0
-      '@vitest/coverage-istanbul': 5.1.1
-      '@vitest/coverage-v8': 5.1.1
-      '@vitest/ui': 5.1.1
+      '@vitest/coverage-istanbul': 5.1.2
+      '@vitest/coverage-v8': 5.1.2
+      '@vitest/ui': 5.1.2
       happy-dom: '*'
       jsdom: '*'
       vite: ^6.4.0 || ^7.0.0 || ^8.0.0
@@ -4890,42 +4890,42 @@ snapshots:
       '@sigstore/core': 3.2.1
       '@sigstore/protobuf-specs': 0.5.2
 
-  '@simbo/accessible@2.0.1': {}
+  '@simbo/accessible@3.0.0': {}
 
-  '@simbo/call-prettier@2.0.2':
+  '@simbo/call-prettier@3.0.0':
     dependencies:
-      '@simbo/accessible': 2.0.1
-      '@simbo/find-bin': 2.0.2
+      '@simbo/accessible': 3.0.0
+      '@simbo/find-bin': 3.0.0
       execa: 10.2.1
 
-  '@simbo/cli-output@2.0.1':
+  '@simbo/cli-output@3.0.0':
     dependencies:
       yoctocolors: 2.2.0
 
-  '@simbo/clirk@2.0.2(zod-validation-error@5.0.0(zod@4.6.7))':
+  '@simbo/clirk@3.0.0(zod-validation-error@5.0.0(zod@4.6.7))':
     dependencies:
-      '@simbo/cli-output': 2.0.1
-      '@simbo/find-up-package': 2.0.1
-      '@simbo/graceful-exit': 2.0.1
-      '@simbo/plural': 2.0.1
-      '@simbo/stringify-error': 2.0.1
-      '@simbo/zodpak': 1.0.1(zod-validation-error@5.0.0(zod@4.6.7))(zod@4.6.7)
+      '@simbo/cli-output': 3.0.0
+      '@simbo/find-up-package': 3.0.0
+      '@simbo/graceful-exit': 3.0.0
+      '@simbo/plural': 3.0.0
+      '@simbo/stringify-error': 3.0.0
+      '@simbo/zodpak': 2.0.0(zod-validation-error@5.0.0(zod@4.6.7))(zod@4.6.7)
       minimist: 1.2.8
       yoctocolors: 2.2.0
       zod: 4.6.7
     transitivePeerDependencies:
       - zod-validation-error
 
-  '@simbo/commitlint-config@2.0.2(@commitlint/cli@21.2.4(conventional-commits-parser@7.1.4)(typescript@6.0.3))':
+  '@simbo/commitlint-config@3.0.0(@commitlint/cli@21.2.4(conventional-commits-parser@7.1.4)(typescript@6.0.3))':
     dependencies:
       '@commitlint/cli': 21.2.4(conventional-commits-parser@7.1.4)(typescript@6.0.3)
       '@commitlint/config-conventional': 21.2.4
 
-  '@simbo/cspell-config@2.2.0(cspell@10.5.2)':
+  '@simbo/cspell-config@3.0.0(cspell@10.5.2)':
     dependencies:
       cspell: 10.5.2
 
-  '@simbo/eslint-config@4.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@simbo/eslint-config@5.0.0(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@eslint/js': 10.0.1(eslint@10.15.0(jiti@2.6.1)(supports-color@7.2.0))
       eslint: 10.15.0(jiti@2.6.1)(supports-color@7.2.0)
@@ -4941,60 +4941,58 @@ snapshots:
       - ts-declaration-location
       - typescript
 
-  '@simbo/find-bin@2.0.2':
+  '@simbo/find-bin@3.0.0':
     dependencies:
-      '@simbo/accessible': 2.0.1
+      '@simbo/accessible': 3.0.0
       execa: 10.2.1
       find-up: 8.0.0
 
-  '@simbo/find-git-repository-root@2.0.1':
+  '@simbo/find-git-repository-root@3.0.0':
     dependencies:
-      '@simbo/is-git-repository-root': 2.0.1
+      '@simbo/is-git-repository-root': 3.0.0
       find-up: 8.0.0
 
-  '@simbo/find-up-package@2.0.1':
+  '@simbo/find-up-package@3.0.0':
     dependencies:
-      '@simbo/accessible': 2.0.1
-      '@simbo/package-json': 1.0.1
+      '@simbo/accessible': 3.0.0
+      '@simbo/package-json': 2.0.0
       find-up: 8.0.0
       normalize-package-data: 9.0.0
       type-fest: 5.10.0
 
-  '@simbo/git-changes@3.0.1':
+  '@simbo/git-changes@4.0.0':
     dependencies:
-      '@simbo/find-git-repository-root': 2.0.1
+      '@simbo/find-git-repository-root': 3.0.0
       execa: 10.2.1
 
-  '@simbo/git-constants@2.0.1': {}
+  '@simbo/git-constants@3.0.0': {}
 
-  '@simbo/graceful-exit@2.0.1':
+  '@simbo/graceful-exit@3.0.0':
     dependencies:
-      '@simbo/cli-output': 2.0.1
-      '@simbo/stringify-error': 2.0.1
-      '@simbo/user-facing-error': 2.0.1
+      '@simbo/cli-output': 3.0.0
+      '@simbo/stringify-error': 3.0.0
+      '@simbo/user-facing-error': 3.0.0
       yoctocolors: 2.2.0
 
-  '@simbo/inject-between-html-comments@2.0.1':
-    dependencies:
-      escape-string-regexp: 5.0.0
+  '@simbo/inject-between-html-comments@3.0.0': {}
 
-  '@simbo/is-git-repository-root@2.0.1':
+  '@simbo/is-git-repository-root@3.0.0':
     dependencies:
-      '@simbo/accessible': 2.0.1
-      '@simbo/git-constants': 2.0.1
+      '@simbo/accessible': 3.0.0
+      '@simbo/git-constants': 3.0.0
 
-  '@simbo/monorepo-packages-list-cli@2.0.3(@types/node@24.19.2)(typescript@6.0.3)(zod-validation-error@5.0.0(zod@4.6.7))':
+  '@simbo/monorepo-packages-list-cli@3.0.1(@types/node@24.19.2)(typescript@6.0.3)(zod-validation-error@5.0.0(zod@4.6.7))':
     dependencies:
-      '@simbo/accessible': 2.0.1
-      '@simbo/call-prettier': 2.0.2
-      '@simbo/cli-output': 2.0.1
-      '@simbo/clirk': 2.0.2(zod-validation-error@5.0.0(zod@4.6.7))
-      '@simbo/find-git-repository-root': 2.0.1
-      '@simbo/inject-between-html-comments': 2.0.1
-      '@simbo/monorepo-packages-list': 2.0.3(zod-validation-error@5.0.0(zod@4.6.7))
-      '@simbo/monorepo-utils': 2.0.3
-      '@simbo/user-facing-error': 2.0.1
-      '@simbo/zodpak': 1.0.1(zod-validation-error@5.0.0(zod@4.6.7))(zod@4.6.7)
+      '@simbo/accessible': 3.0.0
+      '@simbo/call-prettier': 3.0.0
+      '@simbo/cli-output': 3.0.0
+      '@simbo/clirk': 3.0.0(zod-validation-error@5.0.0(zod@4.6.7))
+      '@simbo/find-git-repository-root': 3.0.0
+      '@simbo/inject-between-html-comments': 3.0.0
+      '@simbo/monorepo-packages-list': 3.0.1(zod-validation-error@5.0.0(zod@4.6.7))
+      '@simbo/monorepo-utils': 3.0.1
+      '@simbo/user-facing-error': 3.0.0
+      '@simbo/zodpak': 2.0.0(zod-validation-error@5.0.0(zod@4.6.7))(zod@4.6.7)
       cosmiconfig: 10.0.1
       cosmiconfig-typescript-loader: 6.3.0(@types/node@24.19.2)(cosmiconfig@10.0.1)(typescript@6.0.3)
       yoctocolors: 2.2.0
@@ -5004,37 +5002,37 @@ snapshots:
       - typescript
       - zod-validation-error
 
-  '@simbo/monorepo-packages-list@2.0.3(zod-validation-error@5.0.0(zod@4.6.7))':
+  '@simbo/monorepo-packages-list@3.0.1(zod-validation-error@5.0.0(zod@4.6.7))':
     dependencies:
-      '@simbo/monorepo-utils': 2.0.3
-      '@simbo/zodpak': 1.0.1(zod-validation-error@5.0.0(zod@4.6.7))(zod@4.6.7)
+      '@simbo/monorepo-utils': 3.0.1
+      '@simbo/zodpak': 2.0.0(zod-validation-error@5.0.0(zod@4.6.7))(zod@4.6.7)
       zod: 4.6.7
     transitivePeerDependencies:
       - zod-validation-error
 
-  '@simbo/monorepo-utils@2.0.3':
+  '@simbo/monorepo-utils@3.0.1':
     dependencies:
-      '@simbo/accessible': 2.0.1
-      '@simbo/package-json': 1.0.1
-      '@simbo/stringify-error': 2.0.1
+      '@simbo/accessible': 3.0.0
+      '@simbo/package-json': 2.0.0
+      '@simbo/stringify-error': 3.0.0
       globby: 16.2.4
       p-queue: 10.0.0
       type-fest: 5.10.0
       yaml: 2.9.1
 
-  '@simbo/package-json@1.0.1':
+  '@simbo/package-json@2.0.0':
     dependencies:
-      '@simbo/stringify-error': 2.0.1
+      '@simbo/stringify-error': 3.0.0
       type-fest: 5.10.0
 
-  '@simbo/plural@2.0.1': {}
+  '@simbo/plural@3.0.0': {}
 
-  '@simbo/prettier-config@3.0.2(@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.10.1)(supports-color@7.2.0))(prettier@3.10.1)':
+  '@simbo/prettier-config@4.0.0(@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.10.1)(supports-color@7.2.0))(prettier@3.10.1)':
     dependencies:
       '@ianvs/prettier-plugin-sort-imports': 4.7.1(prettier@3.10.1)(supports-color@7.2.0)
       prettier: 3.10.1
 
-  '@simbo/rollup-github-actions-config@2.0.1(rollup@4.68.8)(typescript@6.0.3)':
+  '@simbo/rollup-github-actions-config@3.0.1(rollup@4.68.8)(typescript@6.0.3)':
     dependencies:
       '@rollup/plugin-commonjs': 29.0.3(rollup@4.68.8)
       '@rollup/plugin-json': 6.1.0(rollup@4.68.8)
@@ -5046,17 +5044,17 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@simbo/stringify-error@2.0.1': {}
+  '@simbo/stringify-error@3.0.0': {}
 
-  '@simbo/tsconfig@2.1.0(typescript@6.0.3)':
+  '@simbo/tsconfig@3.0.1(typescript@6.0.3)':
     dependencies:
       typescript: 6.0.3
 
-  '@simbo/user-facing-error@2.0.1':
+  '@simbo/user-facing-error@3.0.0':
     dependencies:
-      '@simbo/stringify-error': 2.0.1
+      '@simbo/stringify-error': 3.0.0
 
-  '@simbo/zodpak@1.0.1(zod-validation-error@5.0.0(zod@4.6.7))(zod@4.6.7)':
+  '@simbo/zodpak@2.0.0(zod-validation-error@5.0.0(zod@4.6.7))(zod@4.6.7)':
     dependencies:
       zod: 4.6.7
       zod-validation-error: 5.0.0(zod@4.6.7)
@@ -5158,8 +5156,8 @@ snapshots:
 
   '@typescript-eslint/project-service@8.72.2(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.72.2(typescript@6.0.3)
-      '@typescript-eslint/types': 8.72.2
+      '@typescript-eslint/tsconfig-utils': 8.74.0(typescript@6.0.3)
+      '@typescript-eslint/types': 8.74.0
       debug: 4.4.3(supports-color@7.2.0)
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -5271,7 +5269,7 @@ snapshots:
       '@typescript-eslint/types': 8.74.0
       eslint-visitor-keys: 5.0.1
 
-  '@vitest/coverage-v8@5.1.1(vitest@5.1.1)':
+  '@vitest/coverage-v8@5.1.2(vitest@5.1.2)':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
       '@vitest/istanbul-lib-coverage': 2.1.1
@@ -5281,7 +5279,7 @@ snapshots:
       obug: 3.0.0
       std-env: 4.3.0
       tinyrainbow: 3.2.0
-      vitest: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
+      vitest: 5.1.2(@types/node@24.19.2)(@vitest/coverage-v8@5.1.2)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
 
   '@vitest/istanbul-lib-coverage@2.1.1': {}
 
@@ -5289,16 +5287,16 @@ snapshots:
     dependencies:
       '@vitest/istanbul-lib-coverage': 2.1.1
 
-  '@vitest/mocker@5.1.1(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))':
+  '@vitest/mocker@5.1.2(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
-      '@vitest/spy': 5.1.1
+      '@vitest/spy': 5.1.2
       estree-walker: 3.0.3
       magic-string: 1.4.5
     optionalDependencies:
       vite: 8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1)
 
-  '@vitest/spy@5.1.1': {}
+  '@vitest/spy@5.1.2': {}
 
   abbrev@2.0.0: {}
 
@@ -7034,10 +7032,10 @@ snapshots:
       terser: 5.51.4
       yaml: 2.9.1
 
-  vitest@5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1)):
+  vitest@5.1.2(@types/node@24.19.2)(@vitest/coverage-v8@5.1.2)(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.1.1(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
+      '@vitest/mocker': 5.1.2(vite@8.3.8(@types/node@24.19.2)(jiti@2.6.1)(terser@5.51.4)(yaml@2.9.1))
       chai: 6.3.0
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -7052,7 +7050,7 @@ snapshots:
       why-is-node-running: 3.2.1
     optionalDependencies:
       '@types/node': 24.19.2
-      '@vitest/coverage-v8': 5.1.1(vitest@5.1.1)
+      '@vitest/coverage-v8': 5.1.2(vitest@5.1.2)
     transitivePeerDependencies:
       - msw
 
