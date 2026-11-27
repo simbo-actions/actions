@@ -9,7 +9,7 @@
   "bugs": "https://github.com/simbo-actions/actions/issues",
   "repository": "github:simbo-actions/actions",
   "engines": {
-    "node": ">=24.0.0"
+    "node": "^24.15.0"
   },
   "packageManager": "pnpm@12.5.1",
   "workspaces": [
@@ -51,10 +51,10 @@
     "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "^21.2.4",
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
-    "@simbo/commitlint-config": "^2.0.2",
-    "@simbo/cspell-config": "^2.2.0",
-    "@simbo/monorepo-packages-list-cli": "^2.0.3",
-    "@simbo/prettier-config": "^3.0.2",
+    "@simbo/commitlint-config": "^3.0.0",
+    "@simbo/cspell-config": "^3.0.0",
+    "@simbo/monorepo-packages-list-cli": "^3.0.1",
+    "@simbo/prettier-config": "^4.0.0",
     "@types/node": "^24.19.2",
     "cspell": "^10.5.2",
     "husky": "^9.1.7",

@@ -500,8 +500,8 @@ That initial commit is created by GitHub and is verified as well.
   Very large commits may be rejected by the API; split them into several
   commits.
 - **Merge commits** cannot be created.
-- **Runners:** Linux only (x64 and arm64), with Node.js 24.8 or later, as on all
-  GitHub-hosted runners.
+- **Runners:** Linux only (x64 and arm64), with Node.js 24.15 or later, as on
+  all GitHub-hosted runners.
 
 ## About Simbo's Actions
 
